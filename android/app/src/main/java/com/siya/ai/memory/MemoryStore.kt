@@ -136,7 +136,7 @@ Keep exact amounts, names, dates and obligations. Do not invent facts. Ignore gr
 Utterance: ${JSONObject.quote(utterance.take(2500))}"""
             val body = JSONObject().put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
                 .put("generationConfig", JSONObject().put("temperature", 0.1).put("responseMimeType", "application/json"))
-            val req = Request.Builder().url("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+            val req = Request.Builder().url("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent")
                 .header("x-goog-api-key", key).post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType())).build()
             http.newCall(req).execute().use { response ->
                 if (!response.isSuccessful) { Log.w("SIYA_MEMORY", "Fact extraction HTTP ${response.code}"); return }
