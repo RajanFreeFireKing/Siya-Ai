@@ -421,8 +421,8 @@ object SmartAccessibilityEngine {
             }
             StoryStage.PICK_MEDIA -> {
                 val pickerVisible = isMediaPickerPackage(packageName) ||
-                    screen.contains("recent photos") || screen.contains("camera roll") ||
-                    screen.contains("select photos") || screen.contains("select an item")
+                    screen.contains("recent") || screen.contains("photos") || screen.contains("gallery") ||
+                    screen.contains("camera roll") || screen.contains("select photos") || screen.contains("select an item")
                 if (pickerVisible) {
                     if (clickNewestAccessibleThumbnail(root)) {
                         storyStage = StoryStage.OPEN_STICKERS
