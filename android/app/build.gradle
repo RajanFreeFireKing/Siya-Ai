@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace "com.siya.ai"
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.siya.ai"
