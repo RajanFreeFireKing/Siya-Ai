@@ -5,6 +5,7 @@ import com.siya.ai.browser.AiBrowser
 import com.siya.ai.data.LocationHelper
 import com.siya.ai.data.MapWindow
 import com.siya.ai.memory.MemoryStore
+import com.siya.ai.service.SmartAccessibilityEngine
 import org.json.JSONArray
 import org.json.JSONObject
 
