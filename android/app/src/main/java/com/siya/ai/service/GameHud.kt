@@ -62,9 +62,9 @@ object GameHud {
             }
             val tm = chip("%d:%02d".format(total / 60, total % 60)) { left = total }.also { timerView = it }
             strip.addView(tm)
-            lateinit var micChip: TextView
             val hudPrefs = app.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
-            micChip = chip(if (hudPrefs.getBoolean("game_hud_mic_on", false)) "MIC ON" else "MIC OFF") {
+            val micChip = chip(if (hudPrefs.getBoolean("game_hud_mic_on", false)) "MIC ON" else "MIC OFF") { }
+            micChip.setOnClickListener {
                 val wasOn = hudPrefs.getBoolean("game_hud_mic_on", false)
                 val nextOn = !wasOn
                 val action = if (nextOn) SiyaService.ACTION_START else SiyaService.ACTION_MIC_OFF
