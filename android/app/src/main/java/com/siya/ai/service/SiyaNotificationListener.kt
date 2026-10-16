@@ -15,6 +15,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import com.siya.ai.data.PeopleStore
 import android.util.Log
 import java.util.Locale
 
@@ -66,10 +67,12 @@ class SiyaNotificationListener : NotificationListenerService() {
         pendingAction = action
         pendingInputs = action?.remoteInputs
 
+        val contactContext = try { PeopleStore.contextForContact(applicationContext, sender) } catch (_: Exception) { "" }
+        val contextPrefix = if (contactContext.isBlank()) "" else "$contactContext. "
         val prompt = if (action != null) {
-            "$sender ne message kiya hai: '$message'. Kya reply dena hai ya aise hi chhod dein?"
+            "$contextPrefix$sender ne message kiya hai: $message. Kya reply dena hai ya aise hi chhod dein?"
         } else {
-            "$sender ne message kiya hai: '$message'. Is notification mein direct reply ka option nahi mila."
+            "$contextPrefix$sender ne message kiya hai: $message. Is notification mein direct reply ka option nahi mila."
         }
         speakPrompt(prompt, action != null)
     }
