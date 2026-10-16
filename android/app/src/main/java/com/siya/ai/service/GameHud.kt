@@ -62,7 +62,18 @@ object GameHud {
             }
             val tm = chip("%d:%02d".format(total / 60, total % 60)) { left = total }.also { timerView = it }
             strip.addView(tm)
-            strip.addView(chip("\uD83C\uDF99") { SiyaService.send(app, SiyaService.ACTION_START, "hud") })
+            lateinit var micChip: TextView
+            val hudPrefs = app.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
+            micChip = chip(if (hudPrefs.getBoolean("game_hud_mic_on", false)) "MIC ON" else "MIC OFF") {
+                val wasOn = hudPrefs.getBoolean("game_hud_mic_on", false)
+                val nextOn = !wasOn
+                val action = if (nextOn) SiyaService.ACTION_START else SiyaService.ACTION_MIC_OFF
+                if (SiyaService.send(app, action, "hud")) {
+                    hudPrefs.edit().putBoolean("game_hud_mic_on", nextOn).apply()
+                    micChip.text = if (nextOn) "MIC ON" else "MIC OFF"
+                } else android.widget.Toast.makeText(app, "Microphone permission check karo", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            strip.addView(micChip)
             GameControl.macroNames(app).take(5).forEach { n -> strip.addView(chip(n) { Thread { GameControl.run(app, n) }.start() }) }
             strip.addView(chip("\u2715") { hide() })
             box.addView(orb); box.addView(strip)

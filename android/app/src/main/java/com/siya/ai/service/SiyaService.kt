@@ -240,6 +240,14 @@ class SiyaService : Service() {
                         lp.x = (lp.x + dx).toInt().coerceIn(0, dm.widthPixels - (60 * dm.density).toInt())
                         lp.y = (lp.y + dy).toInt().coerceIn(0, dm.heightPixels - (120 * dm.density).toInt())
                         try { overlay?.let { wm.updateViewLayout(it, lp) } } catch (_: Exception) {}
+                    },
+                    onMicToggle = {
+                        if (lastState == "idle") { startSession("overlay-mic"); true }
+                        else {
+                            session?.stop()
+                            main.postDelayed({ if (overlay == null && Settings.canDrawOverlays(this)) showOverlay() }, 500)
+                            false
+                        }
                     })
                 @Suppress("DEPRECATION")
                 val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY

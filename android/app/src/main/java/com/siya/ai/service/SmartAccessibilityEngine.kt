@@ -13,6 +13,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.siya.ai.core.GameControl
 import java.util.Locale
 
 object SmartAccessibilityEngine {
@@ -285,6 +286,21 @@ object SmartAccessibilityEngine {
         }
         return null
     }
+
+
+    // ── Task 7: OpenGL game-control bridge ───────────────────────────────
+    fun dispatchTap(x:Float,y:Float,duration:Long=50):Boolean {
+        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.N) return false
+        val service=AccessibilityHelperService.instance ?: return false
+        val path=Path().apply { moveTo(x,y); lineTo(x+0.1f,y+0.1f) }
+        val stroke=GestureDescription.StrokeDescription(path,0,duration.coerceIn(1L,100L))
+        return try { service.dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(),null,null) }
+        catch(e:Exception) { Log.w(TAG,"dispatchTap rejected: "+e.message); false }
+    }
+    fun gameAction(context:Context,action:String):String=GameControl.action(context,action)
+    fun setGameTouchMapping(context:Context,action:String,x:Float,y:Float):String=GameControl.setMapping(context,action,x,y)
+    fun gameTouchMappingSummary(context:Context):String=GameControl.mappingSummary(context)
+    fun calibrateGameTouchMapping(context:Context):String=GameControl.calibrate(context)
 
     // ── Task 6: bounded story/status automation ──────────────────────────
     private const val STORY_TAG = "SiyaStoryAutomation"

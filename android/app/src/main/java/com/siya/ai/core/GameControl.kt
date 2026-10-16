@@ -35,7 +35,10 @@ object GameControl {
     @Volatile private var autoOn = false
     private fun prefs(ctx: Context) = ctx.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
     private fun svc() = AccessibilityHelperService.instance
-    private fun metrics(ctx: Context) = ctx.resources.displayMetrics
+    private fun metrics(ctx: Context): android.util.DisplayMetrics = android.util.DisplayMetrics().also { dm ->
+        @Suppress("DEPRECATION")
+        (ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealMetrics(dm)
+    }
 
     // ── gestures ────────────────────────────────────────────
     private fun gesture(path: Path, ms: Long): Boolean {
@@ -66,6 +69,46 @@ object GameControl {
         val (a, b) = px(ctx, x1, y1); val (c, d) = px(ctx, x2, y2)
         return if (gesture(Path().apply { moveTo(a, b); lineTo(c, d) }, ms)) "OK: swipe/drag" else "ERROR: gesture nahi chala"
     }
+
+
+    /** Fast, non-blocking mapped action. Gloo wall uses two short strokes in one gesture. */
+    fun action(ctx: Context, actionName: String): String {
+        val service=svc() ?: return "ERROR: Accessibility ON nahi hai"
+        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.N) return "ERROR: Gesture control ke liye Android 7+ chahiye"
+        val action=GameTouchMapping.Button.from(actionName) ?: return "ERROR: fire, jump, crouch, gloo_wall, sprint ya joystick use karo."
+        val dm=metrics(ctx); val width=dm.widthPixels.coerceAtLeast(1); val height=dm.heightPixels.coerceAtLeast(1)
+        if(action==GameTouchMapping.Button.JOYSTICK) {
+            val start=GameTouchMapping.get(ctx,GameTouchMapping.Button.JOYSTICK)
+            val end=GameTouchMapping.Point((start.xPercent-5f).coerceIn(0f,100f),(start.yPercent-12f).coerceIn(0f,100f))
+            val (sx,sy)=start.toPixels(width,height); val (ex,ey)=end.toPixels(width,height)
+            val path=Path().apply { moveTo(sx,sy); lineTo(ex,ey) }
+            val ok=service.dispatchGesture(GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path,0,90)).build(),null,null)
+            return if(ok) "OK: joystick gesture queued" else "ERROR: gesture dispatch rejected"
+        }
+        val strokes=if(action==GameTouchMapping.Button.GLOO_WALL) listOf(
+            Triple(GameTouchMapping.get(ctx,GameTouchMapping.Button.GLOO_WALL),0L,38L),
+            Triple(GameTouchMapping.get(ctx,GameTouchMapping.Button.FIRE),38L,38L)
+        ) else listOf(Triple(GameTouchMapping.get(ctx,action),0L,45L))
+        val builder=GestureDescription.Builder()
+        strokes.forEach { (point,start,duration) ->
+            val (x,y)=point.toPixels(width,height)
+            val path=Path().apply { moveTo(x,y); lineTo(x+0.1f,y+0.1f) }
+            builder.addStroke(GestureDescription.StrokeDescription(path,start,duration))
+        }
+        val accepted=service.dispatchGesture(builder.build(),object:AccessibilityService.GestureResultCallback() {
+            override fun onCompleted(gestureDescription:GestureDescription?) { Log.i("GameControl","mapped action completed: "+action.key) }
+            override fun onCancelled(gestureDescription:GestureDescription?) { Log.w("GameControl","mapped action cancelled: "+action.key) }
+        },null)
+        Log.i("GameControl","mapped action="+action.key+" accepted="+accepted+" display="+width+"x"+height)
+        return if(accepted) "OK: "+action.key+" gesture queued ("+(strokes.last().second+strokes.last().third)+"ms plan)" else "ERROR: gesture dispatch rejected"
+    }
+    fun setMapping(ctx:Context,actionName:String,x:Float,y:Float):String {
+        val button=GameTouchMapping.Button.from(actionName) ?: return "ERROR: unknown game button"
+        val p=GameTouchMapping.set(ctx,button,x,y)
+        return "OK: "+button.label+" mapped to "+"%.1f".format(java.util.Locale.ROOT,p.xPercent)+"%, "+"%.1f".format(java.util.Locale.ROOT,p.yPercent)+"%"
+    }
+    fun mappingSummary(ctx:Context):String=GameTouchMapping.summary(ctx)
+    fun calibrate(ctx:Context):String=GameVisionOverlay.show(ctx)
 
     // ── macros (Feature 2) ──────────────────────────────────
     private fun macros(ctx: Context) = try { JSONObject(prefs(ctx).getString("game_macros", "{}")) } catch (_: Exception) { JSONObject() }

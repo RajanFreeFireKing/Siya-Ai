@@ -37,6 +37,7 @@ class OrbOverlayView(
     context: Context,
     private val onClose: () -> Unit,
     private val onDrag: (dx: Float, dy: Float) -> Unit,
+    private val onMicToggle: () -> Boolean = { false },
 ) : View(context) {
 
     private val d = resources.displayMetrics.density
@@ -56,6 +57,8 @@ class OrbOverlayView(
     private val rect = RectF()
     private val path = Path()
     private val closeRect = RectF()
+    private val micRect = RectF()
+    private var micOn = false
 
     private var t = 0f
     private var level = 0.1f
@@ -203,6 +206,12 @@ class OrbOverlayView(
 
         chip.color = (pa and 0x00FFFFFF) or 0xFF000000.toInt()
         c.drawText(when (stateName) { "listening" -> "LISTENING"; "speaking" -> "SPEAKING"; "idle" -> "STANDBY"; else -> "THINKING" }, left + 14 * d, top + 22 * d, chip)
+        micRect.set(left + 91 * d, top + 5 * d, left + 151 * d, top + 29 * d)
+        fill.shader = null; fill.color = if (micOn) 0xAA087F5B.toInt() else 0xAA475569.toInt()
+        c.drawRoundRect(micRect, 8 * d, 8 * d, fill)
+        chip.textSize = 8.5f * d
+        c.drawText(if (micOn) "MIC ON" else "MIC OFF", micRect.left + 7 * d, micRect.centerY() + 3 * d, chip)
+        chip.textSize = 9.5f * d
 
         // [X] - sirf yahi Siya ko band karta hai
         val cs = 26 * d
@@ -244,6 +253,7 @@ class OrbOverlayView(
             }
             MotionEvent.ACTION_UP -> if (!dragging) {
                 if (expanded && closeRect.contains(e.x, e.y)) onClose()
+                else if (expanded && micRect.contains(e.x, e.y)) { micOn = onMicToggle(); invalidate() }
                 else { expanded = !expanded; requestLayout(); invalidate() }
                 performClick()
             }
