@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF000000">
+
+    <!-- Top: Incoming Call text + waveform bars -->
+    <LinearLayout
+        android:id="@+id/topSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="60dp"
+        android:layout_alignParentTop="true">
+
+        <com.siya.ai.ui.main.WaveformView
+            android:id="@+id/topWaveLeft"
+            android:layout_width="80dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"/>
+
+        <TextView
+            android:id="@+id/callStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Incoming Call..."
+            android:textColor="#00E5FF"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"/>
+
+        <com.siya.ai.ui.main.WaveformView
+            android:id="@+id/topWaveRight"
+            android:layout_width="80dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="12dp"/>
+    </LinearLayout>
+
+    <!-- Caller Avatar Circle with glowing ring -->
+    <FrameLayout
+        android:id="@+id/avatarFrame"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/topSection"
+        android:layout_marginTop="32dp">
+
+        <!-- Outer glow ring -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_caller_ring_glow"/>
+
+        <!-- Avatar background circle -->
+        <FrameLayout
+            android:layout_width="130dp"
+            android:layout_height="130dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_caller_avatar">
+
+            <!-- Initial Letter -->
+            <TextView
+                android:id="@+id/callerInitialText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="R"
+                android:textColor="#FFFFFF"
+                android:textSize="56sp"
+                android:fontFamily="sans-serif-black"
+                android:textStyle="bold"/>
+        </FrameLayout>
+
+        <!-- Small phone icon badge -->
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="4dp"
+            android:src="@drawable/ic_mic_on"
+            android:background="@drawable/bg_phone_badge"
+            android:padding="6dp"/>
+    </FrameLayout>
+
+    <!-- Caller Name -->
+    <TextView
+        android:id="@+id/callerNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/avatarFrame"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:text="Rahul Sharma"
+        android:textColor="#FFFFFF"
+        android:textSize="30sp"
+        android:fontFamily="sans-serif-black"
+        android:textStyle="bold"/>
+
+    <!-- Phone number -->
+    <LinearLayout
+        android:id="@+id/phoneRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/callerNameText"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_mic_on"
+            android:tint="#00E5FF"
+            android:layout_marginEnd="6dp"/>
+
+        <TextView
+            android:id="@+id/phoneNumberText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+91 98765 43210"
+            android:textColor="#00E5FF"
+            android:textSize="16sp"/>
+    </LinearLayout>
+
+    <!-- Location / Country row -->
+    <LinearLayout
+        android:id="@+id/locationRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/phoneRow"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_location_pill"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📍"
+            android:textSize="12sp"
+            android:layout_marginEnd="4dp"/>
+
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="India"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+    <!-- Center Orb Animation -->
+    <com.siya.ai.ui.main.OrbAnimationView
+        android:id="@+id/callOrbView"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/locationRow"
+        android:layout_marginTop="20dp"/>
+
+    <!-- Waveform around orb (decorative) -->
+    <com.siya.ai.ui.main.WaveformView
+        android:id="@+id/callWaveform"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@id/locationRow"
+        android:layout_marginTop="110dp"
+        android:alpha="0.6"/>
+
+    <!-- Bottom buttons: Decline | waveform | Accept -->
+    <LinearLayout
+        android:id="@+id/buttonsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="60dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp">
+
+        <!-- Decline -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnReject"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:src="@drawable/ic_close"
+                android:background="@drawable/bg_decline_button"
+                android:padding="20dp"
+                android:tint="#FFFFFF"
+                android:elevation="6dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Decline"
+                android:textColor="#FF5252"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↓"
+                android:textColor="#FF5252"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
+        <!-- Center mini waveform -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.siya.ai.ui.main.WaveformView
+                android:id="@+id/centerWave"
+                android:layout_width="60dp"
+                android:layout_height="30dp"/>
+        </LinearLayout>
+
+        <!-- Accept -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnAnswer"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:src="@drawable/ic_mic_on"
+                android:background="@drawable/bg_accept_button"
+                android:padding="20dp"
+                android:tint="#FFFFFF"
+                android:elevation="6dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Accept"
+                android:textColor="#00E676"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↓"
+                android:textColor="#00E676"
+                android:textSize="12sp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

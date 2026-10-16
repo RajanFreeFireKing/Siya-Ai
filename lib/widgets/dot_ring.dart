@@ -1,0 +1,145 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
+/// "I'm listening" wala dotted ring (design ke 100% jaisa) + beech ka pink gola.
+///
+/// Performance: ek hi AnimationController, koi blur/MaskFilter nahi, sirf ~64 chhote circles.
+/// Gola static gradient hai, sirf Transform.scale se saans leta hai (GPU par, repaint nahi).
+class DotRing extends StatelessWidget {
+  const DotRing({
+    super.key,
+    required this.size,
+    required this.time,
+    required this.level,
+    required this.label,
+  });
+
+  final double size;
+  final Animation<double> time; // 0..1 repeat
+  final ValueListenable<double> level; // 0..1 awaaz / activity
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final blob = size * 0.72;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // pink gola (static paint, sirf scale animate)
+          AnimatedBuilder(
+            animation: Listenable.merge([time, level]),
+            builder: (_, child) {
+              final breathe = 0.5 + 0.5 * math.sin(time.value * math.pi * 2 * 5);
+              final s = 0.97 + 0.03 * breathe + 0.07 * level.value;
+              return Transform.scale(scale: s, child: child);
+            },
+            child: RepaintBoundary(
+              child: Container(
+                width: blob,
+                height: blob,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0xF2F2479F), Color(0xCCF76BC0), Color(0x66FBA5DA), Color(0x00FFFFFF)],
+                    stops: [0.0, 0.42, 0.78, 1.0],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // dots
+          Positioned.fill(
+            child: RepaintBoundary(
+              child: CustomPaint(painter: _DotsPainter(time: time, level: level)),
+            ),
+          ),
+          // text
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: Text(
+              label,
+              key: ValueKey(label),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: size * 0.092,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.2,
+                shadows: const [Shadow(color: Color(0x33E0168F), blurRadius: 6)],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot {
+  const _Dot(this.angle, this.off, this.size, this.rot, this.breathe, this.phase, this.halo);
+  final double angle; // shuruaati kon
+  final double off; // ring se andar/bahar (R ka hissa)
+  final double size; // R ka hissa
+  final int rot; // ghoomne ki gati (poore chakkar / loop)
+  final int breathe; // saans ki frequency (integer = loop seamless)
+  final double phase;
+  final bool halo;
+}
+
+class _DotsPainter extends CustomPainter {
+  _DotsPainter({required this.time, required this.level}) : super(repaint: Listenable.merge([time, level]));
+
+  final Animation<double> time;
+  final ValueListenable<double> level;
+
+  static const int _n = 64;
+  static final List<_Dot> _dots = _make();
+
+  static List<_Dot> _make() {
+    final r = math.Random(11);
+    return List.generate(_n, (i) {
+      final big = i % 5 == 0;
+      return _Dot(
+        (i / _n) * math.pi * 2 + (r.nextDouble() - 0.5) * 0.09,
+        (r.nextDouble() - 0.5) * 0.15 + (r.nextBool() ? 0.0 : -0.035),
+        big ? 0.020 + r.nextDouble() * 0.019 : 0.006 + r.nextDouble() * 0.011,
+        i % 7 == 3 ? -1 : 1,
+        3 + r.nextInt(5),
+        r.nextDouble() * math.pi * 2,
+        big,
+      );
+    });
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final R = size.width / 2 * 0.80;
+    final v = time.value;
+    final lv = level.value;
+    final p = Paint();
+    final halo = Paint();
+    for (final d in _dots) {
+      final ang = d.angle + v * math.pi * 2 * d.rot; // poora chakkar / loop = seamless (koi jhatka nahi)
+      final breath = math.sin(v * math.pi * 2 * d.breathe + d.phase);
+      final rr = R * (1 + d.off) + breath * R * (0.022 + 0.05 * lv);
+      final o = Offset(c.dx + math.cos(ang) * rr, c.dy + math.sin(ang) * rr);
+      final rad = R * d.size * (1 + 0.25 * lv * (0.5 + 0.5 * breath));
+      if (d.halo) {
+        halo.color = SiyaLight.pink.withOpacity(0.16);
+        canvas.drawCircle(o, rad * 1.9, halo);
+      }
+      p.color = Color.lerp(SiyaLight.pinkDeep, SiyaLight.magenta, d.halo ? 0.0 : 0.25 + 0.2 * (0.5 + 0.5 * breath))!;
+      canvas.drawCircle(o, rad, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DotsPainter old) => false;
+}

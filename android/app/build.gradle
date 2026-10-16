@@ -1,0 +1,61 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // Flutter Gradle Plugin android aur kotlin plugin ke baad aana chahiye
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace "com.siya.ai"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.siya.ai"
+        minSdk 26
+        targetSdk 34
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+}
+
+flutter {
+    source "../.."
+}
+
+dependencies {
+    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.cardview:cardview:1.0.0"
+    implementation "androidx.recyclerview:recyclerview:1.3.2"
+    implementation "androidx.activity:activity-ktx:1.9.0"
+    implementation "androidx.fragment:fragment-ktx:1.7.1"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.0"
+    implementation "androidx.biometric:biometric:1.1.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "androidx.exifinterface:exifinterface:1.3.7"
+    implementation "com.alphacephei:vosk-android:0.3.47"      // offline "Hey Siya" (free, key nahi chahiye)
+    implementation "ai.picovoice:porcupine-android:3.0.2"   // offline "Hey Siya" (hey_siya.ppn + AccessKey chahiye)
+}

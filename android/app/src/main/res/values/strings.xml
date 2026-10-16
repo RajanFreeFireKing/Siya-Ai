@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Siya Ai</string>
+    <string name="accessibility_service_description">Siya Accessibility Service — apps aur UI ko aapki voice command se control karta hai (WhatsApp, calls, system actions).</string>
+</resources>
