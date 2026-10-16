@@ -125,6 +125,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         initViews()
         if (contactContext.isNotBlank()) {
+            callerNameText.text = "$callerName\\n$contactContext"
             statusText.text = contactContext
             statusText.visibility = View.VISIBLE
         }
