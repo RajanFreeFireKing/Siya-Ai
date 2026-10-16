@@ -6,9 +6,29 @@ import android.graphics.Path
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo\nimport java.util.Locale
 
 object SmartAccessibilityEngine {
+
+    /**
+     * True only for explicit cancellation phrases. This parser is used by WhatsApp
+     * announce-and-confirm mode; silence/errors are handled as cancellation separately.
+     */
+    fun isCancelReplyCommand(spoken: String): Boolean {
+        val normalized = spoken.trim().lowercase(Locale.ROOT)
+            .replace(Regex("[^\\p{L}\\p{N}\\s]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+        if (normalized.isBlank()) return true
+        val exact = setOf(
+            "chhod do", "chhod de", "chod do", "chod de", "rehne do", "rahne do",
+            "aise hi chhod dein", "aise hi chhod do", "mat bhejo", "reply mat bhejo",
+            "cancel", "cancel karo", "nahi", "nahin", "no", "leave it", "ignore it",
+            "dont reply", "don't reply", "do not reply"
+        )
+        return normalized in exact
+    }
+
 
     private const val TAG = "SmartAccessibility"
 
