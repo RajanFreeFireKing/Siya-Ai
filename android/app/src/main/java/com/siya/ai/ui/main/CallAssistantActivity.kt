@@ -54,6 +54,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private var callerName = "Unknown Caller"
     private var phoneNumber = ""
+    private var contactContext = ""
     private var userName = "Sir"
     private var personality = "gf"
     private var isWhatsAppCall = false
@@ -115,6 +116,7 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Intent se data lo — FIXED: WhatsApp call detection
         callerName  = intent.getStringExtra("CALLER_NAME") ?: "Unknown Caller"
         phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
+        contactContext = intent.getStringExtra("CONTACT_CONTEXT").orEmpty()
         userName    = intent.getStringExtra("USER_NAME") ?: getPrefsValue("user_name", "Sir")
         personality = intent.getStringExtra("PERSONALITY") ?: getPrefsValue("personality_mode", "gf")
         isWhatsAppCall = intent.getBooleanExtra("IS_WHATSAPP_CALL", false)
@@ -122,6 +124,10 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         Log.d(TAG, "CallAssistant started: caller=$callerName, whatsapp=$isWhatsAppCall, personality=$personality")
 
         initViews()
+        if (contactContext.isNotBlank()) {
+            statusText.text = contactContext
+            statusText.visibility = View.VISIBLE
+        }
 
         // Initialize Live Audio Manager FIRST (before Gemini)
         liveAudioManager = LiveAudioManager(this)
