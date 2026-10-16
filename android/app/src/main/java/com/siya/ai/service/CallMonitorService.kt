@@ -17,6 +17,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.siya.ai.R
+import com.siya.ai.data.PeopleStore
 import java.util.concurrent.Executors
 
 /**
@@ -133,6 +134,7 @@ class CallMonitorService : Service() {
         }
 
         val callerName = resolveCallerName(rawNumber)
+        val contactContext = try { PeopleStore.contextForContact(this, callerName, rawNumber.orEmpty()) } catch (_: Exception) { "" }
         val userName   = prefs.getString("user_name", "Sir") ?: "Sir"
         val personality= prefs.getString("personality_mode", "gf") ?: "gf"
 
@@ -143,6 +145,7 @@ class CallMonitorService : Service() {
             putExtra("PHONE_NUMBER", rawNumber ?: "")
             putExtra("USER_NAME", userName)
             putExtra("PERSONALITY", personality)
+            putExtra("CONTACT_CONTEXT", contactContext)
             putExtra("IS_WHATSAPP_CALL", isWhatsAppCall)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
