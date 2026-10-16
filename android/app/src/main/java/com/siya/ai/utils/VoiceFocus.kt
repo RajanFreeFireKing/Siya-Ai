@@ -1,35 +1,31 @@
 package com.siya.ai.utils
 
-/**
- * User ki awaaz par focus: background ki awaaz (TV, bheed, door ke log) mein jo dheemi hai wo Gemini tak nahi jaati.
- * Idea: noise floor lagatar seekhte rehna; awaaz tabhi "user ki" maani jaati hai jab floor se kaafi upar
- * (aur ek minimum level se upar) ho. Bolne ke baad thodi der gate khula rehta hai (hangover) aur
- * bolna shuru hone se pehle ki ~240 ms audio bhi saath jaati hai, taaki shabd kate nahi.
- */
+import kotlin.math.max
+
+/** Adaptive voice gate for the live microphone; ambient mode bypasses this class in SiyaSession. */
 class VoiceFocus(private val mode: String) {
-    // mode: off | normal | strict
-    private val margin = when (mode) { "strict" -> 2.8f; "normal" -> 1.9f; else -> 0f }
-    private val minLevel = when (mode) { "strict" -> 0.012f; "normal" -> 0.006f; else -> 0f }
-    private val hangoverMs = if (mode == "strict") 450L else 650L
-
-    private var floor = 0.006f
+    private val margin = when (mode) { "strict" -> 2.5f; "normal" -> 1.75f; else -> 0f }
+    private val minLevel = when (mode) { "strict" -> 0.010f; "normal" -> 0.0045f; else -> 0f }
+    private val hangoverMs = if (mode == "strict") 520L else 700L
+    private var floor = 0.004f
     private var openUntil = 0L
-    private val pre = ArrayDeque<ByteArray>()      // pre-roll (6 x 40ms)
+    private val pre = ArrayDeque<ByteArray>()
 
-    /** Ek 40 ms chunk do. Wapas: bhejne wali audio chunks ki list (khaali = gate band, silence bhejo). */
+    /** Input is one PCM chunk. Empty output means background silence is suppressed. */
     fun process(buf: ByteArray, n: Int, level: Float, now: Long): List<ByteArray> {
         if (margin == 0f) return listOf(buf.copyOf(n))
-        // Floor = lagatar "sabse shaant" level (minimum-tracking): bolne se upar nahi chadhta,
-        // isliye dheemi mic wale phone par bhi gate kabhi hamesha band nahi rehta.
-        floor = if (level < floor) floor * 0.8f + level * 0.2f else floor * 1.0015f
-        floor = floor.coerceIn(0.0015f, 0.02f)
-        val loud = level > maxOf(minLevel, floor * margin)
+        val bounded = level.coerceIn(0f, 1f)
+        floor = if (bounded < floor) floor * 0.72f + bounded * 0.28f
+                else floor * 0.9995f + bounded.coerceAtMost(floor * 1.15f) * 0.0005f
+        floor = floor.coerceIn(0.0008f, 0.025f)
+        val loud = bounded > max(minLevel, floor * margin)
         val chunk = buf.copyOf(n)
         if (loud) {
             val wasClosed = now > openUntil
             openUntil = now + hangoverMs
             if (wasClosed && pre.isNotEmpty()) {
-                val out = ArrayList<ByteArray>(pre)
+                val out = ArrayList<ByteArray>(pre.size + 1)
+                out.addAll(pre)
                 out.add(chunk)
                 pre.clear()
                 return out
@@ -42,5 +38,9 @@ class VoiceFocus(private val mode: String) {
         return emptyList()
     }
 
-    fun reset() { openUntil = 0L; pre.clear() }
+    fun reset() {
+        openUntil = 0L
+        pre.clear()
+        floor = 0.004f
+    }
 }
