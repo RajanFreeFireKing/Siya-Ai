@@ -410,7 +410,7 @@ object SmartAccessibilityEngine {
             }
             StoryStage.OPEN_STORY -> {
                 val labels = if (storyPlatform == "instagram")
-                    listOf("your story", "add to story", "story", "create story", "add story")
+                    listOf("add to your story", "add to story", "create story", "new story", "add story")
                 else listOf("updates", "status", "my status", "add status")
                 if (clickStoryLabel(root, labels)) {
                     storyStage = StoryStage.PICK_MEDIA
@@ -420,15 +420,23 @@ object SmartAccessibilityEngine {
                 }
             }
             StoryStage.PICK_MEDIA -> {
-                if (clickStoryLabel(root, listOf("gallery", "recent", "camera roll", "photos", "choose from gallery", "select from gallery"))) {
-                    storyStatus("Recent photos khol rahi hoon.")
-                } else if (isMediaPickerPackage(packageName) || screen.contains("recent") || screen.contains("photos") || screen.contains("gallery")) {
+                val pickerVisible = isMediaPickerPackage(packageName) ||
+                    screen.contains("recent photos") || screen.contains("camera roll") ||
+                    screen.contains("select photos") || screen.contains("select an item")
+                if (pickerVisible) {
                     if (clickNewestAccessibleThumbnail(root)) {
                         storyStage = StoryStage.OPEN_STICKERS
                         storyStatus("Recent photo select ki; music sticker dhoondh rahi hoon.")
                     }
+                } else if (clickStoryLabel(root, listOf("gallery", "recent", "camera roll", "photos", "choose from gallery", "select from gallery"))) {
+                    storyStatus("Recent photos khol rahi hoon.")
                 } else if (clickStoryLabel(root, listOf("camera", "add status", "new story"))) {
                     storyStatus("Story composer khula; gallery thumbnail ka wait kar rahi hoon.")
+                } else if (screen.contains("recent") || screen.contains("photos") || screen.contains("gallery")) {
+                    if (clickNewestAccessibleThumbnail(root)) {
+                        storyStage = StoryStage.OPEN_STICKERS
+                        storyStatus("Recent photo select ki; music sticker dhoondh rahi hoon.")
+                    }
                 }
             }
             StoryStage.OPEN_STICKERS -> {
@@ -453,7 +461,8 @@ object SmartAccessibilityEngine {
                 val terms = storyMusic.split(Regex("\\s+")).filter { it.length >= 3 }.take(4)
                 val matching = findStoryNode(root) { node ->
                     val label = storyNodeLabel(node).lowercase(Locale.ROOT)
-                    label.isNotBlank() && terms.any { label.contains(it.lowercase(Locale.ROOT)) } &&
+                    label.isNotBlank() && !node.isEditable && !label.contains("search") &&
+                        terms.any { label.contains(it.lowercase(Locale.ROOT)) } &&
                         (node.isClickable || node.parent?.isClickable == true)
                 }
                 val result = matching ?: if (screen.contains("results") || screen.contains("songs") || screen.contains("tracks")) findFirstMusicResult(root) else null
