@@ -18,6 +18,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -40,6 +42,7 @@ class SiyaService : Service() {
         const val ACTION_STOP = "com.siya.ai.action.STOP"
         const val ACTION_SYNC = "com.siya.ai.action.SYNC"
         const val ACTION_SHUTDOWN = "com.siya.ai.action.SHUTDOWN"
+        const val ACTION_WAKE_DETECTED = "com.siya.ai.action.WAKE_DETECTED"
         /** Notification ka "Mic off" button: sirf mic / session band, Siya taiyaar rehti hai. */
         const val ACTION_MIC_OFF = "com.siya.ai.action.MIC_OFF"
         const val EXTRA_SOURCE = "source"
@@ -85,6 +88,7 @@ class SiyaService : Service() {
         override fun onReceive(c: Context, i: Intent) {
             when (i.action) {
                 CallMonitorService.ACTION_CALL_ACTIVE -> if (!prefs.getBoolean("screener_active", false)) { inCall = true; session?.pauseForCall(); wake?.stop() }
+                ACTION_WAKE_DETECTED -> onWakeWord()
                 CallMonitorService.ACTION_CALL_ENDED -> {
                     if (prefs.getBoolean("screener_active", false)) { prefs.edit().putBoolean("screener_active", false).apply(); session?.stop() }
                     inCall = false; session?.resumeAfterCall(); syncWake()
@@ -99,6 +103,7 @@ class SiyaService : Service() {
         val f = IntentFilter().apply {
             addAction(CallMonitorService.ACTION_CALL_ACTIVE)
             addAction(CallMonitorService.ACTION_CALL_ENDED)
+            addAction(ACTION_WAKE_DETECTED)
         }
         ContextCompat.registerReceiver(this, callReceiver, f, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
@@ -199,7 +204,12 @@ class SiyaService : Service() {
     }
 
     private fun onWakeWord() {
-        Log.d(TAG, "Hello Siya detected")
+        Log.d(TAG, "Hey Siya detected; opening orb")
+        try {
+            val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 65)
+            tone.startTone(ToneGenerator.TONE_PROP_ACK, 180)
+            main.postDelayed({ try { tone.release() } catch (_: Exception) {} }, 300)
+        } catch (_: Exception) {}
         startSession("wake")
     }
 
