@@ -47,6 +47,7 @@ class AccessibilityHelperService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         // Feed the bounded image-generation workflow; it ignores events while idle.
         BrowserAutomationEngine.onAccessibilityEvent(event)
+        SmartAccessibilityEngine.onStoryAccessibilityEvent(event)
     }
 
     // Feature 15: Volume DOWN 3 baar (2 second ke andar) = SOS
