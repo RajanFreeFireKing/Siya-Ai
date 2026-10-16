@@ -19,6 +19,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.siya.ai.data.ImageUtil
 import com.siya.ai.service.AccessibilityHelperService
+import com.siya.ai.service.GameVisionOverlay
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.CountDownLatch
