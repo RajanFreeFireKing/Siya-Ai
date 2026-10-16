@@ -125,8 +125,10 @@ object MemoryStore {
     }
 
     private fun extractFactsWithGemini(ctx: Context, utterance: String) {
+        if (!isEnabled(ctx)) return
+        rememberSimplePreferenceFallback(ctx, utterance)
         val key = apiKey(ctx)
-        if (key.isBlank() || !isEnabled(ctx)) return
+        if (key.isBlank()) return
         try {
             val prompt = """Extract only durable, useful personal facts from this Hindi/Hinglish/English user utterance.
 Return strict JSON only: {"facts":[{"text":"short standalone fact","category":"preferences|promises|daily_routine|financial_debts|relationships|important_dates|other","entity":"user or person's name"}]}.
@@ -155,6 +157,15 @@ Utterance: ${JSONObject.quote(utterance.take(2500))}"""
                 }
             }
         } catch (e: Exception) { Log.w("SIYA_MEMORY", "Gemini fact extraction failed: ${e.message}") }
+    }
+
+    /** Keep explicit preference statements reliable even if Gemini is temporarily unavailable. */
+    private fun rememberSimplePreferenceFallback(ctx: Context, utterance: String) {
+        val color = Regex("(?i)\\b(?:mera|meri|my)?\\s*(?:favourite|favorite|pasandida)\\s*(?:color|colour|rang)\\s+([\\p{L}]+)")
+            .find(utterance)?.groupValues?.getOrNull(1)?.trim()
+        if (!color.isNullOrBlank() && color.lowercase(Locale.ROOT) !in setOf("hai", "is", "hamesha")) {
+            addCategorizedFact(ctx, "Favourite color: ${color.lowercase(Locale.ROOT)}", "preferences", "user", "local-fallback")
+        }
     }
 
     private fun rewrite(ctx: Context) {
