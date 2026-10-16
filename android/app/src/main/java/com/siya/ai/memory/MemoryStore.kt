@@ -2,6 +2,7 @@ package com.siya.ai.memory
 
 import android.content.Context
 import android.util.Log
+import com.siya.ai.data.PeopleStore
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -146,7 +147,11 @@ Utterance: ${JSONObject.quote(utterance.take(2500))}"""
                     val factText = item.optString("text").trim()
                     if (factText.isBlank()) continue
                     val requestedCategory = item.optString("category", inferCategory(factText))
-                    addCategorizedFact(ctx, factText, requestedCategory, item.optString("entity", "user"), "gemini")
+                    val entity = item.optString("entity", "user").trim().ifBlank { "user" }
+                    addCategorizedFact(ctx, factText, requestedCategory, entity, "gemini")
+                    if (!entity.equals("user", true) && !entity.equals("unknown", true)) {
+                        try { PeopleStore.addNote(ctx, entity, note = factText, category = requestedCategory) } catch (_: Exception) { }
+                    }
                 }
             }
         } catch (e: Exception) { Log.w("SIYA_MEMORY", "Gemini fact extraction failed: ${e.message}") }
