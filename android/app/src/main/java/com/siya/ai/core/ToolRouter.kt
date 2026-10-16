@@ -248,11 +248,15 @@ object ToolRouter {
             "get_datetime" -> PhoneController.dateTime()
             "battery_level" -> PhoneController.battery(ctx)
             "search_memory" -> {
-                val sem = com.siya.ai.memory.VectorMemory.search(ctx, a.optString("query"))
-                if (sem.isNotBlank()) sem else {
-                    val r = MemoryStore.search(ctx, a.optString("query"))
-                    if (r.isEmpty()) "Memory mein kuch nahi mila" else r.joinToString("\n") { MemoryStore.format(it).take(300) }
+                val query = a.optString("query")
+                val facts = MemoryStore.searchFacts(ctx, query)
+                val sem = com.siya.ai.memory.VectorMemory.search(ctx, query)
+                val history = if (sem.isNotBlank()) sem else {
+                    val r = MemoryStore.search(ctx, query)
+                    if (r.isEmpty()) "" else r.joinToString("\n") { MemoryStore.format(it).take(300) }
                 }
+                val savedFacts = facts.joinToString("\n") { "[${it.category}] ${it.text}" }
+                listOf(savedFacts, history).filter { it.isNotBlank() }.joinToString("\n").ifBlank { "Memory mein kuch nahi mila" }
             }
             "remember_fact" -> if (MemoryStore.addFact(ctx, a.optString("fact"))) "OK: yaad kar liya" else "ERROR"
             else -> "ERROR: unknown tool $name"
