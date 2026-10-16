@@ -6,7 +6,8 @@ import android.graphics.Path
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.accessibility.AccessibilityNodeInfo\nimport java.util.Locale
+import android.view.accessibility.AccessibilityNodeInfo
+import java.util.Locale
 
 object SmartAccessibilityEngine {
 
