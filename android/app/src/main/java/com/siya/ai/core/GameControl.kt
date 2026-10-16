@@ -10,6 +10,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.provider.Settings
 import android.view.Display
 import android.view.Gravity
