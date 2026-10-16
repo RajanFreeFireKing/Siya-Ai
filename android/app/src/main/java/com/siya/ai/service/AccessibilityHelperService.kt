@@ -6,6 +6,7 @@ import android.provider.Settings
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import com.siya.ai.security.SosManager
+import com.siya.ai.automation.BrowserAutomationEngine
 
 class AccessibilityHelperService : AccessibilityService() {
 
@@ -44,7 +45,8 @@ class AccessibilityHelperService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Screen par hone wale changes ko yahan se monitor kiya jayega
+        // Feed the bounded image-generation workflow; it ignores events while idle.
+        BrowserAutomationEngine.onAccessibilityEvent(event)
     }
 
     // Feature 15: Volume DOWN 3 baar (2 second ke andar) = SOS
