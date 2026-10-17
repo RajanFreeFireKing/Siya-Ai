@@ -313,9 +313,9 @@ class SiyaService : Service() {
         val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), flags)
-        val micOff = PendingIntent.getService(this, 2, Intent(this, SiyaService::class.java).setAction(ACTION_MIC_OFF), flags)
+        val micOff = PendingIntent.getService(this, 2, Intent(this, SiyaService::class.java).setAction(ACTION_TOGGLE_MIC_MUTE), flags)
         val micOn = PendingIntent.getService(this, 3,
-            Intent(this, SiyaService::class.java).setAction(ACTION_START).putExtra(EXTRA_SOURCE, "app"), flags)
+            Intent(this, SiyaService::class.java).setAction(ACTION_TOGGLE_MIC_MUTE), flags)
         val cancel = PendingIntent.getService(this, 1, Intent(this, SiyaService::class.java).setAction(ACTION_SHUTDOWN), flags)
         val active = session?.active == true
         val text = when {
