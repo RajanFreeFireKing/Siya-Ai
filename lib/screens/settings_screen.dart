@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
+import '../widgets/aurora_background.dart';
 import 'features_screen.dart';
 import 'location_screen.dart';
 import 'memory_screen.dart';
@@ -118,15 +119,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SiyaColors.bg,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF06182A), Color(0xFF020A14)],
-          ),
-        ),
-        child: SafeArea(
+      body: Stack(
+        children: [
+          const Positioned.fill(child: AuroraBackground()),
+          SafeArea(
           child: !_loaded
               ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
               : Column(
@@ -276,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     ),
                   ],
                 ),
-        ),
+        ],
       ),
     );
   }
