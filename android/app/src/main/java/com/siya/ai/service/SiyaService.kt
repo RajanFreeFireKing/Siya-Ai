@@ -45,6 +45,7 @@ class SiyaService : Service() {
         const val ACTION_WAKE_DETECTED = "com.siya.ai.action.WAKE_DETECTED"
         /** Notification ka "Mic off" button: sirf mic / session band, Siya taiyaar rehti hai. */
         const val ACTION_MIC_OFF = "com.siya.ai.action.MIC_OFF"
+        const val ACTION_TOGGLE_MIC_MUTE = "com.siya.ai.action.TOGGLE_MIC_MUTE"
         const val EXTRA_SOURCE = "source"
         private const val CHANNEL = "siya_background_v2"   // naya channel: IMPORTANCE_LOW (purana MIN hone se buttons chhup jaate the)
         private const val NOTIF_ID = 1001
@@ -116,6 +117,14 @@ class SiyaService : Service() {
         ensureForeground()
         when (action) {
             ACTION_START -> startSession(intent?.getStringExtra(EXTRA_SOURCE) ?: "app")
+            ACTION_TOGGLE_MIC_MUTE -> {
+                val s = session
+                if (s?.active == true) {
+                    val micOn = s.toggleMicMute()
+                    overlay?.update(mapOf("type" to "micMuted", "muted" to !micOn))
+                    updateNotification()
+                } else startSession("app")
+            }
             ACTION_STOP, ACTION_MIC_OFF -> session?.stop() ?: afterSession()
             ACTION_SYNC -> { syncWake(); if (session?.active != true && wake?.isRunning != true) stopSelfSafely() }
             ACTION_SHUTDOWN -> { session?.stop(); wake?.stop(); stopSelfSafely() }
@@ -242,12 +251,8 @@ class SiyaService : Service() {
                         try { overlay?.let { wm.updateViewLayout(it, lp) } } catch (_: Exception) {}
                     },
                     onMicToggle = {
-                        if (lastState == "idle") { startSession("overlay-mic"); true }
-                        else {
-                            session?.stop()
-                            main.postDelayed({ if (overlay == null && Settings.canDrawOverlays(this)) showOverlay() }, 500)
-                            false
-                        }
+                        val s = session
+                        if (s?.active == true) s.toggleMicMute() else { startSession("overlay-mic"); true }
                     })
                 @Suppress("DEPRECATION")
                 val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -360,6 +365,9 @@ class SiyaService : Service() {
 
     /** MainActivity ke liye */
     fun isSessionActive() = session?.active == true
+
+    /** Display the floating assistant bubble when the Flutter UI is minimized. */
+    fun showOverlayForUi() { if (session?.active == true) showOverlay() }
 
     /** Settings (API key / awaaz / personality) badalne par naya connection. */
     fun reloadSession() { session?.reload() }
