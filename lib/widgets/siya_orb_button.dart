@@ -1,161 +1,108 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme.dart';
 
-/// Neeche ka bada glossy orb (design jaisa). Tap par mic start / stop.
-/// Halo + glossy gola static paint hai; saans = Transform.scale, listening mein ripple rings.
+/// Compact floating Aurora activator with two animated satellite actions.
 class SiyaOrbButton extends StatefulWidget {
-  const SiyaOrbButton({
-    super.key,
-    required this.size,
-    required this.time,
-    required this.level,
-    required this.state,
-    required this.onTap,
-  });
+  const SiyaOrbButton({super.key, required this.time, required this.isActive, required this.micMuted, required this.onMicTap, required this.onMinimize});
 
-  final double size; // halo ka poora size
   final Animation<double> time;
-  final ValueListenable<double> level;
-  final String state; // idle | waiting | listening | processing | speaking
-  final VoidCallback onTap;
+  final bool isActive;
+  final bool micMuted;
+  final VoidCallback onMicTap;
+  final VoidCallback onMinimize;
 
   @override
   State<SiyaOrbButton> createState() => _SiyaOrbButtonState();
 }
 
-class _SiyaOrbButtonState extends State<SiyaOrbButton> {
-  bool _down = false;
+class _SiyaOrbButtonState extends State<SiyaOrbButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _expand = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+  bool _expanded = false;
 
   @override
-  Widget build(BuildContext context) {
-    final active = widget.state != 'idle';
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _down = true),
-      onTapCancel: () => setState(() => _down = false),
-      onTapUp: (_) => setState(() => _down = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _down ? 0.93 : 1.0,
-        duration: const Duration(milliseconds: 110),
-        child: SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (active)
-                Positioned.fill(
-                  child: RepaintBoundary(
-                    child: CustomPaint(painter: _RipplePainter(time: widget.time, level: widget.level)),
-                  ),
-                ),
-              AnimatedBuilder(
-                animation: Listenable.merge([widget.time, widget.level]),
-                builder: (_, child) {
-                  final b = 0.5 + 0.5 * math.sin(widget.time.value * math.pi * 2 * 4);
-                  final s = 1.0 + (active ? 0.025 + 0.05 * widget.level.value : 0.018) * b;
-                  return Transform.scale(scale: s, child: child);
-                },
-                child: RepaintBoundary(
-                  child: CustomPaint(size: Size.square(widget.size), painter: const _OrbPainter()),
-                ),
+  void dispose() { _expand.dispose(); super.dispose(); }
+
+  void _toggleExpanded() {
+    HapticFeedback.selectionClick();
+    setState(() => _expanded = !_expanded);
+    if (_expanded) { _expand.forward(); } else { _expand.reverse(); }
+  }
+
+  Widget _satellite({required IconData icon, required String tooltip, required VoidCallback onTap, required double dx, required Color glow}) {
+    return AnimatedBuilder(
+      animation: _expand,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(dx * Curves.easeOutBack.transform(_expand.value), 0),
+        child: Transform.scale(scale: 0.72 + 0.28 * _expand.value, child: Opacity(opacity: _expand.value, child: child)),
+      ),
+      child: IgnorePointer(
+        ignoring: !_expanded,
+        child: Tooltip(
+          message: tooltip,
+          child: Material(
+            color: const Color(0xF21B1032),
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () { HapticFeedback.lightImpact(); onTap(); },
+              child: Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: glow.withOpacity(0.78)),
+                  boxShadow: [BoxShadow(color: glow.withOpacity(0.22), blurRadius: 18, spreadRadius: 1)]),
+                child: Icon(icon, color: Colors.white, size: 21),
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-}
-
-class _OrbPainter extends CustomPainter {
-  const _OrbPainter();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final c = size.center(Offset.zero);
-    final R = size.width / 2;
-    // halo (do soft safed ring)
-    canvas.drawCircle(c, R, Paint()..color = Colors.white.withOpacity(0.28));
-    canvas.drawCircle(c, R, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = Colors.white.withOpacity(0.55));
-    canvas.drawCircle(c, R * 0.86, Paint()..color = Colors.white.withOpacity(0.30));
-
-    // glossy gola
-    final r = R * 0.70;
-    final body = Rect.fromCircle(center: c, radius: r);
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-0.45, 0.55),
-          radius: 1.25,
-          colors: [Color(0xFFFF8A3D), Color(0xFFFF4FA3), Color(0xFFC13BFF), Color(0xFF8E2DE2)],
-          stops: [0.0, 0.38, 0.72, 1.0],
-        ).createShader(body),
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 62,
+      width: 214,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(left: 6, child: _satellite(icon: widget.micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+            tooltip: widget.micMuted ? 'Unmute microphone' : 'Mute microphone', onTap: widget.onMicTap, dx: 48, glow: widget.micMuted ? const Color(0xFFFF718B) : const Color(0xFFB58CFF))),
+          Positioned(right: 6, child: _satellite(icon: Icons.keyboard_arrow_down_rounded,
+            tooltip: 'Minimize to floating overlay', onTap: widget.onMinimize, dx: -48, glow: const Color(0xFF8C6BFF))),
+          AnimatedBuilder(
+            animation: widget.time,
+            builder: (context, child) => Transform.scale(
+              scale: 1 + 0.035 * math.sin(widget.time.value * math.pi * 2),
+              child: child,
+            ),
+            child: Material(
+              color: const Color(0xFF180D32),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _toggleExpanded,
+                child: Container(
+                  width: 58, height: 58,
+                  decoration: BoxDecoration(shape: BoxShape.circle,
+                    gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      colors: [Color(0xFFB995FF), Color(0xFF7C4DDB), Color(0xFF47218B)]),
+                    border: Border.all(color: const Color(0xFFE6D7FF).withOpacity(0.88), width: 1.2),
+                    boxShadow: [BoxShadow(color: SiyaColors.purple.withOpacity(0.52), blurRadius: 24, spreadRadius: 2),
+                      BoxShadow(color: const Color(0xFF9C6AFF).withOpacity(0.18), blurRadius: 4, spreadRadius: 1)]),
+                  child: Icon(_expanded ? Icons.close_rounded : (widget.isActive ? Icons.graphic_eq_rounded : Icons.auto_awesome_rounded),
+                    color: Colors.white, size: 25),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
-    // upar ka halka safed chamak
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(0.0, -0.75),
-          radius: 0.9,
-          colors: [Colors.white.withOpacity(0.55), Colors.white.withOpacity(0)],
-        ).createShader(body),
-    );
-    // beech ka safed glossy hissa
-    final blob = Rect.fromCenter(center: Offset(c.dx - r * 0.05, c.dy + r * 0.05), width: r * 0.95, height: r * 0.95);
-    canvas.drawOval(
-      blob,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [Colors.white.withOpacity(0.97), Colors.white.withOpacity(0.55), Colors.white.withOpacity(0)],
-          stops: const [0.0, 0.55, 1.0],
-        ).createShader(blob),
-    );
-    canvas.drawCircle(c, r, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = Colors.white.withOpacity(0.7));
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
-class _RipplePainter extends CustomPainter {
-  _RipplePainter({required this.time, required this.level}) : super(repaint: Listenable.merge([time, level]));
-
-  final Animation<double> time;
-  final ValueListenable<double> level;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = size.center(Offset.zero);
-    final R = size.width / 2;
-    for (int i = 0; i < 3; i++) {
-      final ph = (time.value * 4 + i / 3) % 1.0; // 4 baar / loop
-      canvas.drawCircle(
-        c,
-        R * (0.70 + ph * 0.36),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0 * (1 - ph) + 0.4
-          ..color = SiyaLight.pink.withOpacity((1 - ph) * (0.35 + 0.35 * level.value)),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
 }
