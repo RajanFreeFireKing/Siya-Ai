@@ -15,6 +15,7 @@ class SiyaBridge extends ChangeNotifier {
   /// idle | listening | processing | speaking | waiting
   String state = 'idle';
   String status = '';
+  bool micMuted = false;
   final ValueNotifier<double> amp = ValueNotifier<double>(0);
 
   /// Native se aayi error ka code (no_key, no_mic, connection...). UI dikhane ke baad null kar deta hai.
@@ -49,6 +50,10 @@ class SiyaBridge extends ChangeNotifier {
         if (state == 'idle') amp.value = 0;
         notifyListeners();
         break;
+      case 'micMuted':
+        micMuted = (e['muted'] as bool?) ?? false;
+        notifyListeners();
+        break;
       case 'status':
         status = (e['text'] as String?) ?? '';
         notifyListeners();
@@ -68,6 +73,14 @@ class SiyaBridge extends ChangeNotifier {
     } on PlatformException {
       // ignore
     }
+  }
+
+  Future<void> toggleMicMute() async {
+    try { await _method.invokeMethod<void>('toggleMicMute'); } on PlatformException { /* surfaced by native state */ }
+  }
+
+  Future<void> minimizeApp() async {
+    try { await _method.invokeMethod<void>('minimizeApp'); } on PlatformException { /* no-op on unsupported hosts */ }
   }
 
   Future<bool> consumeFirstRun() async =>
