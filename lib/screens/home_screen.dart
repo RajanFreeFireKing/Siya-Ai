@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
@@ -12,8 +11,7 @@ import '../widgets/siya_orb_button.dart';
 import '../widgets/wallpaper_layer.dart';
 import 'settings_screen.dart';
 
-/// Naya Home screen (pink / orange design). Layout width/height ke ratio par bana hai,
-/// isliye har phone par same dikhta hai.
+/// Siya home screen with a compact Aurora floating action pill.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.bridge});
 
@@ -144,13 +142,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: SiyaColors.bg,
       body: LayoutBuilder(builder: (context, c) {
         final w = c.maxWidth;
         final h = c.maxHeight;
         final ring = w * 0.64;
-        final orbHalo = w * 0.31;
-        final side = w * 0.135;
 
         return Stack(
           children: [
@@ -213,62 +209,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
               ),
             ),
 
-            // neeche: mic | orb | X
+            // Compact floating activator; satellite actions expand on demand.
             Positioned(
               left: 0,
               right: 0,
-              top: h * 0.884 - orbHalo / 2,
-              height: orbHalo,
+              bottom: MediaQuery.paddingOf(context).bottom + 18,
               child: FadeTransition(
                 opacity: _iv(0.35, 0.85, Curves.easeOut),
                 child: SlideTransition(
                   position: Tween<Offset>(begin: const Offset(0, 0.7), end: Offset.zero).animate(_iv(0.35, 1.0, Curves.easeOutCubic)),
-                  child: AnimatedBuilder(
-                    animation: widget.bridge,
-                    builder: (_, __) {
-                      final active = widget.bridge.isActive;
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            left: w * 0.20 - side / 2,
-                            child: GlassButton(
-                              size: side,
-                              icon: active ? Icons.mic_rounded : Icons.mic_none_rounded,
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                if (!active) widget.bridge.toggleMic();
-                              },
-                            ),
-                          ),
-                          SiyaOrbButton(
-                            size: orbHalo,
-                            time: _ctrl,
-                            level: _level,
-                            state: widget.bridge.state,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              widget.bridge.toggleMic();
-                            },
-                          ),
-                          Positioned(
-                            right: w * 0.23 - side / 2,
-                            child: GlassButton(
-                              size: side,
-                              icon: Icons.close_rounded,
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                if (active) {
-                                  widget.bridge.toggleMic(); // AI band
-                                } else {
-                                  SystemNavigator.pop(); // app band
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  child: Center(
+                    child: AnimatedBuilder(
+                      animation: widget.bridge,
+                      builder: (_, __) => SiyaOrbButton(
+                        time: _ctrl,
+                        isActive: widget.bridge.isActive,
+                        micMuted: widget.bridge.micMuted,
+                        onMicTap: widget.bridge.toggleMicMute,
+                        onMinimize: widget.bridge.minimizeApp,
+                      ),
+                    ),
                   ),
                 ),
               ),
