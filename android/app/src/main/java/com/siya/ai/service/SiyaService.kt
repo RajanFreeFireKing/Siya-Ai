@@ -368,6 +368,7 @@ class SiyaService : Service() {
 
     /** MainActivity ke liye */
     fun isSessionActive() = session?.active == true
+    fun isMicMuted() = session?.micMuted == true
 
     /** Display the floating assistant bubble when the Flutter UI is minimized. */
     fun showOverlayForUi() { showOverlay() }
