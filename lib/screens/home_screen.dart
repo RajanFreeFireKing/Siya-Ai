@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
         'speaking' => 'Speaking...',
         'processing' => 'Thinking...',
         'waiting' => 'Connecting...',
-        _ => 'Tap to talk',
+        _ => 'Tap the glow below',
       };
 
   @override
