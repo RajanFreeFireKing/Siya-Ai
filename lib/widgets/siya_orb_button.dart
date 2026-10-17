@@ -72,9 +72,9 @@ class _SiyaOrbButtonState extends State<SiyaOrbButton> with SingleTickerProvider
         clipBehavior: Clip.none,
         children: [
           Positioned(left: 6, child: _satellite(icon: widget.micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-            tooltip: widget.micMuted ? 'Unmute microphone' : 'Mute microphone', onTap: widget.onMicTap, dx: 48, glow: widget.micMuted ? const Color(0xFFFF718B) : const Color(0xFFB58CFF))),
+            tooltip: widget.micMuted ? 'Unmute microphone' : 'Mute microphone', onTap: widget.onMicTap, dx: -48, glow: widget.micMuted ? const Color(0xFFFF718B) : const Color(0xFFB58CFF))),
           Positioned(right: 6, child: _satellite(icon: Icons.keyboard_arrow_down_rounded,
-            tooltip: 'Minimize to floating overlay', onTap: widget.onMinimize, dx: -48, glow: const Color(0xFF8C6BFF))),
+            tooltip: 'Minimize to floating overlay', onTap: widget.onMinimize, dx: 48, glow: const Color(0xFF8C6BFF))),
           AnimatedBuilder(
             animation: widget.time,
             builder: (context, child) => Transform.scale(
