@@ -90,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
       ..showSnackBar(SnackBar(
         content: Text(msg),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: SiyaLight.ink,
+        backgroundColor: SiyaColors.card,
         action: code == 'no_key' ? SnackBarAction(label: 'Settings', textColor: SiyaLight.orangeSoft, onPressed: _openSettings) : null,
       ));
   }
@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
             Positioned(
               left: 0,
               right: 0,
-              bottom: MediaQuery.paddingOf(context).bottom + 18,
+              bottom: MediaQuery.of(context).padding.bottom + 18,
               child: FadeTransition(
                 opacity: _iv(0.35, 0.85, Curves.easeOut),
                 child: SlideTransition(
