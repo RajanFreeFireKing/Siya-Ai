@@ -148,6 +148,7 @@ class MainActivity : FlutterFragmentActivity() {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 SiyaService.eventSink = { m -> events?.success(m) }
                 events?.success(mapOf("type" to "state", "state" to SiyaService.lastState))
+                events?.success(mapOf("type" to "micMuted", "muted" to (SiyaService.instance?.isMicMuted() ?: false)))
             }
             override fun onCancel(arguments: Any?) { SiyaService.eventSink = null }
         })
