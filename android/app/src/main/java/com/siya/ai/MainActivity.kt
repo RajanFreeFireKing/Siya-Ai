@@ -170,8 +170,8 @@ class MainActivity : FlutterFragmentActivity() {
                     result.success(null)
                 }
                 "minimizeApp" -> {
-                    if (SiyaService.instance?.isSessionActive() == true && Settings.canDrawOverlays(this)) {
-                        SiyaService.instance?.showOverlayForUi()
+                    if (Settings.canDrawOverlays(this)) {
+                        SiyaService.send(this, SiyaService.ACTION_SHOW_OVERLAY, "app")
                     }
                     moveTaskToBack(true)
                     result.success(null)
