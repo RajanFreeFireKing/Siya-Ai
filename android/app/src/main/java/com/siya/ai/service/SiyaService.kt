@@ -46,6 +46,7 @@ class SiyaService : Service() {
         /** Notification ka "Mic off" button: sirf mic / session band, Siya taiyaar rehti hai. */
         const val ACTION_MIC_OFF = "com.siya.ai.action.MIC_OFF"
         const val ACTION_TOGGLE_MIC_MUTE = "com.siya.ai.action.TOGGLE_MIC_MUTE"
+        const val ACTION_SHOW_OVERLAY = "com.siya.ai.action.SHOW_OVERLAY"
         const val EXTRA_SOURCE = "source"
         private const val CHANNEL = "siya_background_v2"   // naya channel: IMPORTANCE_LOW (purana MIN hone se buttons chhup jaate the)
         private const val NOTIF_ID = 1001
@@ -117,6 +118,7 @@ class SiyaService : Service() {
         ensureForeground()
         when (action) {
             ACTION_START -> startSession(intent?.getStringExtra(EXTRA_SOURCE) ?: "app")
+            ACTION_SHOW_OVERLAY -> showOverlay()
             ACTION_TOGGLE_MIC_MUTE -> {
                 val s = session
                 if (s?.active == true) {
@@ -244,7 +246,7 @@ class SiyaService : Service() {
                 val dm = resources.displayMetrics
                 lateinit var lp: WindowManager.LayoutParams
                 val v = OrbOverlayView(this,
-                    onClose = { session?.stop() },     // bubble ka tap Siya band NAHI karta; sirf [X] karta hai
+                    onClose = { if (session?.active == true) session?.stop() else stopSelfSafely() },     // bubble ka tap Siya band NAHI karta; sirf [X] karta hai
                     onDrag = { dx, dy ->
                         lp.x = (lp.x + dx).toInt().coerceIn(0, dm.widthPixels - (60 * dm.density).toInt())
                         lp.y = (lp.y + dy).toInt().coerceIn(0, dm.heightPixels - (120 * dm.density).toInt())
@@ -367,7 +369,7 @@ class SiyaService : Service() {
     fun isSessionActive() = session?.active == true
 
     /** Display the floating assistant bubble when the Flutter UI is minimized. */
-    fun showOverlayForUi() { if (session?.active == true) showOverlay() }
+    fun showOverlayForUi() { showOverlay() }
 
     /** Settings (API key / awaaz / personality) badalne par naya connection. */
     fun reloadSession() { session?.reload() }
