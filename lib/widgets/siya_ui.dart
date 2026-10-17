@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'aurora_background.dart';
 
 /// Naye screens (Profile, Wallpaper, Location, User data) ke shared neon-style pieces.
 class SiyaPage extends StatelessWidget {
@@ -14,15 +15,10 @@ class SiyaPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SiyaColors.bg,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF06182A), Color(0xFF020A14)],
-          ),
-        ),
-        child: SafeArea(
+      body: Stack(
+        children: [
+          const Positioned.fill(child: AuroraBackground()),
+          SafeArea(
           child: Column(
             children: [
               Padding(
@@ -46,7 +42,7 @@ class SiyaPage extends StatelessWidget {
               Expanded(child: child),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
