@@ -42,6 +42,7 @@ class SiyaPage extends StatelessWidget {
               Expanded(child: child),
             ],
           ),
+          ),
         ],
       ),
     );
