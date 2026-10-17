@@ -65,6 +65,8 @@ class SiyaSession(
     @Volatile var active = false
         private set
     @Volatile private var paused = false
+    @Volatile var micMuted = false
+        private set
     private var attempts = 0
     private var modelIdx = 0
     private var lastClose = ""
@@ -81,7 +83,8 @@ class SiyaSession(
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             status("Mic permission chahiye"); emit(mapOf("type" to "error", "code" to "no_mic")); return false
         }
-        active = true; paused = false; attempts = 0; modelIdx = 0
+        active = true; paused = false; micMuted = false; attempts = 0; modelIdx = 0
+        emit(mapOf("type" to "micMuted", "muted" to false))
         current = this
         btDevice = try { AudioRouter.enter(ctx) } catch (_: Exception) { null }   // Bluetooth headset ho to mic + speaker usi se
         focus = VoiceFocus(prefs.getString("voice_focus", "normal").orEmpty().ifBlank { "normal" })
@@ -109,6 +112,22 @@ class SiyaSession(
     }
 
     fun toggle() { if (active) stop() else start() }
+
+    /** Mute microphone input only; keep the Gemini connection and audio replies alive. */
+    fun toggleMicMute(): Boolean {
+        if (!active) return false
+        micMuted = !micMuted
+        if (micMuted) {
+            try { mic?.stop() } catch (_: Exception) {}
+            mic = null
+            status("Mic muted — Siya ke replies chalte rahenge")
+        } else {
+            if (client?.isReady == true && !paused) startMic()
+            status("")
+        }
+        emit(mapOf("type" to "micMuted", "muted" to micMuted))
+        return !micMuted
+    }
 
     fun pauseForCall() {
         paused = true
@@ -145,13 +164,13 @@ class SiyaSession(
     }
 
     private fun startMic() {
-        if (mic != null || paused || !active) return
+        if (mic != null || paused || micMuted || !active) return
         val m = MicStreamer(btDevice) { buf, n, level -> onMic(buf, n, level) }
         if (m.start()) mic = m else { status("Mic start nahi hua"); emit(mapOf("type" to "error", "code" to "mic_fail")) }
     }
 
     private fun onMic(buf: ByteArray, n: Int, level: Float) {
-        if (!active || paused) return
+        if (!active || paused || micMuted) return
         val now = System.currentTimeMillis()
         val speaking = audioOut?.isPlaying == true
         if (!speaking && now - lastAmp > 50) {
@@ -186,7 +205,7 @@ class SiyaSession(
             if (!active) return@post
             startMic()
             setState(State.LISTENING)
-            status("")
+            status(if (micMuted) "Mic muted — Siya ke replies chalte rahenge" else "")
         }
     }
 
