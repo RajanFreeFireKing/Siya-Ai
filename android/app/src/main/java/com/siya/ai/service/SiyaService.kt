@@ -319,6 +319,7 @@ class SiyaService : Service() {
         val cancel = PendingIntent.getService(this, 1, Intent(this, SiyaService::class.java).setAction(ACTION_SHUTDOWN), flags)
         val active = session?.active == true
         val text = when {
+            active && session?.micMuted == true -> "Mic muted — Siya replies de sakti hai"
             active -> "Siya sun rahi hai"
             wake?.isRunning == true -> "\"Hey Siya\" bolo, main jaag jaungi"
             else -> "Siya taiyaar hai"
@@ -335,7 +336,7 @@ class SiyaService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         // Mic off / Mic on  +  Cancel: dono buttons notification ke andar hi
-        if (active) b.addAction(R.drawable.ic_mic_off, "Mic off", micOff)
+        if (active && session?.micMuted != true) b.addAction(R.drawable.ic_mic_off, "Mic off", micOff)
         else b.addAction(R.drawable.ic_mic_on, "Mic on", micOn)
         b.addAction(R.drawable.ic_close, "Cancel", cancel)
         return b.build()
