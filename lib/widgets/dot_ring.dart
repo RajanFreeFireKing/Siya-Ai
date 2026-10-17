@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// "I'm listening" wala dotted ring (design ke 100% jaisa) + beech ka pink gola.
-///
-/// Performance: ek hi AnimationController, koi blur/MaskFilter nahi, sirf ~64 chhote circles.
-/// Gola static gradient hai, sirf Transform.scale se saans leta hai (GPU par, repaint nahi).
+/// Galaxy-style compact particle hologram. Center blob intentionally removed:
+/// hundreds of tiny particles orbit in layered bands; no phone lock/power action.
 class DotRing extends StatelessWidget {
   const DotRing({
     super.key,
@@ -25,35 +23,12 @@ class DotRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blob = size * 0.72;
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // pink gola (static paint, sirf scale animate)
-          AnimatedBuilder(
-            animation: Listenable.merge([time, level]),
-            builder: (_, child) {
-              final breathe = 0.5 + 0.5 * math.sin(time.value * math.pi * 2 * 5);
-              final s = 0.97 + 0.03 * breathe + 0.07 * level.value;
-              return Transform.scale(scale: s, child: child);
-            },
-            child: RepaintBoundary(
-              child: Container(
-                width: blob,
-                height: blob,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [Color(0xF2F2479F), Color(0xCCF76BC0), Color(0x66FBA5DA), Color(0x00FFFFFF)],
-                    stops: [0.0, 0.42, 0.78, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
           // dots
           Positioned.fill(
             child: RepaintBoundary(
@@ -98,19 +73,19 @@ class _DotsPainter extends CustomPainter {
   final Animation<double> time;
   final ValueListenable<double> level;
 
-  static const int _n = 64;
+  static const int _n = 240;
   static final List<_Dot> _dots = _make();
 
   static List<_Dot> _make() {
     final r = math.Random(11);
     return List.generate(_n, (i) {
-      final big = i % 5 == 0;
+      final big = i % 19 == 0;
       return _Dot(
         (i / _n) * math.pi * 2 + (r.nextDouble() - 0.5) * 0.09,
-        (r.nextDouble() - 0.5) * 0.15 + (r.nextBool() ? 0.0 : -0.035),
-        big ? 0.020 + r.nextDouble() * 0.019 : 0.006 + r.nextDouble() * 0.011,
-        i % 7 == 3 ? -1 : 1,
-        3 + r.nextInt(5),
+        (r.nextDouble() - 0.5) * 0.62 + (r.nextBool() ? 0.0 : -0.12),
+        big ? 0.006 + r.nextDouble() * 0.006 : 0.0018 + r.nextDouble() * 0.0035,
+        i % 3 == 0 ? -1 : 1,
+        2 + r.nextInt(8),
         r.nextDouble() * math.pi * 2,
         big,
       );
@@ -120,7 +95,7 @@ class _DotsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
-    final R = size.width / 2 * 0.80;
+    final R = size.width / 2 * 0.55;
     final v = time.value;
     final lv = level.value;
     final p = Paint();
@@ -128,12 +103,12 @@ class _DotsPainter extends CustomPainter {
     for (final d in _dots) {
       final ang = d.angle + v * math.pi * 2 * d.rot; // poora chakkar / loop = seamless (koi jhatka nahi)
       final breath = math.sin(v * math.pi * 2 * d.breathe + d.phase);
-      final rr = R * (1 + d.off) + breath * R * (0.022 + 0.05 * lv);
+      final rr = R * (0.45 + d.off) + breath * R * (0.025 + 0.07 * lv);
       final o = Offset(c.dx + math.cos(ang) * rr, c.dy + math.sin(ang) * rr);
-      final rad = R * d.size * (1 + 0.25 * lv * (0.5 + 0.5 * breath));
+      final rad = R * d.size * (1 + 0.35 * lv * (0.5 + 0.5 * breath));
       if (d.halo) {
-        halo.color = SiyaLight.pink.withOpacity(0.16);
-        canvas.drawCircle(o, rad * 1.9, halo);
+        halo.color = SiyaLight.pink.withOpacity(0.10);
+        canvas.drawCircle(o, rad * 2.0, halo);
       }
       p.color = Color.lerp(SiyaLight.pinkDeep, SiyaLight.magenta, d.halo ? 0.0 : 0.25 + 0.2 * (0.5 + 0.5 * breath))!;
       canvas.drawCircle(o, rad, p);
