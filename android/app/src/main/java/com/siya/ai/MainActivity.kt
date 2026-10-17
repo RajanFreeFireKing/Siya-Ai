@@ -161,6 +161,21 @@ class MainActivity : FlutterFragmentActivity() {
                     result.success(first)
                 }
                 "toggleMic" -> { toggleMic(); result.success(null) }
+                "toggleMicMute" -> {
+                    if (SiyaService.instance?.isSessionActive() == true) {
+                        SiyaService.send(this, SiyaService.ACTION_TOGGLE_MIC_MUTE)
+                    } else {
+                        SiyaService.send(this, SiyaService.ACTION_START, "app")
+                    }
+                    result.success(null)
+                }
+                "minimizeApp" -> {
+                    if (SiyaService.instance?.isSessionActive() == true && Settings.canDrawOverlays(this)) {
+                        SiyaService.instance?.showOverlayForUi()
+                    }
+                    moveTaskToBack(true)
+                    result.success(null)
+                }
                 "getSettings" -> result.success(readSettings())
                 "saveSettings" -> {
                     @Suppress("UNCHECKED_CAST")
