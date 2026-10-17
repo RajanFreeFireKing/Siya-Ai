@@ -54,10 +54,6 @@ class SiyaBridge extends ChangeNotifier {
         micMuted = (e['muted'] as bool?) ?? false;
         notifyListeners();
         break;
-      case 'micMuted':
-        micMuted = (e['muted'] as bool?) ?? false;
-        notifyListeners();
-        break;
       case 'status':
         status = (e['text'] as String?) ?? '';
         notifyListeners();
@@ -80,19 +76,19 @@ class SiyaBridge extends ChangeNotifier {
   }
 
   Future<void> toggleMicMute() async {
-    try { await _method.invokeMethod<void>('toggleMicMute'); } on PlatformException { /* surfaced by native state */ }
+    try {
+      await _method.invokeMethod<void>('toggleMicMute');
+    } on PlatformException {
+      // Native session remains authoritative.
+    }
   }
 
   Future<void> minimizeApp() async {
-    try { await _method.invokeMethod<void>('minimizeApp'); } on PlatformException { /* no-op on unsupported hosts */ }
-  }
-
-  Future<void> toggleMicMute() async {
-    try { await _method.invokeMethod<void>('toggleMicMute'); } on PlatformException { /* native state remains authoritative */ }
-  }
-
-  Future<void> minimizeApp() async {
-    try { await _method.invokeMethod<void>('minimizeApp'); } on PlatformException { /* unsupported host */ }
+    try {
+      await _method.invokeMethod<void>('minimizeApp');
+    } on PlatformException {
+      // Overlay mode is Android-only.
+    }
   }
 
   Future<bool> consumeFirstRun() async =>
