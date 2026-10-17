@@ -58,7 +58,7 @@ class OrbOverlayView(
     private val path = Path()
     private val closeRect = RectF()
     private val micRect = RectF()
-    private var micOn = false
+    private var micOn = true
 
     private var t = 0f
     private var level = 0.1f
@@ -78,9 +78,9 @@ class OrbOverlayView(
         if (shaderFor == stateName) return
         shaderFor = stateName
         val (a, b, deep) = when (stateName) {
-            "listening" -> Triple(0xFF7CFFD8.toInt(), 0xFF00C98D.toInt(), 0xFF22D3EE.toInt())
-            "processing", "thinking", "waiting" -> Triple(0xFFFFD27A.toInt(), 0xFFFF9F1C.toInt(), 0xFFB07CFF.toInt())
-            "speaking" -> Triple(0xFFFF9BEA.toInt(), 0xFFD946EF.toInt(), 0xFF8B5CF6.toInt())
+            "listening" -> Triple(0xFFB58CFF.toInt(), 0xFF8B5CF6.toInt(), 0xFF6D35D4.toInt())
+            "processing", "thinking", "waiting" -> Triple(0xFFC7A7FF.toInt(), 0xFF9B6BFF.toInt(), 0xFF6D35D4.toInt())
+            "speaking" -> Triple(0xFFE0C9FF.toInt(), 0xFF9A65FF.toInt(), 0xFF6D35D4.toInt())
             else -> Triple(0xFF8FB3D9.toInt(), 0xFF3D6A99.toInt(), 0xFF5B5F97.toInt())
         }
         pa = a; pb = b; pdeep = deep
@@ -102,6 +102,7 @@ class OrbOverlayView(
         when (event["type"]) {
             "state" -> { stateName = event["state"] as? String ?: "idle"; invalidate() }
             "amp" -> level = ((event["v"] as? Double) ?: 0.0).toFloat().coerceIn(0f, 1f)
+            "micMuted" -> { micOn = (event["muted"] as? Boolean) != true; invalidate() }
             "caption" -> {
                 val who = event["who"] as? String
                 val text = (event["text"] as? String).orEmpty()
