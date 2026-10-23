@@ -133,14 +133,7 @@ class _HomeScreenState extends State<HomeScreen>
     _loadWallpaper();
   }
 
-  String _ringLabel(String s) => switch (s) {
-        'listening' => "I’m listening",
-        'speaking' => 'Speaking...',
-        'processing' => 'Thinking...',
-        'waiting' => 'Connecting...',
-        _ => 'Tap the glow below',
-      };
-
+  
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
