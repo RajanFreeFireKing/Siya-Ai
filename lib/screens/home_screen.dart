@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
 import '../widgets/dot_ring.dart';
-import '../widgets/glass_button.dart';
 import '../widgets/wallpaper_layer.dart';
 import 'settings_screen.dart';
 
@@ -159,10 +158,9 @@ class _HomeScreenState extends State<HomeScreen>
           final h = constraints.maxHeight;
           final safeTop = MediaQuery.of(context).padding.top;
           final safeBottom = MediaQuery.of(context).padding.bottom;
-          final ring = math.min(w * 0.70, h * 0.40);
-          final titleTop = safeTop + h * 0.025;
-          final ringTop = h * 0.19;
-          final greetingTop = h * 0.635;
+          final ring = math.min(w * 0.79, h * 0.47);
+          final titleTop = safeTop + h * 0.018;
+          final ringTop = h * 0.185;
 
           return Stack(
             fit: StackFit.expand,
@@ -181,19 +179,6 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Center(child: _Title(width: w)),
                 ),
               ),
-              Positioned(
-                top: safeTop + h * 0.028,
-                right: w * 0.065,
-                child: FadeTransition(
-                  opacity: _iv(0.12, 0.72, Curves.easeOut),
-                  child: GlassButton(
-                    size: w * 0.125,
-                    icon: Icons.settings_rounded,
-                    iconColor: const Color(0xFFC21870),
-                    onTap: _openSettings,
-                  ),
-                ),
-              ),
               // Central pink glow + animated particles
               Positioned(
                 top: ringTop,
@@ -210,56 +195,28 @@ class _HomeScreenState extends State<HomeScreen>
                         size: ring,
                         time: _ctrl,
                         level: _level,
-                        label: _ringLabel(widget.bridge.state),
+                        label: '',
                       ),
                     ),
                   ),
                 ),
               ),
-              // Greeting and subtitle
+              // Floating neon navigation with the hologram kept as the central action.
               Positioned(
-                top: greetingTop,
-                left: w * 0.075,
-                right: w * 0.075,
-                child: FadeTransition(
-                  opacity: _iv(0.22, 0.8, Curves.easeOut),
-                  child: AnimatedBuilder(
-                    animation: widget.bridge,
-                    builder: (_, __) => _Greeting(
-                      width: w,
-                      status: widget.bridge.state == 'idle' ? '' : widget.bridge.status,
-                    ),
-                  ),
-                ),
-              ),
-              // Three controls matching the reference: mic, glowing action, close/minimize.
-              Positioned(
-                left: w * 0.105,
-                right: w * 0.105,
-                bottom: safeBottom + h * 0.035,
+                left: w * 0.035,
+                right: w * 0.035,
+                bottom: safeBottom + h * 0.012,
                 child: FadeTransition(
                   opacity: _iv(0.35, 0.95, Curves.easeOut),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _RoundControl(
-                        size: w * 0.135,
-                        icon: widget.bridge.micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                        onTap: widget.bridge.toggleMicMute,
-                      ),
-                      _MainGlowButton(
-                        size: w * 0.235,
-                        time: _ctrl,
-                        active: widget.bridge.isActive,
-                        onTap: widget.bridge.toggleMic,
-                      ),
-                      _RoundControl(
-                        size: w * 0.135,
-                        icon: Icons.close_rounded,
-                        onTap: widget.bridge.minimizeApp,
-                      ),
-                    ],
+                  child: _NeonBottomBar(
+                    width: w * 0.93,
+                    time: _ctrl,
+                    active: widget.bridge.isActive,
+                    onHome: () {},
+                    onChat: () => Navigator.of(context).pushNamed('/chat'),
+                    onOrb: widget.bridge.toggleMic,
+                    onFeatures: () => Navigator.of(context).pushNamed('/features'),
+                    onSettings: _openSettings,
                   ),
                 ),
               ),
@@ -495,4 +452,187 @@ class _MainGlowButton extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+/// Floating, translucent navigation bar inspired by the supplied neon reference.
+/// Colors intentionally reuse Siya's pink/magenta/orange brand palette.
+class _NeonBottomBar extends StatelessWidget {
+  const _NeonBottomBar({
+    required this.width,
+    required this.time,
+    required this.active,
+    required this.onHome,
+    required this.onChat,
+    required this.onOrb,
+    required this.onFeatures,
+    required this.onSettings,
+  });
+
+  final double width;
+  final Animation<double> time;
+  final bool active;
+  final VoidCallback onHome;
+  final VoidCallback onChat;
+  final VoidCallback onOrb;
+  final VoidCallback onFeatures;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final barHeight = width * 0.285;
+    final orbSize = width * 0.265;
+    return SizedBox(
+      width: width,
+      height: barHeight + orbSize * 0.20,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: barHeight,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xEE160A2B),
+                borderRadius: BorderRadius.circular(barHeight * 0.35),
+                border: Border.all(color: const Color(0xAAE85AFF), width: 1.1),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x557A19FF), blurRadius: 24, spreadRadius: 1),
+                  BoxShadow(color: Color(0x33250848), blurRadius: 16, offset: Offset(0, 7)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _NavItem(icon: Icons.home_rounded, active: true, onTap: onHome)),
+                  Expanded(child: _NavItem(icon: Icons.chat_bubble_outline_rounded, onTap: onChat)),
+                  SizedBox(width: orbSize * 0.93),
+                  Expanded(child: _NavItem(icon: Icons.grid_view_rounded, onTap: onFeatures)),
+                  Expanded(child: _NavItem(icon: Icons.settings_outlined, onTap: onSettings)),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            child: AnimatedBuilder(
+              animation: time,
+              builder: (context, child) => Transform.scale(
+                scale: 1 + 0.025 * math.sin(time.value * math.pi * 2),
+                child: child,
+              ),
+              child: GestureDetector(
+                onTap: onOrb,
+                child: Container(
+                  width: orbSize,
+                  height: orbSize,
+                  padding: EdgeInsets.all(orbSize * 0.06),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xAAFFBDF0),
+                    border: Border.all(color: const Color(0xFFFFDDFB), width: 2),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x77F52ACB), blurRadius: 24, spreadRadius: 4),
+                      BoxShadow(color: Color(0x554B62FF), blurRadius: 22, spreadRadius: 3),
+                    ],
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        colors: [Color(0xFF4518D5), Color(0xFF9D25FF), Color(0xFFEC29D5), Color(0xFF03A9F4)],
+                        stops: [0.0, 0.35, 0.72, 1.0],
+                      ),
+                      border: Border.all(color: Colors.white, width: 1.7),
+                    ),
+                    child: CustomPaint(painter: _MiniOrbPainter(time: time, active: active)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({required this.icon, required this.onTap, this.active = false});
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: widthAwareSize(context),
+                  color: active ? const Color(0xFFFF61E8) : const Color(0xFFF7F0FF),
+                  shadows: active
+                      ? const [Shadow(color: Color(0xFFFF27D9), blurRadius: 15)]
+                      : const [Shadow(color: Color(0x665F42FF), blurRadius: 8)],
+                ),
+                if (active)
+                  Container(
+                    margin: const EdgeInsets.only(top: 7),
+                    width: 34,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF58E6),
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: const [BoxShadow(color: Color(0xFFFF2DDF), blurRadius: 10, spreadRadius: 1)],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  double widthAwareSize(BuildContext context) => (MediaQuery.sizeOf(context).width * 0.064).clamp(21.0, 28.0);
+}
+
+class _MiniOrbPainter extends CustomPainter {
+  _MiniOrbPainter({required this.time, required this.active});
+
+  final Animation<double> time;
+  final bool active;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide * 0.36;
+    final p = Paint()..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    for (int i = 0; i < 4; i++) {
+      final angle = time.value * math.pi * 2 * (i.isEven ? 1 : -0.7) + i * math.pi / 2;
+      p
+        ..strokeWidth = size.width * (active ? 0.075 : 0.045)
+        ..color = [const Color(0xFFFF7AF0), const Color(0xFF42D9FF), const Color(0xFFC8A2FF), const Color(0xFFFF9CDE)][i]
+            .withOpacity(active ? 0.9 : 0.7);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * (0.68 + i * 0.095)),
+        angle,
+        math.pi * (0.48 + (active ? 0.08 : 0.0)),
+        false,
+        p,
+      );
+    }
+    final glow = Paint()..color = Colors.white.withOpacity(0.9);
+    canvas.drawCircle(center, size.width * 0.035, glow);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniOrbPainter oldDelegate) =>
+      oldDelegate.time != time || oldDelegate.active != active;
 }
