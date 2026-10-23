@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen>
                     time: _ctrl,
                     active: widget.bridge.isActive,
                     onHome: () {},
-                    onChat: () => Navigator.of(context).pushNamed('/chat'),
+                    onChat: () => _showChatUnavailable(context),
                     onOrb: widget.bridge.toggleMic,
                     onFeatures: () => Navigator.of(context).pushNamed('/features'),
                     onSettings: _openSettings,
@@ -325,6 +325,16 @@ class _SparklesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+
+void _showChatUnavailable(BuildContext context) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(
+      content: Text('Chat panel is not available yet. Tap the center hologram for voice.'),
+      behavior: SnackBarBehavior.floating,
+    ));
 }
 
 /// Floating, translucent navigation bar inspired by the supplied neon reference.
