@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Reference-style hologram: soft pink central glow surrounded by orbiting pink particles.
+/// Siya hologram with a clean text-free center and a fuller field of animated particles.
 class DotRing extends StatelessWidget {
   const DotRing({
     super.key,
@@ -39,8 +39,8 @@ class DotRing extends StatelessWidget {
               );
             },
             child: Container(
-              width: size * 0.72,
-              height: size * 0.72,
+              width: size * 0.78,
+              height: size * 0.78,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -56,21 +56,8 @@ class DotRing extends StatelessWidget {
               child: CustomPaint(painter: _DotsPainter(time: time, level: level)),
             ),
           ),
-          // text
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: Text(
-              label,
-              key: ValueKey(label),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: size * 0.092,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0.2,
-                shadows: const [Shadow(color: Color(0x33E0168F), blurRadius: 6)],
-              ),
-            ),
-          ),
+          // Keep the center text-free; status labels are shown through accessible semantics.
+          Semantics(label: label.isEmpty ? 'Siya AI hologram' : label, child: const SizedBox.shrink()),
         ],
       ),
     );
@@ -94,17 +81,17 @@ class _DotsPainter extends CustomPainter {
   final Animation<double> time;
   final ValueListenable<double> level;
 
-  static const int _n = 240;
+  static const int _n = 420;
   static final List<_Dot> _dots = _make();
 
   static List<_Dot> _make() {
     final r = math.Random(11);
     return List.generate(_n, (i) {
-      final big = i % 19 == 0;
+      final big = i % 17 == 0;
       return _Dot(
         (i / _n) * math.pi * 2 + (r.nextDouble() - 0.5) * 0.09,
-        (r.nextDouble() - 0.5) * 0.62 + (r.nextBool() ? 0.0 : -0.12),
-        big ? 0.030 + r.nextDouble() * 0.018 : 0.012 + r.nextDouble() * 0.014,
+        (r.nextDouble() - 0.5) * 0.82 + (r.nextBool() ? 0.02 : -0.10),
+        big ? 0.032 + r.nextDouble() * 0.022 : 0.012 + r.nextDouble() * 0.017,
         i % 3 == 0 ? -1 : 1,
         2 + r.nextInt(8),
         r.nextDouble() * math.pi * 2,
