@@ -2,13 +2,56 @@ import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
-import '../widgets/aurora_background.dart';
+
 import 'features_screen.dart';
 import 'location_screen.dart';
 import 'memory_screen.dart';
 import 'power_features_screen.dart';
 import 'profile_screen.dart';
 import 'wallpaper_screen.dart';
+
+class _SettingsSilkBackground extends StatelessWidget {
+  const _SettingsSilkBackground();
+
+  @override
+  Widget build(BuildContext context) => const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFF7FB), Color(0xFFFFFFFF), Color(0xFFFFEAF4), Color(0xFFFFF8FC)],
+          ),
+        ),
+        child: CustomPaint(painter: _SettingsSilkPainter(), size: Size.infinite),
+      );
+}
+
+class _SettingsSilkPainter extends CustomPainter {
+  const _SettingsSilkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 6; i++) {
+      final y = size.height * (0.06 + i * .17);
+      final path = Path()
+        ..moveTo(-size.width * .1, y)
+        ..cubicTo(size.width * .2, y - size.height * .12, size.width * .38, y + size.height * .13, size.width * .68, y - size.height * .01)
+        ..cubicTo(size.width * .87, y - size.height * .08, size.width * .97, y + size.height * .1, size.width * 1.1, y + size.height * .015)
+        ..lineTo(size.width * 1.1, y + size.height * .045)
+        ..cubicTo(size.width * .82, y + size.height * .18, size.width * .65, y + size.height * .055, size.width * .4, y + size.height * .12)
+        ..cubicTo(size.width * .16, y + size.height * .17, size.width * .04, y + size.height * .02, -size.width * .1, y + size.height * .07)
+        ..close();
+      paint.shader = LinearGradient(
+        colors: [const Color(0x00FF4D91), Color(0x33FF70AC).withOpacity(i.isEven ? .52 : .28), const Color(0x11EAA7FF), const Color(0x00FF4D91)],
+      ).createShader(Rect.fromLTWH(0, y - size.height * .18, size.width, size.height * .36));
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 /// Settings - purani SettingsActivity ke saare features, naye dark neon style mein.
 /// Data Kotlin ke SharedPreferences ("siya_prefs") mein save hota hai.
@@ -118,13 +161,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SiyaColors.bg,
+      backgroundColor: const Color(0xFFFFF5FA),
       body: Stack(
         children: [
-          const Positioned.fill(child: AuroraBackground()),
+          const Positioned.fill(child: _SettingsSilkBackground()),
           SafeArea(
           child: !_loaded
-              ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+              ? const Center(child: CircularProgressIndicator(color: const Color(0xFFFF4D91)))
               : Column(
                   children: [
                     _header(context),
@@ -259,10 +302,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           _aiDataTile(),
                           const SizedBox(height: 8),
                           ListTile(
-                            leading: const Icon(Icons.bolt_rounded, color: SiyaColors.cyanSoft),
-                            title: const Text('Power Features', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                            subtitle: const Text('WhatsApp reply, call screener, SOS, Ghost Mode, Gaming HUD', style: TextStyle(color: Colors.white60, fontSize: 12)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+                            leading: const Icon(Icons.bolt_rounded, color: const Color(0xFFD6004C)),
+                            title: const Text('Power Features', style: TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
+                            subtitle: const Text('WhatsApp reply, call screener, SOS, Ghost Mode, Gaming HUD', style: TextStyle(color: const Color(0xFF6F6470), fontSize: 12)),
+                            trailing: const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
                             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PowerFeaturesScreen(bridge: widget.bridge))),
                           ),
                           const SizedBox(height: 12),
@@ -292,11 +335,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: LinearGradient(colors: [
-              SiyaColors.cyan.withOpacity(0.22),
-              SiyaColors.purple.withOpacity(0.28),
+              const Color(0xFFFF4D91).withOpacity(0.22),
+              const Color(0xFFFFB5D0).withOpacity(0.28),
             ]),
-            border: Border.all(color: SiyaColors.cyanSoft.withOpacity(0.4)),
-            boxShadow: [BoxShadow(color: SiyaColors.cyan.withOpacity(0.15), blurRadius: 18)],
+            border: Border.all(color: const Color(0xFFD6004C).withOpacity(0.4)),
+            boxShadow: [BoxShadow(color: const Color(0xFFFF4D91).withOpacity(0.15), blurRadius: 18)],
           ),
           child: Row(
             children: [
@@ -304,11 +347,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF071826),
+                  color: const Color(0xFFFFE4EF),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: SiyaColors.cyan.withOpacity(0.6)),
+                  border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.6)),
                 ),
-                child: const Icon(Icons.psychology_alt_outlined, color: SiyaColors.cyanSoft),
+                child: const Icon(Icons.psychology_alt_outlined, color: const Color(0xFFD6004C)),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -316,18 +359,18 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('AI Data',
-                        style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+                        style: TextStyle(color: const Color(0xFF2A1C25), fontSize: 17, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(
                       _memCount == 0
                           ? 'Siya ki yaaddaasht aur chat history'
                           : '$_memCount messages yaad hain - chat history dekho',
-                      style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12.5),
+                      style: TextStyle(color: const Color(0xFF6F6470), fontSize: 12.5),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white54),
+              const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
             ],
           ),
         ),
@@ -342,7 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             ShaderMask(
               blendMode: BlendMode.srcIn,
               shaderCallback: (r) => const LinearGradient(
-                colors: [SiyaColors.cyanSoft, SiyaColors.violet],
+                colors: [const Color(0xFFD6004C), const Color(0xFFFF0068)],
               ).createShader(r),
               child: const Text('Settings',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
@@ -357,11 +400,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFF071826),
+            color: const Color(0xFFFFE4EF),
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: SiyaColors.cyan.withOpacity(0.6)),
+            border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.6)),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: const Color(0xFF2A1C25), size: 20),
         ),
       );
 
@@ -369,7 +412,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         padding: const EdgeInsets.fromLTRB(6, 18, 0, 8),
         child: Text(t.toUpperCase(),
             style: TextStyle(
-              color: SiyaColors.cyanSoft.withOpacity(0.85),
+              color: const Color(0xFFD6004C).withOpacity(0.85),
               fontSize: 12,
               letterSpacing: 1.6,
               fontWeight: FontWeight.w700,
@@ -379,10 +422,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Widget _card(List<Widget> children) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: SiyaColors.card,
+          color: const Color(0xEFFFFFFF),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: SiyaColors.cyan.withOpacity(0.18)),
-          boxShadow: [BoxShadow(color: SiyaColors.purple.withOpacity(0.06), blurRadius: 18)],
+          border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.18)),
+          boxShadow: [BoxShadow(color: const Color(0xFFFFB5D0).withOpacity(0.06), blurRadius: 18)],
         ),
         child: Column(
           children: [
@@ -400,31 +443,31 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       controller: c,
       obscureText: secret && _hideKeys,
       keyboardType: keyboard,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: const Color(0xFF2A1C25)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.55)),
-        prefixIcon: Icon(icon, color: SiyaColors.cyanSoft.withOpacity(0.8), size: 20),
+        labelStyle: TextStyle(color: const Color(0xFF756A76)),
+        prefixIcon: Icon(icon, color: const Color(0xFFD6004C).withOpacity(0.8), size: 20),
         suffixIcon: secret
             ? IconButton(
                 icon: Icon(_hideKeys ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.white54, size: 20),
+                    color: const Color(0xFF8B7180), size: 20),
                 onPressed: () => setState(() => _hideKeys = !_hideKeys),
               )
             : null,
         filled: true,
-        fillColor: const Color(0xFF071420),
+        fillColor: const Color(0xFFFFF9FC),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: SiyaColors.cyan.withOpacity(0.2)),
+          borderSide: BorderSide(color: const Color(0xFFFF4D91).withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: SiyaColors.cyan.withOpacity(0.2)),
+          borderSide: BorderSide(color: const Color(0xFFFF4D91).withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: SiyaColors.cyan, width: 1.4),
+          borderSide: const BorderSide(color: const Color(0xFFFF4D91), width: 1.4),
         ),
       ),
     );
@@ -447,15 +490,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               gradient: sel
-                  ? const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple])
+                  ? const LinearGradient(colors: [const Color(0xFFFF4D91), const Color(0xFFFFB5D0)])
                   : null,
-              color: sel ? null : const Color(0xFF071420),
+              color: sel ? null : const Color(0xFFFFF9FC),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: SiyaColors.cyan.withOpacity(sel ? 0 : 0.25)),
+              border: Border.all(color: const Color(0xFFFF4D91).withOpacity(sel ? 0 : 0.25)),
             ),
             child: Text(e.value,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF2A1C25),
                   fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                 )),
           ),
@@ -471,50 +514,50 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(sub, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                Text(sub, style: TextStyle(color: const Color(0xFF756A76), fontSize: 12)),
               ],
             ),
           ),
           Switch(
             value: v,
             onChanged: on,
-            activeColor: SiyaColors.cyanSoft,
-            activeTrackColor: SiyaColors.purple.withOpacity(0.6),
+            activeColor: const Color(0xFFD6004C),
+            activeTrackColor: const Color(0xFFFFB5D0).withOpacity(0.6),
           ),
         ],
       );
 
   /// ok: true = green, false = red, null = neutral.
   Widget _action(IconData icon, String title, String sub, bool? ok, VoidCallback onTap) {
-    final color = ok == null ? Colors.white54 : (ok ? SiyaColors.ok : SiyaColors.bad);
+    final color = ok == null ? const Color(0xFF8B7180) : (ok ? SiyaColors.ok : SiyaColors.bad);
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF071420),
+          color: const Color(0xFFFFF9FC),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: SiyaColors.cyan.withOpacity(0.12)),
+          border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.12)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: SiyaColors.cyanSoft, size: 22),
+            Icon(icon, color: const Color(0xFFD6004C), size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(sub, style: TextStyle(color: color, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white38),
+            const Icon(Icons.chevron_right, color: const Color(0xFF2A1C25)38),
           ],
         ),
       ),
@@ -527,12 +570,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           height: 54,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple]),
+            gradient: const LinearGradient(colors: [const Color(0xFFFF4D91), const Color(0xFFFFB5D0)]),
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [BoxShadow(color: SiyaColors.cyan.withOpacity(0.35), blurRadius: 16)],
+            boxShadow: [BoxShadow(color: const Color(0xFFFF4D91).withOpacity(0.35), blurRadius: 16)],
           ),
           child: const Text('Save',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: const Color(0xFF2A1C25), fontSize: 17, fontWeight: FontWeight.w700)),
         ),
       );
 }
