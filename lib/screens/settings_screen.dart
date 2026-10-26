@@ -53,6 +53,96 @@ class _SettingsSilkPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+class _SettingsBottomBar extends StatelessWidget {
+  const _SettingsBottomBar({
+    required this.onHome,
+    required this.onChat,
+    required this.onMic,
+    required this.onTools,
+  });
+
+  final VoidCallback onHome;
+  final VoidCallback onChat;
+  final VoidCallback onMic;
+  final VoidCallback onTools;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 3, 12, 9),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0xEFFFF0F7),
+            borderRadius: BorderRadius.circular(34),
+            border: Border.all(color: const Color(0xCCFFFFFF), width: 1.5),
+            boxShadow: const [
+              BoxShadow(color: Color(0x33FF3F86), blurRadius: 20, spreadRadius: 1),
+              BoxShadow(color: Color(0x99FFFFFF), blurRadius: 7),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(child: _SettingsNavItem(icon: Icons.home_rounded, label: 'Home', onTap: onHome)),
+              Expanded(child: _SettingsNavItem(icon: Icons.chat_bubble_outline_rounded, label: 'Chat', onTap: onChat)),
+              GestureDetector(
+                onTap: onMic,
+                child: Container(
+                  width: 66,
+                  height: 66,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const RadialGradient(colors: [Color(0xFF17000A), Color(0xFF480018), Color(0xFFE90050)]),
+                    border: Border.all(color: const Color(0xFFFF75AA), width: 2.2),
+                    boxShadow: const [BoxShadow(color: Color(0x66FF155E), blurRadius: 16, spreadRadius: 1)],
+                  ),
+                  child: const Icon(Icons.mic_rounded, color: Colors.white, size: 29),
+                ),
+              ),
+              Expanded(child: _SettingsNavItem(icon: Icons.bolt_rounded, label: 'Tools', onTap: onTools)),
+              const Expanded(child: _SettingsNavItem(icon: Icons.settings_rounded, label: 'Settings', active: true)),
+            ],
+          ),
+        ),
+      );
+}
+
+class _SettingsNavItem extends StatelessWidget {
+  const _SettingsNavItem({required this.icon, required this.label, this.onTap, this.active = false});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 24, color: const Color(0xFFD6004C)),
+              const SizedBox(height: 3),
+              Text(label, style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                color: active ? const Color(0xFFD6004C) : const Color(0xFF78606D),
+              )),
+              if (active) Container(
+                margin: const EdgeInsets.only(top: 2),
+                width: 20,
+                height: 2.5,
+                decoration: BoxDecoration(color: const Color(0xFFE6004C), borderRadius: BorderRadius.circular(4)),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
 /// Settings - purani SettingsActivity ke saare features, naye dark neon style mein.
 /// Data Kotlin ke SharedPreferences ("siya_prefs") mein save hota hai.
 class SettingsScreen extends StatefulWidget {
@@ -162,6 +252,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5FA),
+      bottomNavigationBar: _SettingsBottomBar(
+        onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
+        onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Voice chat ke liye center mic tap karein.'),
+          behavior: SnackBarBehavior.floating,
+        )),
+        onMic: widget.bridge.toggleMic,
+        onTools: () => Navigator.of(context).pushNamed('/features'),
+      ),
       body: Stack(
         children: [
           const Positioned.fill(child: _SettingsSilkBackground()),
