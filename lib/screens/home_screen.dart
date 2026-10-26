@@ -225,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.012 : 0.022)),
+                    SizedBox(height: h * (compact ? 0.024 : 0.034)),
                     FadeTransition(
                       opacity: _iv(0.05, 0.72, Curves.easeOut),
                       child: ScaleTransition(
@@ -272,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.018 : 0.028)),
+                    SizedBox(height: h * (compact ? 0.026 : 0.038)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: w * .055),
                       child: Container(
@@ -477,8 +477,8 @@ class _SilkWavePainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [
           const Color(0x00FF5AA7),
-          Color(0x44FF7DAF).withOpacity(i.isEven ? .24 : .13),
-          const Color(0x22F6A7FF),
+          Color(0x44FF7DAF).withOpacity(i.isEven ? .15 : .08),
+          const Color(0x14F6A7FF),
           const Color(0x00FF5AA7),
         ],
       ).createShader(Rect.fromLTWH(0, y - size.height * .20, size.width, size.height * .40));
@@ -492,7 +492,7 @@ class _SilkWavePainter extends CustomPainter {
     for (int i = 0; i < normalizedDots.length; i++) {
       final dot = Offset(size.width * normalizedDots[i].dx, size.height * normalizedDots[i].dy);
       final r = size.width * (i % 3 == 0 ? .011 : .007);
-      canvas.drawCircle(dot, r * 2.2, Paint()..color = const Color(0x33FF176B)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+      canvas.drawCircle(dot, r * 2.2, Paint()..color = const Color(0x22FF176B)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
       canvas.drawCircle(dot, r, Paint()..shader = RadialGradient(
         colors: const [Color(0xFFFF9ECA), Color(0xFFE80046)],
       ).createShader(Rect.fromCircle(center: dot, radius: r)));
@@ -589,8 +589,8 @@ class _CoreLogo extends StatelessWidget {
               shape: BoxShape.circle, color: const Color(0xFF080207),
               border: Border.all(color: const Color(0xFFFF5B99), width: 2.5),
               boxShadow: const [
-                BoxShadow(color: Color(0x77FF004C), blurRadius: 30, spreadRadius: 4),
-                BoxShadow(color: Color(0x44FF6AB6), blurRadius: 10, spreadRadius: 1),
+                BoxShadow(color: Color(0x44FF004C), blurRadius: 20, spreadRadius: 2),
+                BoxShadow(color: Color(0x22FF6AB6), blurRadius: 7, spreadRadius: 0),
               ],
             ),
           ),
@@ -642,7 +642,7 @@ class _SiyaGlyphPainter extends CustomPainter {
       stops: [0, .50, 1],
     ).createShader(Offset.zero & size);
     p.strokeWidth = size.width * .16;
-    canvas.drawPath(path, p..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+    canvas.drawPath(path, p..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
     p.maskFilter = null;
     canvas.drawPath(path, p);
     final c = Offset(size.width * .73, size.height * .40);
@@ -680,7 +680,7 @@ class _OrbSparksPainter extends CustomPainter {
       final pulse = .5 + .5 * math.sin(time.value * math.pi * 2 * (i + 1) + i);
       final o = Offset(size.width * q.dx, size.height * q.dy);
       final r = size.width * (.004 + .006 * pulse + level.value * .003);
-      canvas.drawCircle(o, r * 3, Paint()..color = const Color(0x55FF174F)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+      canvas.drawCircle(o, r * 3, Paint()..color = const Color(0x2AFF174F)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
       canvas.drawCircle(o, r, Paint()..color = Color.lerp(const Color(0xFFFF334F), Colors.white, pulse * .42)!);
     }
   }
@@ -698,10 +698,10 @@ class _OrbRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()..style = PaintingStyle.stroke;
-    canvas.drawCircle(size.center(Offset.zero), size.width * (.485 + .004 * math.sin(time.value * math.pi * 4)),
+    canvas.drawCircle(size.center(Offset.zero), size.width * (.485 + .002 * math.sin(time.value * math.pi * 4)),
         p..strokeWidth = 2.1..color = const Color(0xAAFF356F));
-    canvas.drawCircle(size.center(Offset.zero), size.width * .505, p..strokeWidth = 1.4..color = const Color(0x99FFFFFF));
-    canvas.drawCircle(size.center(Offset.zero), size.width * .525, p..strokeWidth = 1..color = const Color(0x55FFB0D2));
+    canvas.drawCircle(size.center(Offset.zero), size.width * .505, p..strokeWidth = 1.4..color = const Color(0x66FFFFFF));
+    canvas.drawCircle(size.center(Offset.zero), size.width * .525, p..strokeWidth = 1..color = const Color(0x33FFB0D2));
   }
 
   @override
@@ -801,11 +801,11 @@ class _ReferenceBottomBar extends StatelessWidget {
                 ],
               ),
               child: Row(children: [
-                Expanded(child: _ReferenceNavItem(icon: Icons.home_rounded, active: true, onTap: onHome)),
-                Expanded(child: _ReferenceNavItem(icon: Icons.chat_bubble_outline_rounded, onTap: onChat)),
+                Expanded(child: _ReferenceNavItem(icon: Icons.home_rounded, label: 'Home', active: true, onTap: onHome)),
+                Expanded(child: _ReferenceNavItem(icon: Icons.chat_bubble_outline_rounded, label: 'Chat', onTap: onChat)),
                 SizedBox(width: micSize * .86),
-                Expanded(child: _ReferenceNavItem(icon: Icons.bolt_rounded, onTap: onFeatures)),
-                Expanded(child: _ReferenceNavItem(icon: Icons.settings_outlined, onTap: onSettings)),
+                Expanded(child: _ReferenceNavItem(icon: Icons.bolt_rounded, label: 'Tools', onTap: onFeatures)),
+                Expanded(child: _ReferenceNavItem(icon: Icons.settings_rounded, label: 'Settings', onTap: onSettings)),
               ]),
             ),
           ),
@@ -853,8 +853,9 @@ class _ReferenceBottomBar extends StatelessWidget {
 }
 
 class _ReferenceNavItem extends StatelessWidget {
-  const _ReferenceNavItem({required this.icon, required this.onTap, this.active = false});
+  const _ReferenceNavItem({required this.icon, required this.label, required this.onTap, this.active = false});
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
   final bool active;
 
@@ -862,18 +863,49 @@ class _ReferenceNavItem extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap, borderRadius: BorderRadius.circular(32),
-          child: Center(
-            child: Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: active ? const Color(0xFFFFF5FA) : const Color(0x22FF2B6C),
-                border: Border.all(color: active ? const Color(0x88FFB4CE) : const Color(0x44FFFFFF)),
-                boxShadow: active ? const [BoxShadow(color: Color(0x44FF205C), blurRadius: 14, spreadRadius: 1)] : const [],
-              ),
-              child: Icon(icon, size: 30, color: const Color(0xFFDF0048),
-                shadows: const [Shadow(color: Color(0x55FF246E), blurRadius: 10)]),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: active ? Colors.white : const Color(0x22FF2B6C),
+                    border: Border.all(
+                      color: active ? const Color(0xFFFFA5C5) : const Color(0x44FFFFFF),
+                      width: active ? 1.4 : 1,
+                    ),
+                    boxShadow: active
+                        ? const [BoxShadow(color: Color(0x33FF205C), blurRadius: 10, spreadRadius: 0)]
+                        : const [],
+                  ),
+                  child: Icon(icon, size: 25, color: const Color(0xFFD60048)),
+                ),
+                const SizedBox(height: 2),
+                Text(label, maxLines: 1, style: TextStyle(
+                  fontSize: 10,
+                  height: 1.05,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                  color: active ? const Color(0xFFD60048) : const Color(0xFF78606D),
+                )),
+                if (active)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 18,
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE6004C),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
