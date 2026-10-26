@@ -404,7 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             leading: const Icon(Icons.bolt_rounded, color: const Color(0xFFD6004C)),
                             title: const Text('Power Features', style: TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
                             subtitle: const Text('WhatsApp reply, call screener, SOS, Ghost Mode, Gaming HUD', style: TextStyle(color: const Color(0xFF6F6470), fontSize: 12)),
-                            trailing: const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
+                            trailing: const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
                             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PowerFeaturesScreen(bridge: widget.bridge))),
                           ),
                           const SizedBox(height: 12),
@@ -469,7 +469,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
+              const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
             ],
           ),
         ),
@@ -542,7 +542,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       controller: c,
       obscureText: secret && _hideKeys,
       keyboardType: keyboard,
-      style: const TextStyle(color: const Color(0xFF2A1C25)),
+      style: const TextStyle(color: Color(0xFF2A1C25)),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: const Color(0xFF756A76)),
@@ -589,7 +589,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               gradient: sel
-                  ? const LinearGradient(colors: [const Color(0xFFFF4D91), const Color(0xFFFFB5D0)])
+                  ? const LinearGradient(colors: [Color(0xFFFF4D91), const Color(0xFFFFB5D0)])
                   : null,
               color: sel ? null : const Color(0xFFFFF9FC),
               borderRadius: BorderRadius.circular(20),
@@ -613,7 +613,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: const TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
+                    style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(sub, style: TextStyle(color: const Color(0xFF756A76), fontSize: 12)),
               ],
@@ -650,13 +650,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: const TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
+                      style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(sub, style: TextStyle(color: color, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
+            const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
           ],
         ),
       ),
@@ -669,7 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           height: 54,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [const Color(0xFFFF4D91), const Color(0xFFFFB5D0)]),
+            gradient: const LinearGradient(colors: [Color(0xFFFF4D91), Color(0xFFFFB5D0)]),
             borderRadius: BorderRadius.circular(18),
             boxShadow: [BoxShadow(color: const Color(0xFFFF4D91).withOpacity(0.35), blurRadius: 16)],
           ),
