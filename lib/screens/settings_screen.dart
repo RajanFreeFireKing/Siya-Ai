@@ -656,7 +656,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: const Color(0xFF2A1C25)38),
+            const Icon(Icons.chevron_right, color: const Color(0xFF8B7180)),
           ],
         ),
       ),
