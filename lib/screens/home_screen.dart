@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen>
               ? 10.0
               : MediaQuery.of(context).padding.bottom;
           final compact = h < 730;
-          final ring = math.min(w * 0.72, h * (compact ? 0.30 : 0.335));
+          final ring = math.min(w * 0.55, h * (compact ? 0.245 : 0.275));
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.010 : 0.018)),
+                    SizedBox(height: h * (compact ? 0.008 : 0.014)),
                     Text(
                       _greeting,
                       textAlign: TextAlign.center,
@@ -272,21 +272,21 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.014 : 0.026)),
+                    SizedBox(height: h * (compact ? 0.018 : 0.028)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: w * .055),
                       child: Container(
-                        height: compact ? 74 : 94,
+                        height: compact ? 64 : 78,
                         decoration: BoxDecoration(
-                          color: const Color(0x66FFFFFF),
+                          color: const Color(0x33FFFFFF),
                           borderRadius: BorderRadius.circular(38),
-                          border: Border.all(color: const Color(0xCCFFFFFF), width: 1.4),
+                          border: Border.all(color: const Color(0x77FFFFFF), width: 1.1),
                           boxShadow: const [
-                            BoxShadow(color: Color(0x33FF4D91), blurRadius: 28, spreadRadius: 1, offset: Offset(0, 8)),
+                            BoxShadow(color: Color(0x22FF4D91), blurRadius: 22, spreadRadius: 1, offset: Offset(0, 5)),
                             BoxShadow(color: Color(0xAAFFFFFF), blurRadius: 8, spreadRadius: -2),
                           ],
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         child: AnimatedBuilder(
                           animation: _ctrl,
                           builder: (_, __) => CustomPaint(
@@ -374,12 +374,16 @@ class _SettingsStatusSheet extends StatelessWidget {
       (Icons.mic_rounded, 'Voice assistant', bridge.isActive ? 'Active' : 'Standby', bridge.isActive),
       (Icons.key_rounded, 'AI API key', apiKeyReady ? 'Configured' : 'Needs setup', apiKeyReady),
       (Icons.waves_rounded, 'Sound animation', 'Ready', true),
+      (Icons.phone_android_rounded, 'Mobile customization', 'Tap to customize', true),
       (Icons.wallpaper_rounded, 'Wallpaper', wallpaper == 'none' ? 'Default background' : 'Custom wallpaper', true),
       (Icons.notifications_active_outlined, 'Notifications', 'Tap bell to view updates', true),
     ];
     return SafeArea(
       top: false,
-      child: Container(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.82),
+        child: SingleChildScrollView(
+          child: Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
         decoration: const BoxDecoration(
           color: Color(0xFFFFF7FB),
@@ -427,6 +431,8 @@ class _SettingsStatusSheet extends StatelessWidget {
               ),
             )),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -511,7 +517,7 @@ class _BrandTitle extends StatelessWidget {
           children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
               Text('SIYA', style: TextStyle(
-                fontSize: (width * .075).clamp(28.0, 38.0),
+                fontSize: (width * .083).clamp(38.0, 56.0),
                 height: .96, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic,
                 letterSpacing: -2, color: const Color(0xFF08070D),
                 shadows: const [Shadow(color: Color(0x44FF649B), blurRadius: 8)],
@@ -521,7 +527,7 @@ class _BrandTitle extends StatelessWidget {
                 blendMode: BlendMode.srcIn,
                 shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF003D), Color(0xFFE60077)]).createShader(r),
                 child: Text('AI', style: TextStyle(
-                  fontSize: (width * .086).clamp(31.0, 42.0), height: .92,
+                  fontSize: (width * .092).clamp(42.0, 62.0), height: .92,
                   fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, letterSpacing: -1.8,
                 )),
               ),
