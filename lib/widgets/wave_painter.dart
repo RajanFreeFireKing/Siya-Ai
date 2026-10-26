@@ -3,53 +3,48 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
-
-/// Mic ke dono side ki equalizer bars (edge par purple dots -> mic ke paas cyan).
-/// [leftSide] true ho to bars left side wali hoti hain (edge = left).
-class WavePainter extends CustomPainter {
-  WavePainter({required this.time, required this.level, required this.leftSide})
+/// Efficient vector waveform painted into a single canvas.
+class SiyaWavePainter extends CustomPainter {
+  SiyaWavePainter({required this.time, required this.level, required this.active})
       : super(repaint: Listenable.merge([time, level]));
 
   final Animation<double> time;
   final ValueListenable<double> level;
-  final bool leftSide;
-
-  static const int _n = 42;
+  final bool active;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final step = size.width / _n;
-    final barW = math.max(1.6, step * 0.42);
-    final maxH = size.height;
-    final t = time.value * math.pi * 2 * 16;
-    final lv = level.value;
+    if (size.isEmpty) return;
     final cy = size.height / 2;
-
-    final glow = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.5);
+    const count = 45;
+    final step = size.width / count;
+    final barWidth = math.max(2.0, step * .4);
+    final maxHeight = size.height * .88;
+    final glow = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     final core = Paint();
-
-    for (int i = 0; i < _n; i++) {
-      final u = i / (_n - 1); // 0 = outer edge, 1 = mic side
-      final x = leftSide ? (i + 0.5) * step : size.width - (i + 0.5) * step;
-
-      final env = math.pow(math.sin(math.pi * math.pow(u, 1.15)), 1.25).toDouble();
-      final mod = 0.5 + 0.5 * math.sin(i * 2.3 + t * (0.8 + (i % 3) * 0.2));
-      final drive = 0.38 + 0.62 * lv;
-      final h = math.max(3.0, maxH * env * (0.22 + 0.78 * mod) * drive);
-
-      final color = Color.lerp(SiyaColors.purple, SiyaColors.cyanSoft, math.pow(u, 0.8).toDouble())!;
+    final phase = time.value * math.pi * 2 * (active ? 12 : 4);
+    for (int i = 0; i < count; i++) {
+      final dist = ((i - (count - 1) / 2).abs()) / ((count - 1) / 2);
+      final envelope = math.pow(1 - dist, .72).toDouble();
+      final rhythm = .35 + .65 * (.5 + .5 * math.sin(i * 1.7 + phase));
+      final energy = active ? .42 + .58 * level.value : .47;
+      final h = math.max(3.5, maxHeight * envelope * rhythm * energy);
       final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(x, cy), width: barW, height: h),
-        Radius.circular(barW / 2),
+        Rect.fromCenter(center: Offset(step * (i + .5), cy), width: barWidth, height: h),
+        Radius.circular(barWidth),
       );
-      glow.color = color.withOpacity(0.45);
+      final t = (1 - dist).clamp(0.0, 1.0);
+      final color = Color.lerp(const Color(0xFFFF0060), const Color(0xFFB50020), t)!;
+      glow.color = color.withOpacity(.48);
       core.color = color;
       canvas.drawRRect(rect, glow);
       canvas.drawRRect(rect, core);
     }
+    final dotPaint = Paint()..color = const Color(0xFFE90049);
+    canvas.drawCircle(Offset(size.width * .018, cy), 3.4, dotPaint);
+    canvas.drawCircle(Offset(size.width * .982, cy), 3.4, dotPaint);
   }
 
   @override
-  bool shouldRepaint(covariant WavePainter old) => old.leftSide != leftSide;
+  bool shouldRepaint(covariant SiyaWavePainter oldDelegate) => oldDelegate.active != active;
 }
