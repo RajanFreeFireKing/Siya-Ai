@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -46,7 +46,19 @@ jobs:
           test -s build/app/outputs/flutter-apk/app-release.apk
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload APK
+      - name: Publish APK as GitHub Release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: siya-ai-build-${{ github.run_number }}
+          name: Siya AI APK Build ${{ github.run_number }}
+          body: |
+            Automated release APK built by GitHub Actions.
+            Build run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          fail_on_unmatched_files: true
+          make_latest: true
+
+      - name: Upload workflow artifact (optional)
         if: ${{ vars.ENABLE_APK_ARTIFACTS == 'true' }}
         uses: actions/upload-artifact@v4
         with:
@@ -55,9 +67,3 @@ jobs:
           if-no-files-found: error
           retention-days: 3
           compression-level: 0
-
-      - name: Explain skipped artifact upload
-        if: ${{ vars.ENABLE_APK_ARTIFACTS != 'true' }}
-        run: |
-          echo "APK built successfully, but artifact upload is disabled because storage quota may be exhausted."
-          echo "Set repository variable ENABLE_APK_ARTIFACTS=true after clearing Actions storage to enable artifact uploads."
