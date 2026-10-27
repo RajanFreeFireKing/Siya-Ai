@@ -286,28 +286,40 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.alphaBlend(_primaryThemeColor.withOpacity(.045), const Color(0xFFFFF5FA)),
-      bottomNavigationBar: SiyaBottomNavigation(
-        width: MediaQuery.sizeOf(context).width * .93,
-        primaryColor: _primaryThemeColor,
-        time: const AlwaysStoppedAnimation<double>(0),
-        active: widget.bridge.isActive,
-        homeActive: false,
-        settingsActive: true,
-        onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
-        onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Voice chat ke liye center mic tap karein.'),
-          behavior: SnackBarBehavior.floating,
-        )),
-        onMic: widget.bridge.toggleMic,
-        onTools: () => Navigator.of(context).pushNamed('/features'),
-        onSettings: () {},
-      ),
       body: Stack(
         children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: SiyaBottomNavigation(
+                  width: MediaQuery.sizeOf(context).width * .93,
+                  primaryColor: _primaryThemeColor,
+                  time: const AlwaysStoppedAnimation<double>(0),
+                  active: widget.bridge.isActive,
+                  homeActive: false,
+                  settingsActive: true,
+                  onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                  onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Voice chat ke liye center mic tap karein.'),
+                    behavior: SnackBarBehavior.floating,
+                  )),
+                  onMic: widget.bridge.toggleMic,
+                  onTools: () => Navigator.of(context).pushNamed('/features'),
+                  onSettings: () {},
+                ),
+              ),
+            ),
+          ),
           Positioned.fill(
             child: _SettingsSilkBackground(primaryThemeColor: _primaryThemeColor),
           ),
           SafeArea(
+            bottom: false,
           child: !_loaded
               ? const Center(child: CircularProgressIndicator(color: const Color(0xFFFF4D91)))
               : Column(
