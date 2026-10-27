@@ -432,16 +432,35 @@ class _SilkWavePainter extends CustomPainter {
 class _BrandTitle extends StatelessWidget {
   const _BrandTitle({required this.width});
   final double width;
+
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: width * .39, height: width * .16,
-    child: ColorFiltered(
-      colorFilter: ColorFilter.mode(SiyaTheme.accent.value, BlendMode.srcATop),
-      child: Image.asset('android/app/Image/Ai name.png', fit: BoxFit.contain, alignment: Alignment.centerLeft,
-        errorBuilder: (_, __, ___) => const Text('SIYA AI', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic)),
-      ),
-    ),
-  );
+        width: width * .42,
+        height: width * .145,
+        child: RepaintBoundary(
+          child: ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              SiyaTheme.accent.value,
+              BlendMode.srcATop,
+            ),
+            child: Image.asset(
+              'android/app/Image/Ai name.png',
+              fit: BoxFit.contain,
+              alignment: Alignment.centerLeft,
+              semanticLabel: 'Siya AI logo',
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => const Text(
+                'SIYA AI',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _NotificationButton extends StatelessWidget {
@@ -487,10 +506,26 @@ class _CoreLogo extends StatelessWidget {
         border: Border.all(color: accent, width: 2.5),
         boxShadow: [BoxShadow(color: accent.withOpacity(.28), blurRadius: 20, spreadRadius: 2), BoxShadow(color: accent.withOpacity(.14), blurRadius: 7)])),
       Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
-      Padding(padding: EdgeInsets.all(size * .16),
-        child: ColorFiltered(colorFilter: ColorFilter.mode(accent, BlendMode.srcATop),
-          child: Image.asset('android/app/Image/ home page program.png', fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => CustomPaint(painter: _SiyaGlyphPainter(time: time, active: active))))),
+      Padding(
+        padding: EdgeInsets.all(size * .135),
+        child: RepaintBoundary(
+          child: ColorFiltered(
+            colorFilter: ColorFilter.mode(accent, BlendMode.srcATop),
+            child: Image.asset(
+              'android/app/Image/ home page program.png',
+              width: size * .73,
+              height: size * .73,
+              fit: BoxFit.contain,
+              alignment: Alignment.center,
+              filterQuality: FilterQuality.high,
+              semanticLabel: 'Siya AI hologram core',
+              errorBuilder: (_, __, ___) => CustomPaint(
+                painter: _SiyaGlyphPainter(time: time, active: active),
+              ),
+            ),
+          ),
+        ),
+      ),
       Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
     ]);
   }
