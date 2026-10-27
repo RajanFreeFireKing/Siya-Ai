@@ -8,10 +8,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: siya-ai-apk-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,6 +50,15 @@ jobs:
           test -s build/app/outputs/flutter-apk/app-release.apk
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Siya-Ai-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
       - name: Publish APK as GitHub Release asset
         uses: softprops/action-gh-release@v2
         with:
@@ -57,13 +70,3 @@ jobs:
           files: build/app/outputs/flutter-apk/app-release.apk
           fail_on_unmatched_files: true
           make_latest: true
-
-      - name: Upload workflow artifact (optional)
-        if: ${{ vars.ENABLE_APK_ARTIFACTS == 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Siya-Ai-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 3
-          compression-level: 0
