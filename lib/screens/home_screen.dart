@@ -141,25 +141,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _openSettings() async {
-    final settings = await widget.bridge.getSettings().catchError((_) => <String, dynamic>{});
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) => _SettingsStatusSheet(
-        bridge: widget.bridge,
-        settings: settings,
-        onOpenFullSettings: () async {
-          Navigator.of(sheetContext).pop();
-          await Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => SettingsScreen(bridge: widget.bridge)),
-          );
-          _loadWallpaper();
-        },
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(bridge: widget.bridge),
       ),
     );
-    _loadWallpaper();
+    if (mounted) _loadWallpaper();
   }
 
   Future<void> _sendMessage() async {
@@ -353,89 +340,6 @@ class _HomeScreenState extends State<HomeScreen>
       default:
         return 'How can I help you today?';
     }
-  }
-}
-
-class _SettingsStatusSheet extends StatelessWidget {
-  const _SettingsStatusSheet({
-    required this.bridge,
-    required this.settings,
-    required this.onOpenFullSettings,
-  });
-  final SiyaBridge bridge;
-  final Map<String, dynamic> settings;
-  final VoidCallback onOpenFullSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    final apiKeyReady = (settings['gemini_api_key'] ?? settings['api_key'] ?? '').toString().trim().isNotEmpty;
-    final wallpaper = (settings['wallpaper_type'] ?? 'none').toString();
-    final items = <(IconData, String, String, bool)>[
-      (Icons.mic_rounded, 'Voice assistant', bridge.isActive ? 'Active' : 'Standby', bridge.isActive),
-      (Icons.key_rounded, 'AI API key', apiKeyReady ? 'Configured' : 'Needs setup', apiKeyReady),
-      (Icons.waves_rounded, 'Sound animation', 'Ready', true),
-      (Icons.phone_android_rounded, 'Mobile customization', 'Tap to customize', true),
-      (Icons.wallpaper_rounded, 'Wallpaper', wallpaper == 'none' ? 'Default background' : 'Custom wallpaper', true),
-      (Icons.notifications_active_outlined, 'Notifications', 'Tap bell to view updates', true),
-    ];
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.82),
-        child: SingleChildScrollView(
-          child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF7FB),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          border: Border(top: BorderSide(color: Color(0xFFFFB4D0), width: 1.5)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFFF9DBF), borderRadius: BorderRadius.circular(9)))),
-            const SizedBox(height: 16),
-            Row(children: [
-              Container(width: 46, height: 46, decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Color(0xFFFF1B60), Color(0xFFB90054)])), child: const Icon(Icons.settings_rounded, color: Colors.white, size: 25)),
-              const SizedBox(width: 12),
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Siya AI Settings', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: Color(0xFF151019))),
-                SizedBox(height: 3),
-                Text('Quick status overview', style: TextStyle(fontSize: 13, color: Color(0xFF77707D))),
-              ])),
-              IconButton(tooltip: 'Close settings panel', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded, color: Color(0xFF8B1647))),
-            ]),
-            const SizedBox(height: 12),
-            ...items.map((item) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(.9), borderRadius: BorderRadius.circular(17), border: Border.all(color: const Color(0xFFFFD7E5))),
-              child: Row(children: [
-                Icon(item.$1, color: const Color(0xFFE50050), size: 23),
-                const SizedBox(width: 12),
-                Expanded(child: Text(item.$2, style: const TextStyle(color: Color(0xFF25202A), fontWeight: FontWeight.w700, fontSize: 14))),
-                Text(item.$3, style: TextStyle(color: item.$4 ? const Color(0xFF16845B) : const Color(0xFFD00043), fontWeight: FontWeight.w700, fontSize: 12)),
-              ]),
-            )),
-            const SizedBox(height: 6),
-            SizedBox(width: double.infinity, child: ElevatedButton.icon(
-              onPressed: onOpenFullSettings,
-              icon: const Icon(Icons.tune_rounded),
-              label: const Text('Open Full Settings'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE50046), foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
-                elevation: 4,
-              ),
-            )),
-          ],
-        ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
