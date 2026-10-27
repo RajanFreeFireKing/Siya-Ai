@@ -588,7 +588,21 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       );
 
   Widget _keyCard() => _card([
-        _field(_apiKey, 'Gemini API Key', Icons.vpn_key_rounded, secret: true),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Gemini API Key',
+              style: TextStyle(
+                color: Color(0xFF151019),
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 5),
+            _field(_apiKey, 'Paste your API key', Icons.vpn_key_rounded, secret: true),
+          ],
+        ),
       ]);
 
   Widget _header(BuildContext context) => Padding(
