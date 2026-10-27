@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: siya-ai-apk-${{ github.ref }}
@@ -58,15 +59,3 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
-
-      - name: Publish APK as GitHub Release asset
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: siya-ai-build-${{ github.run_number }}
-          name: Siya AI APK Build ${{ github.run_number }}
-          body: |
-            Automated release APK built by GitHub Actions.
-            Build run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          files: build/app/outputs/flutter-apk/app-release.apk
-          fail_on_unmatched_files: true
-          make_latest: true
