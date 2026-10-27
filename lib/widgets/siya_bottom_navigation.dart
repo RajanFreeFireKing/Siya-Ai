@@ -28,6 +28,7 @@ class SiyaBottomNavigation extends StatelessWidget {
     required this.onSettings,
     this.primaryColor = const Color(0xFFE6004C),
     this.homeActive = true,
+    this.settingsActive = false,
   });
 
   final double width;
@@ -40,6 +41,7 @@ class SiyaBottomNavigation extends StatelessWidget {
   final VoidCallback onSettings;
   final Color primaryColor;
   final bool homeActive;
+  final bool settingsActive;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +73,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                 Expanded(child: _SiyaNavItem(icon: Icons.chat_bubble_outline_rounded, label: SiyaNavLabels.chat, primaryColor: primaryColor, onTap: onChat)),
                 SizedBox(width: micSize * .86),
                 Expanded(child: _SiyaNavItem(icon: Icons.bolt_rounded, label: SiyaNavLabels.tools, primaryColor: primaryColor, onTap: onTools)),
-                Expanded(child: _SiyaNavItem(icon: Icons.settings_rounded, label: SiyaNavLabels.settings, primaryColor: primaryColor, onTap: onSettings)),
+                Expanded(child: _SiyaNavItem(icon: Icons.settings_rounded, label: SiyaNavLabels.settings, active: settingsActive, primaryColor: primaryColor, onTap: onSettings)),
               ]),
             ),
           ),
