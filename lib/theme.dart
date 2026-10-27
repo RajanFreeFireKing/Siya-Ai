@@ -31,3 +31,30 @@ class SiyaLight {
 
 /// Home screen par status text dikhana hai ya nahi (purana flag, ab use nahi hota).
 const bool kShowStatusText = false;
+
+/// Shared, persisted accent color for the complete Siya AI app.
+class SiyaTheme {
+  SiyaTheme._();
+  static const Color defaultAccent = Color(0xFFFF2A6D);
+  static final ValueNotifier<Color> accent = ValueNotifier<Color>(defaultAccent);
+  static Color parseAccent(Object? value) {
+    if (value is int) return Color(value);
+    if (value is! String) return defaultAccent;
+    final raw = value.trim().replaceFirst('#', '').replaceFirst('0x', '');
+    final parsed = int.tryParse(raw, radix: 16);
+    if (parsed == null) return defaultAccent;
+    return Color(raw.length == 6 ? 0xFF000000 | parsed : parsed);
+  }
+  static Future<void> loadFromSettings(Future<Map<String, dynamic>> Function() read) async {
+    try {
+      final settings = await read();
+      if (settings['app_accent_color'] != null) {
+        accent.value = parseAccent(settings['app_accent_color']);
+      }
+    } catch (_) {}
+  }
+  static Future<void> setAccent(Color color, Future<void> Function(Map<String, dynamic>) save) async {
+    accent.value = color;
+    await save({'app_accent_color': color.value});
+  }
+}
