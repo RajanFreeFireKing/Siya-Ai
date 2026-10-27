@@ -65,7 +65,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                 color: const Color(0xDDFCE8F2),
                 borderRadius: BorderRadius.circular(barHeight * .46),
                 border: Border.all(color: const Color(0x99FFFFFF), width: 1.6),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(color: accent.withOpacity(.20), blurRadius: 24, spreadRadius: 1),
                   BoxShadow(color: Color(0xCCFFFFFF), blurRadius: 8, spreadRadius: -2),
                 ],
@@ -103,7 +103,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(color: accent.withOpacity(.60), blurRadius: 25, spreadRadius: 3),
                           BoxShadow(color: Color(0x66FF84B4), blurRadius: 12, spreadRadius: 1),
                         ],
@@ -116,7 +116,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                             stops: [0, .72, 1],
                           ),
                           border: Border.all(color: accent, width: 2.4),
-                          boxShadow: const [BoxShadow(color: accent.withOpacity(.48), blurRadius: 18, spreadRadius: 2)],
+                          boxShadow: [BoxShadow(color: accent.withOpacity(.48), blurRadius: 18, spreadRadius: 2)],
                         ),
                         child: Icon(
                           active ? Icons.graphic_eq_rounded : Icons.mic_rounded,
