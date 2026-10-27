@@ -18,15 +18,15 @@ class _SettingsSilkBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RepaintBoundary(
         child: DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFFFFF7FB),
+                Color.alphaBlend(primaryThemeColor.withOpacity(.09), const Color(0xFFFFF7FB)),
                 Colors.white,
-                Color(0xFFFFEAF4),
-                Color(0xFFFFF8FC),
+                Color.alphaBlend(primaryThemeColor.withOpacity(.07), const Color(0xFFFFEAF4)),
+                Color.alphaBlend(primaryThemeColor.withOpacity(.04), const Color(0xFFFFF8FC)),
               ],
               stops: [0, .40, .78, 1],
             ),
@@ -198,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   bool _allFiles = false;
   bool _loaded = false;
   bool _hideKeys = true;
-  Color _primaryThemeColor = const Color(0xFFFF2A6D);
+  Color _primaryThemeColor = SiyaTheme.defaultAccent;
 
   bool _accessibility = false;
   bool _admin = false;
@@ -235,6 +235,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     if (!mounted) return;
     setState(() {
       _apiKey.text = (s['api_key'] as String?) ?? '';
+      _primaryThemeColor = SiyaTheme.parseAccent(s['app_accent_color'] ?? SiyaTheme.accent.value.value);
+      SiyaTheme.accent.value = _primaryThemeColor;
       _personality = (s['personality_mode'] as String?) ?? 'gf';
       _voice = (s['live_voice'] as String?) ?? 'Aoede';
       _memory = (s['memory_enabled'] as bool?) ?? true;
@@ -266,6 +268,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       'api_key': _apiKey.text,
       'personality_mode': _personality,
       'memory_enabled': _memory,
+      'app_accent_color': _primaryThemeColor.value,
     });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -282,9 +285,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF5FA),
+      backgroundColor: Color.alphaBlend(_primaryThemeColor.withOpacity(.045), const Color(0xFFFFF5FA)),
       bottomNavigationBar: SiyaBottomNavigation(
         width: MediaQuery.sizeOf(context).width * .93,
+        primaryColor: _primaryThemeColor,
         time: const AlwaysStoppedAnimation<double>(0),
         active: widget.bridge.isActive,
         homeActive: false,
@@ -763,7 +767,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             button: true,
             label: 'Choose theme color',
             child: GestureDetector(
-              onTap: () => setState(() => _primaryThemeColor = color),
+              onTap: () async {
+                setState(() => _primaryThemeColor = color);
+                await SiyaTheme.setAccent(color, widget.bridge.saveSettings);
+              },
               child: AnimatedScale(
                 scale: selected ? 1.08 : 1,
                 duration: const Duration(milliseconds: 190),
