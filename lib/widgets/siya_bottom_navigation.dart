@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../theme.dart';
 
 /// Centralized design and labels for Siya AI's bottom navigation.
 /// Edit this file to change button names, icons, colors, sizes, or dock styling.
@@ -26,7 +27,7 @@ class SiyaBottomNavigation extends StatelessWidget {
     required this.onMic,
     required this.onTools,
     required this.onSettings,
-    this.primaryColor = const Color(0xFFE6004C),
+    this.primaryColor,
     this.homeActive = true,
     this.settingsActive = false,
   });
@@ -39,12 +40,13 @@ class SiyaBottomNavigation extends StatelessWidget {
   final VoidCallback onMic;
   final VoidCallback onTools;
   final VoidCallback onSettings;
-  final Color primaryColor;
+  final Color? primaryColor;
   final bool homeActive;
   final bool settingsActive;
 
   @override
   Widget build(BuildContext context) {
+    final accent = primaryColor ?? SiyaTheme.accent.value;
     final barHeight = (width * .185).clamp(74.0, 108.0);
     final micSize = (width * .225).clamp(88.0, 126.0);
     return SizedBox(
@@ -64,16 +66,16 @@ class SiyaBottomNavigation extends StatelessWidget {
                 borderRadius: BorderRadius.circular(barHeight * .46),
                 border: Border.all(color: const Color(0x99FFFFFF), width: 1.6),
                 boxShadow: const [
-                  BoxShadow(color: Color(0x33FF3F86), blurRadius: 24, spreadRadius: 1),
+                  BoxShadow(color: accent.withOpacity(.20), blurRadius: 24, spreadRadius: 1),
                   BoxShadow(color: Color(0xCCFFFFFF), blurRadius: 8, spreadRadius: -2),
                 ],
               ),
               child: Row(children: [
-                Expanded(child: _SiyaNavItem(icon: Icons.home_rounded, label: SiyaNavLabels.home, active: homeActive, primaryColor: primaryColor, onTap: onHome)),
-                Expanded(child: _SiyaNavItem(icon: Icons.chat_bubble_outline_rounded, label: SiyaNavLabels.chat, primaryColor: primaryColor, onTap: onChat)),
+                Expanded(child: _SiyaNavItem(icon: Icons.home_rounded, label: SiyaNavLabels.home, active: homeActive, primaryColor: accent, onTap: onHome)),
+                Expanded(child: _SiyaNavItem(icon: Icons.chat_bubble_outline_rounded, label: SiyaNavLabels.chat, primaryColor: accent, onTap: onChat)),
                 SizedBox(width: micSize * .86),
-                Expanded(child: _SiyaNavItem(icon: Icons.bolt_rounded, label: SiyaNavLabels.tools, primaryColor: primaryColor, onTap: onTools)),
-                Expanded(child: _SiyaNavItem(icon: Icons.settings_rounded, label: SiyaNavLabels.settings, active: settingsActive, primaryColor: primaryColor, onTap: onSettings)),
+                Expanded(child: _SiyaNavItem(icon: Icons.bolt_rounded, label: SiyaNavLabels.tools, primaryColor: accent, onTap: onTools)),
+                Expanded(child: _SiyaNavItem(icon: Icons.settings_rounded, label: SiyaNavLabels.settings, active: settingsActive, primaryColor: accent, onTap: onSettings)),
               ]),
             ),
           ),
@@ -102,7 +104,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: const [
-                          BoxShadow(color: Color(0x99FF1B67), blurRadius: 25, spreadRadius: 3),
+                          BoxShadow(color: accent.withOpacity(.60), blurRadius: 25, spreadRadius: 3),
                           BoxShadow(color: Color(0x66FF84B4), blurRadius: 12, spreadRadius: 1),
                         ],
                       ),
@@ -113,8 +115,8 @@ class SiyaBottomNavigation extends StatelessWidget {
                             colors: [Color(0xFF020207), Color(0xFF1B0009), Color(0xFFE80046)],
                             stops: [0, .72, 1],
                           ),
-                          border: Border.all(color: const Color(0xFFFF5C9B), width: 2.4),
-                          boxShadow: const [BoxShadow(color: Color(0x77FF003C), blurRadius: 18, spreadRadius: 2)],
+                          border: Border.all(color: accent, width: 2.4),
+                          boxShadow: const [BoxShadow(color: accent.withOpacity(.48), blurRadius: 18, spreadRadius: 2)],
                         ),
                         child: Icon(
                           active ? Icons.graphic_eq_rounded : Icons.mic_rounded,
