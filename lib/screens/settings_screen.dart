@@ -11,46 +11,166 @@ import 'profile_screen.dart';
 import 'wallpaper_screen.dart';
 
 class _SettingsSilkBackground extends StatelessWidget {
-  const _SettingsSilkBackground();
+  const _SettingsSilkBackground({super.key, required this.primaryThemeColor});
+  final Color primaryThemeColor;
 
   @override
-  Widget build(BuildContext context) => const DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF7FB), Color(0xFFFFFFFF), Color(0xFFFFEAF4), Color(0xFFFFF8FC)],
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFF7FB),
+                Colors.white,
+                Color(0xFFFFEAF4),
+                Color(0xFFFFF8FC),
+              ],
+              stops: [0, .40, .78, 1],
+            ),
+          ),
+          child: CustomPaint(
+            painter: _SettingsSilkPainter(primaryThemeColor),
+            size: Size.infinite,
           ),
         ),
-        child: CustomPaint(painter: _SettingsSilkPainter(), size: Size.infinite),
       );
 }
 
 class _SettingsSilkPainter extends CustomPainter {
-  const _SettingsSilkPainter();
+  const _SettingsSilkPainter(this.accent);
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    for (var i = 0; i < 6; i++) {
-      final y = size.height * (0.06 + i * .17);
-      final path = Path()
-        ..moveTo(-size.width * .1, y)
-        ..cubicTo(size.width * .2, y - size.height * .12, size.width * .38, y + size.height * .13, size.width * .68, y - size.height * .01)
-        ..cubicTo(size.width * .87, y - size.height * .08, size.width * .97, y + size.height * .1, size.width * 1.1, y + size.height * .015)
-        ..lineTo(size.width * 1.1, y + size.height * .045)
-        ..cubicTo(size.width * .82, y + size.height * .18, size.width * .65, y + size.height * .055, size.width * .4, y + size.height * .12)
-        ..cubicTo(size.width * .16, y + size.height * .17, size.width * .04, y + size.height * .02, -size.width * .1, y + size.height * .07)
+    final glow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          accent.withOpacity(.13),
+          accent.withOpacity(.035),
+          Colors.transparent,
+        ],
+        stops: const [0, .55, 1],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * .83, size.height * .32),
+          radius: size.width * .76,
+        ),
+      );
+    canvas.drawRect(Offset.zero & size, glow);
+
+    final ribbonPaint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 7; i++) {
+      final y = size.height * (.035 + i * .158);
+      final ribbon = Path()
+        ..moveTo(-size.width * .12, y)
+        ..cubicTo(
+          size.width * .16, y - size.height * .15,
+          size.width * .36, y + size.height * .13,
+          size.width * .65, y - size.height * .025,
+        )
+        ..cubicTo(
+          size.width * .86, y - size.height * .10,
+          size.width * .97, y + size.height * .095,
+          size.width * 1.12, y + size.height * .012,
+        )
+        ..lineTo(size.width * 1.12, y + size.height * .045)
+        ..cubicTo(
+          size.width * .86, y + size.height * .17,
+          size.width * .66, y + size.height * .055,
+          size.width * .40, y + size.height * .12,
+        )
+        ..cubicTo(
+          size.width * .16, y + size.height * .17,
+          size.width * .035, y + size.height * .025,
+          -size.width * .12, y + size.height * .065,
+        )
         ..close();
-      paint.shader = LinearGradient(
-        colors: [const Color(0x00FF4D91), Color(0x33FF70AC).withOpacity(i.isEven ? .52 : .28), const Color(0x11EAA7FF), const Color(0x00FF4D91)],
-      ).createShader(Rect.fromLTWH(0, y - size.height * .18, size.width, size.height * .36));
-      canvas.drawPath(path, paint);
+
+      ribbonPaint.shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withOpacity(.02),
+          accent.withOpacity(i.isEven ? .17 : .085),
+          const Color(0xFFFF6EB0).withOpacity(.075),
+          Colors.white.withOpacity(.02),
+        ],
+      ).createShader(
+        Rect.fromLTWH(0, y - size.height * .18, size.width, size.height * .36),
+      );
+      canvas.drawPath(ribbon, ribbonPaint);
+
+      final highlightPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = accent.withOpacity(.12);
+      final highlight = Path()
+        ..moveTo(-size.width * .08, y + size.height * .034)
+        ..cubicTo(
+          size.width * .20, y - size.height * .08,
+          size.width * .47, y + size.height * .19,
+          size.width * .76, y + size.height * .025,
+        )
+        ..cubicTo(
+          size.width * .90, y - size.height * .04,
+          size.width, y + size.height * .11,
+          size.width * 1.08, y + size.height * .05,
+        );
+      canvas.drawPath(highlight, highlightPaint);
+    }
+
+    const points = <Offset>[
+      Offset(.68, .04),
+      Offset(.78, .09),
+      Offset(.59, .15),
+      Offset(.92, .20),
+      Offset(.12, .34),
+      Offset(.88, .47),
+      Offset(.15, .64),
+      Offset(.80, .76),
+      Offset(.07, .91),
+      Offset(.94, .89),
+      Offset(.52, .96),
+    ];
+    for (var i = 0; i < points.length; i++) {
+      final point = Offset(size.width * points[i].dx, size.height * points[i].dy);
+      final radius = size.width * (i.isEven ? .0045 : .003);
+      canvas.drawCircle(
+        point,
+        radius * 3.5,
+        Paint()
+          ..color = accent.withOpacity(.10)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawCircle(
+        point,
+        radius,
+        Paint()..color = accent.withOpacity(.52),
+      );
+      if (i % 3 == 0) {
+        final sparkle = Path()
+          ..moveTo(point.dx, point.dy - radius * 3)
+          ..lineTo(point.dx + radius * .65, point.dy - radius * .65)
+          ..lineTo(point.dx + radius * 3, point.dy)
+          ..lineTo(point.dx + radius * .65, point.dy + radius * .65)
+          ..lineTo(point.dx, point.dy + radius * 3)
+          ..lineTo(point.dx - radius * .65, point.dy + radius * .65)
+          ..lineTo(point.dx - radius * 3, point.dy)
+          ..lineTo(point.dx - radius * .65, point.dy - radius * .65)
+          ..close();
+        canvas.drawPath(
+          sparkle,
+          Paint()..color = accent.withOpacity(.68),
+        );
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SettingsSilkPainter oldDelegate) =>
+      oldDelegate.accent != accent;
 }
 
 class _SettingsBottomBar extends StatelessWidget {
@@ -167,6 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   bool _allFiles = false;
   bool _loaded = false;
   bool _hideKeys = true;
+  Color _primaryThemeColor = const Color(0xFFFF2A6D);
 
   bool _accessibility = false;
   bool _admin = false;
@@ -239,7 +360,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings saved')),
     );
-    Navigator.of(context).pop();
   }
 
   Future<void> _grantPermissions() async {
@@ -263,7 +383,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       ),
       body: Stack(
         children: [
-          const Positioned.fill(child: _SettingsSilkBackground()),
+          Positioned.fill(
+            child: _SettingsSilkBackground(primaryThemeColor: _primaryThemeColor),
+          ),
           SafeArea(
           child: !_loaded
               ? const Center(child: CircularProgressIndicator(color: const Color(0xFFFF4D91)))
@@ -275,9 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                         children: [
                           _section('AI & Keys'),
-                          _card([
-                            _field(_apiKey, 'Gemini API Key', Icons.vpn_key_outlined, secret: true),
-                          ]),
+                          _keyCard(),
                           _card([
                             _action(Icons.tune, 'Features', 'Hey Siya, Browser, Screen on, Call detect, Awaaz focus', null, () async {
                               await Navigator.of(context).push(
@@ -308,18 +428,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             }),
                           ]),
                           _section('Personality'),
-                          _card([
-                            _chips(
-                              value: _personality,
-                              options: const {
-                                'gf': 'Friendly',
-                                'professional': 'Professional',
-                                'assistant': 'Assistant',
-                                'love': 'Love \u2764',
-                              },
-                              onChanged: (v) => setState(() => _personality = v),
-                            ),
-                          ]),
+                          _personalityGrid(),
+                          const SizedBox(height: 10),
+                          _section('Theme Color'),
+                          _themeColorPicker(),
                           _section('Access & Security'),
                           _card([
                             _action(
@@ -446,9 +558,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFE4EF),
+                  color: _primaryThemeColor.withOpacity(.12),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.6)),
+                  border: Border.all(color: _primaryThemeColor.withOpacity(0.6)),
                 ),
                 child: const Icon(Icons.psychology_alt_outlined, color: const Color(0xFFD6004C)),
               ),
@@ -475,19 +587,77 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         ),
       );
 
+  Widget _keyCard() => _card([
+        _field(_apiKey, 'Gemini API Key', Icons.vpn_key_rounded, secret: true),
+      ]);
+
   Widget _header(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(
           children: [
-            _iconBtn(Icons.arrow_back_ios_new_rounded, () => Navigator.of(context).pop()),
-            const SizedBox(width: 14),
-            ShaderMask(
-              blendMode: BlendMode.srcIn,
-              shaderCallback: (r) => const LinearGradient(
-                colors: [const Color(0xFFD6004C), const Color(0xFFFF0068)],
-              ).createShader(r),
-              child: const Text('Settings',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                _iconBtn(Icons.arrow_back_ios_new_rounded, () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                }),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (rect) => LinearGradient(
+                      colors: [_primaryThemeColor, const Color(0xFF8D003A)],
+                    ).createShader(rect),
+                    child: const Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 30,
+                        height: 1.05,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.9,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 1.4,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        _primaryThemeColor.withOpacity(.02),
+                        _primaryThemeColor,
+                        _primaryThemeColor.withOpacity(.08),
+                      ]),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 20,
+                    color: _primaryThemeColor,
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1.4,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        _primaryThemeColor.withOpacity(.08),
+                        _primaryThemeColor,
+                        _primaryThemeColor.withOpacity(.02),
+                      ]),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -499,32 +669,63 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFE4EF),
+            color: _primaryThemeColor.withOpacity(.12),
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.6)),
+            border: Border.all(color: _primaryThemeColor.withOpacity(0.6)),
           ),
           child: Icon(icon, color: const Color(0xFF2A1C25), size: 20),
         ),
       );
 
   Widget _section(String t) => Padding(
-        padding: const EdgeInsets.fromLTRB(6, 18, 0, 8),
-        child: Text(t.toUpperCase(),
-            style: TextStyle(
-              color: const Color(0xFFD6004C).withOpacity(0.85),
-              fontSize: 12,
-              letterSpacing: 1.6,
-              fontWeight: FontWeight.w700,
-            )),
+        padding: const EdgeInsets.fromLTRB(4, 15, 0, 8),
+        child: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: _primaryThemeColor, size: 17),
+            const SizedBox(width: 8),
+            Text(
+              t.toUpperCase(),
+              style: TextStyle(
+                color: _primaryThemeColor,
+                fontSize: 12,
+                letterSpacing: 1.65,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                height: 1.4,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [
+                    _primaryThemeColor.withOpacity(.8),
+                    _primaryThemeColor.withOpacity(.02),
+                  ]),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
 
   Widget _card(List<Widget> children) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xEFFFFFFF),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.18)),
-          boxShadow: [BoxShadow(color: const Color(0xFFFFB5D0).withOpacity(0.06), blurRadius: 18)],
+          color: Colors.white.withOpacity(.68),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.white.withOpacity(.96), width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: _primaryThemeColor.withOpacity(.09),
+              blurRadius: 22,
+              offset: const Offset(0, 7),
+            ),
+            BoxShadow(
+              color: _primaryThemeColor.withOpacity(.09),
+              blurRadius: 12,
+              spreadRadius: -5,
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -546,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: const Color(0xFF756A76)),
-        prefixIcon: Icon(icon, color: const Color(0xFFD6004C).withOpacity(0.8), size: 20),
+        prefixIcon: Icon(icon, color: _primaryThemeColor, size: 20),
         suffixIcon: secret
             ? IconButton(
                 icon: Icon(_hideKeys ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -558,52 +759,116 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         fillColor: const Color(0xFFFFF9FC),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: const Color(0xFFFF4D91).withOpacity(0.2)),
+          borderSide: BorderSide(color: _primaryThemeColor.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: const Color(0xFFFF4D91).withOpacity(0.2)),
+          borderSide: BorderSide(color: _primaryThemeColor.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: const Color(0xFFFF4D91), width: 1.4),
+          borderSide: BorderSide(color: _primaryThemeColor, width: 1.4),
         ),
       ),
     );
   }
 
-  Widget _chips({
-    required String value,
-    required Map<String, String> options,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: options.entries.map((e) {
-        final sel = e.key == value;
-        return GestureDetector(
-          onTap: () => onChanged(e.key),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: sel
-                  ? const LinearGradient(colors: [Color(0xFFFF4D91), const Color(0xFFFFB5D0)])
-                  : null,
-              color: sel ? null : const Color(0xFFFFF9FC),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFF4D91).withOpacity(sel ? 0 : 0.25)),
+  Widget _personalityGrid() {
+    const choices = <(String, String, IconData)>[
+      ('gf', 'Friendly', Icons.check_circle_rounded),
+      ('professional', 'Professional', Icons.work_outline_rounded),
+      ('assistant', 'Assistant', Icons.smart_toy_outlined),
+      ('love', 'Love ❤️', Icons.favorite_rounded),
+    ];
+    return _card([
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 10) / 2;
+          return Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: choices.map((choice) {
+              final selected = _personality == choice.$1;
+              return SizedBox(
+                width: itemWidth,
+                child: _PersonalityChip(
+                  title: choice.$2,
+                  icon: choice.$3,
+                  selected: selected,
+                  color: _primaryThemeColor,
+                  onTap: () async {
+                    setState(() => _personality = choice.$1);
+                    await widget.bridge.saveSettings({
+                      'personality_mode': choice.$1,
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    ]);
+  }
+
+  Widget _themeColorPicker() {
+    const colors = <Color>[
+      Color(0xFFFF2A6D),
+      Color(0xFFE91E63),
+      Color(0xFFFF6B35),
+      Color(0xFF8B5CF6),
+      Color(0xFF02A3FC),
+      Color(0xFF00A884),
+      Color(0xFF111827),
+      Color(0xFFCE2DDF),
+    ];
+    return _card([
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: colors.map((color) {
+          final selected = color.value == _primaryThemeColor.value;
+          return Semantics(
+            button: true,
+            label: 'Choose theme color',
+            child: GestureDetector(
+              onTap: () => setState(() => _primaryThemeColor = color),
+              child: AnimatedScale(
+                scale: selected ? 1.08 : 1,
+                duration: const Duration(milliseconds: 190),
+                curve: Curves.easeOutBack,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: selected ? 3 : 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(selected ? .38 : .15),
+                        blurRadius: selected ? 13 : 7,
+                      ),
+                    ],
+                  ),
+                  child: selected
+                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
+                      : null,
+                ),
+              ),
             ),
-            child: Text(e.value,
-                style: TextStyle(
-                  color: const Color(0xFF2A1C25),
-                  fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                )),
-          ),
-        );
-      }).toList(),
-    );
+          );
+        }).toList(),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Theme accent updates this screen immediately.',
+        style: TextStyle(color: Color(0xFF756A76), fontSize: 12),
+      ),
+    ]);
   }
 
   Widget _switchRow(String title, String sub, bool v, ValueChanged<bool> on) => Row(
@@ -639,11 +904,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         decoration: BoxDecoration(
           color: const Color(0xFFFFF9FC),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFFF4D91).withOpacity(0.12)),
+          border: Border.all(color: _primaryThemeColor.withOpacity(0.12)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFD6004C), size: 22),
+            Icon(icon, color: _primaryThemeColor, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -669,12 +934,107 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           height: 54,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFFF4D91), Color(0xFFFFB5D0)]),
+            gradient: LinearGradient(colors: [_primaryThemeColor, Color.lerp(_primaryThemeColor, const Color(0xFFFF00A8), .75)!]),
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [BoxShadow(color: const Color(0xFFFF4D91).withOpacity(0.35), blurRadius: 16)],
+            boxShadow: [BoxShadow(color: _primaryThemeColor.withOpacity(0.35), blurRadius: 16)],
           ),
           child: const Text('Save',
-              style: TextStyle(color: const Color(0xFF2A1C25), fontSize: 17, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+        ),
+      );
+}
+
+class _PersonalityChip extends StatefulWidget {
+  const _PersonalityChip({
+    required this.title,
+    required this.icon,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+  final String title;
+  final IconData icon;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_PersonalityChip> createState() => _PersonalityChipState();
+}
+
+class _PersonalityChipState extends State<_PersonalityChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? .96 : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            height: 58,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              gradient: widget.selected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        widget.color,
+                        Color.lerp(widget.color, const Color(0xFFE600A9), .74)!,
+                      ],
+                    )
+                  : null,
+              color: widget.selected ? null : Colors.white.withOpacity(.66),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: widget.selected ? Colors.white : widget.color.withOpacity(.23),
+                width: widget.selected ? 1.6 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withOpacity(widget.selected ? .30 : .08),
+                  blurRadius: widget.selected ? 17 : 9,
+                  offset: const Offset(0, 4),
+                ),
+                if (widget.selected)
+                  const BoxShadow(
+                    color: Color(0x55FFFFFF),
+                    blurRadius: 6,
+                    offset: Offset(0, -2),
+                  ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 21,
+                  color: widget.selected ? Colors.white : widget.color,
+                ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: widget.selected ? Colors.white : const Color(0xFF2A1C25),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 }
