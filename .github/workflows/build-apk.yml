@@ -7,17 +7,24 @@ on:
 
 permissions:
   contents: write
-  actions: read
-
-concurrency:
-  group: siya-ai-apk-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
-  build:
+  diagnose-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      - name: Print runner startup diagnostics
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "Workflow runner started"
+          date -u
+          uname -a
+          id
+          df -h
+          echo "Event: ${{ github.event_name }}"
+          echo "Commit: ${{ github.sha }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
