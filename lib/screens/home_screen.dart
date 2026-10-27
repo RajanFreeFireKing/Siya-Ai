@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/dot_ring.dart';
 import '../widgets/wallpaper_layer.dart';
 import '../widgets/wave_painter.dart';
+import '../widgets/siya_bottom_navigation.dart';
 import 'settings_screen.dart';
 
 /// Siya AI home screen inspired by the supplied pink-glass reference.
@@ -289,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen>
                         padding: EdgeInsets.fromLTRB(w * .035, 0, w * .035, math.max(8, safeBottom * .3)),
                         child: FadeTransition(
                           opacity: _iv(.25, 1, Curves.easeOut),
-                          child: _ReferenceBottomBar(
+                          child: SiyaBottomNavigation(
                             width: w * .93,
                             time: _ctrl,
                             active: widget.bridge.isActive,
@@ -299,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen>
                               behavior: SnackBarBehavior.floating,
                             )),
                             onMic: widget.bridge.toggleMic,
-                            onFeatures: () => Navigator.of(context).pushNamed('/features'),
+                            onTools: () => Navigator.of(context).pushNamed('/features'),
                             onSettings: _openSettings,
                           ),
                         ),
@@ -669,149 +670,3 @@ class _MessageBox extends StatelessWidget {
       );
 }
 
-class _ReferenceBottomBar extends StatelessWidget {
-  const _ReferenceBottomBar({
-    required this.width, required this.time, required this.active, required this.onHome,
-    required this.onChat, required this.onMic, required this.onFeatures, required this.onSettings,
-  });
-  final double width;
-  final Animation<double> time;
-  final bool active;
-  final VoidCallback onHome;
-  final VoidCallback onChat;
-  final VoidCallback onMic;
-  final VoidCallback onFeatures;
-  final VoidCallback onSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    final barHeight = (width * .185).clamp(74.0, 108.0);
-    final micSize = (width * .225).clamp(88.0, 126.0);
-    return SizedBox(
-      height: barHeight + micSize * .46,
-      child: Stack(
-        clipBehavior: Clip.none, alignment: Alignment.bottomCenter,
-        children: [
-          Positioned(
-            left: 0, right: 0, bottom: micSize * .17, height: barHeight,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xDDFCE8F2),
-                borderRadius: BorderRadius.circular(barHeight * .46),
-                border: Border.all(color: const Color(0x99FFFFFF), width: 1.6),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x33FF3F86), blurRadius: 24, spreadRadius: 1),
-                  BoxShadow(color: Color(0xCCFFFFFF), blurRadius: 8, spreadRadius: -2),
-                ],
-              ),
-              child: Row(children: [
-                Expanded(child: _ReferenceNavItem(icon: Icons.home_rounded, label: 'Home', active: true, onTap: onHome)),
-                Expanded(child: _ReferenceNavItem(icon: Icons.chat_bubble_outline_rounded, label: 'Chat', onTap: onChat)),
-                SizedBox(width: micSize * .86),
-                Expanded(child: _ReferenceNavItem(icon: Icons.bolt_rounded, label: 'Tools', onTap: onFeatures)),
-                Expanded(child: _ReferenceNavItem(icon: Icons.settings_rounded, label: 'Settings', onTap: onSettings)),
-              ]),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            child: AnimatedBuilder(
-              animation: time,
-              builder: (context, child) => Transform.scale(scale: 1 + .018 * math.sin(time.value * math.pi * 2), child: child),
-              child: Semantics(
-                button: true, label: active ? 'Stop Siya AI voice' : 'Start Siya AI voice',
-                child: Material(
-                  color: const Color(0xFFFFF7FB), shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(), onTap: onMic,
-                    child: Container(
-                      width: micSize, height: micSize, padding: EdgeInsets.all(micSize * .07),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
-                          BoxShadow(color: Color(0x99FF1B67), blurRadius: 25, spreadRadius: 3),
-                          BoxShadow(color: Color(0x66FF84B4), blurRadius: 12, spreadRadius: 1),
-                        ],
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(colors: [Color(0xFF020207), Color(0xFF1B0009), Color(0xFFE80046)], stops: [0, .72, 1]),
-                          border: Border.all(color: const Color(0xFFFF5C9B), width: 2.4),
-                          boxShadow: const [BoxShadow(color: Color(0x77FF003C), blurRadius: 18, spreadRadius: 2)],
-                        ),
-                        child: Icon(active ? Icons.graphic_eq_rounded : Icons.mic_rounded,
-                          color: Colors.white, size: micSize * .37,
-                          shadows: const [Shadow(color: Color(0xFFFF1758), blurRadius: 14)]),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReferenceNavItem extends StatelessWidget {
-  const _ReferenceNavItem({required this.icon, required this.label, required this.onTap, this.active = false});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(28),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: active ? Colors.white : const Color(0x22FF2B6C),
-                    border: Border.all(
-                      color: active ? const Color(0xFFFFA5C5) : const Color(0x44FFFFFF),
-                      width: active ? 1.4 : 1,
-                    ),
-                    boxShadow: active
-                        ? const [BoxShadow(color: Color(0x33FF205C), blurRadius: 10, spreadRadius: 0)]
-                        : const [],
-                  ),
-                  child: Icon(icon, size: 25, color: const Color(0xFFD60048)),
-                ),
-                const SizedBox(height: 2),
-                Text(label, maxLines: 1, style: TextStyle(
-                  fontSize: 10,
-                  height: 1.05,
-                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                  color: active ? const Color(0xFFD60048) : const Color(0xFF78606D),
-                )),
-                if (active)
-                  Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    width: 18,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6004C),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      );
-}
