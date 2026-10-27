@@ -171,12 +171,12 @@ class _HomeScreenState extends State<HomeScreen>
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Color(0xFFFFF7FB),
+        systemNavigationBarColor: Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.045), const Color(0xFFFFF7FB)),
         systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFF7FB),
+        backgroundColor: Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.045), const Color(0xFFFFF7FB)),
         resizeToAvoidBottomInset: true,
         body: LayoutBuilder(builder: (context, constraints) {
           final w = constraints.maxWidth;
@@ -189,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              const _ReferenceBackground(),
+              ColorFiltered(colorFilter: ColorFilter.mode(Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.16), Colors.white), BlendMode.modulate), child: const _ReferenceBackground()),
               Positioned.fill(
                 child: IgnorePointer(
                   child: WallpaperLayer(type: _wpType, path: _wpPath, sound: _wpSound, dim: _wpDim),
@@ -294,6 +294,7 @@ class _HomeScreenState extends State<HomeScreen>
                             width: w * .93,
                             time: _ctrl,
                             active: widget.bridge.isActive,
+                            primaryColor: SiyaTheme.accent.value,
                             onHome: () {},
                             onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                               content: Text('Voice mode ke liye center mic tap karein.'),
@@ -411,42 +412,16 @@ class _SilkWavePainter extends CustomPainter {
 class _BrandTitle extends StatelessWidget {
   const _BrandTitle({required this.width});
   final double width;
-
   @override
-  Widget build(BuildContext context) => FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Text('SIYA', style: TextStyle(
-                fontSize: (width * .083).clamp(38.0, 56.0),
-                height: .96, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic,
-                letterSpacing: -2, color: const Color(0xFF08070D),
-                shadows: const [Shadow(color: Color(0x44FF649B), blurRadius: 8)],
-              )),
-              const SizedBox(width: 7),
-              ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF003D), Color(0xFFE60077)]).createShader(r),
-                child: Text('AI', style: TextStyle(
-                  fontSize: (width * .092).clamp(42.0, 62.0), height: .92,
-                  fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, letterSpacing: -1.8,
-                )),
-              ),
-            ]),
-            SizedBox(height: width * .012),
-            Container(
-              height: 3, width: width * .30,
-              decoration: const BoxDecoration(gradient: LinearGradient(
-                colors: [Color(0xFFED0044), Color(0xFFFF4E9C), Colors.transparent],
-              )),
-            ),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) => SizedBox(
+    width: width * .39, height: width * .16,
+    child: ColorFiltered(
+      colorFilter: ColorFilter.mode(SiyaTheme.accent.value, BlendMode.srcATop),
+      child: Image.asset('android/app/Image/Ai name.png', fit: BoxFit.contain, alignment: Alignment.centerLeft,
+        errorBuilder: (_, __, ___) => const Text('SIYA AI', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic)),
+      ),
+    ),
+  );
 }
 
 class _NotificationButton extends StatelessWidget {
@@ -484,48 +459,21 @@ class _CoreLogo extends StatelessWidget {
   final Animation<double> time;
   final ValueListenable<double> level;
   final bool active;
-
   @override
-  Widget build(BuildContext context) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle, color: const Color(0xFF080207),
-              border: Border.all(color: const Color(0xFFFF5B99), width: 2.5),
-              boxShadow: const [
-                BoxShadow(color: Color(0x44FF004C), blurRadius: 20, spreadRadius: 2),
-                BoxShadow(color: Color(0x22FF6AB6), blurRadius: 7, spreadRadius: 0),
-              ],
-            ),
-          ),
-          Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
-          Positioned(
-            top: size * .19, left: size * .16, right: size * .16, bottom: size * .22,
-            child: CustomPaint(painter: _SiyaGlyphPainter(time: time, active: active)),
-          ),
-          Positioned(
-            bottom: size * .19,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('SIYA', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w800, letterSpacing: -1)),
-                const SizedBox(width: 5),
-                ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF174F), Color(0xFFFF00A0)]).createShader(r),
-                  child: Text('AI', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w900, letterSpacing: -.8)),
-                ),
-              ]),
-            ),
-          ),
-          Positioned(bottom: size * .135, child: Container(
-            width: size * .30, height: 1.5,
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, Color(0xFFFF1B67), Colors.transparent])),
-          )),
-          Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
-        ],
-      );
+  Widget build(BuildContext context) {
+    final accent = SiyaTheme.accent.value;
+    return Stack(alignment: Alignment.center, children: [
+      Container(decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF080207),
+        border: Border.all(color: accent, width: 2.5),
+        boxShadow: [BoxShadow(color: accent.withOpacity(.28), blurRadius: 20, spreadRadius: 2), BoxShadow(color: accent.withOpacity(.14), blurRadius: 7)])),
+      Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
+      Padding(padding: EdgeInsets.all(size * .16),
+        child: ColorFiltered(colorFilter: ColorFilter.mode(accent, BlendMode.srcATop),
+          child: Image.asset('android/app/Image/ home page program.png', fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => CustomPaint(painter: _SiyaGlyphPainter(time: time, active: active))))),
+      Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
+    ]);
+  }
 }
 
 class _SiyaGlyphPainter extends CustomPainter {
