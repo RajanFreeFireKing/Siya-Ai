@@ -895,33 +895,74 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   /// ok: true = green, false = red, null = neutral.
   Widget _action(IconData icon, String title, String sub, bool? ok, VoidCallback onTap) {
-    final color = ok == null ? const Color(0xFF8B7180) : (ok ? SiyaColors.ok : SiyaColors.bad);
+    final statusColor = ok == null ? const Color(0xFF8B7180) : (ok ? SiyaColors.ok : SiyaColors.bad);
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF9FC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _primaryThemeColor.withOpacity(0.12)),
+          color: Colors.white.withOpacity(.54),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _primaryThemeColor.withOpacity(.12)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: _primaryThemeColor, size: 22),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: _primaryThemeColor.withOpacity(.12),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.white, width: 1.3),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryThemeColor.withOpacity(.10),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: _primaryThemeColor, size: 24),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(sub, style: TextStyle(color: color, fontSize: 12)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF2A1C25),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15.5,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    sub,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: ok == null ? const Color(0xFF756A76) : statusColor,
+                      fontSize: 12.5,
+                      height: 1.15,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
+            const SizedBox(width: 8),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(.55),
+                shape: BoxShape.circle,
+                border: Border.all(color: _primaryThemeColor.withOpacity(.13)),
+              ),
+              child: Icon(Icons.chevron_right_rounded, color: _primaryThemeColor, size: 22),
+            ),
           ],
         ),
       ),
