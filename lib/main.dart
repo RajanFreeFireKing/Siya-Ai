@@ -31,6 +31,12 @@ class _SiyaAppState extends State<SiyaApp> {
   final SiyaBridge _bridge = SiyaBridge();
 
   @override
+  void initState() {
+    super.initState();
+    SiyaTheme.loadFromSettings(_bridge.getSettings);
+  }
+
+  @override
   void dispose() {
     _bridge.dispose();
     super.dispose();
@@ -38,24 +44,23 @@ class _SiyaAppState extends State<SiyaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ValueListenableBuilder<Color>(
+      valueListenable: SiyaTheme.accent,
+      builder: (context, accent, _) => MaterialApp(
       title: 'Siya Ai',
       debugShowCheckedModeBanner: false,
       // Baaki screens dark hi hain; sirf Home screen naye light design ka hai.
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: SiyaColors.bg,
-        colorScheme: const ColorScheme.dark(
-          primary: SiyaColors.cyan,
-          secondary: SiyaColors.purple,
-          surface: SiyaColors.card,
-        ),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Color.alphaBlend(accent.withOpacity(.045), const Color(0xFFFFF7FB)),
+        colorScheme: ColorScheme.light(primary: accent, secondary: accent, surface: Color.alphaBlend(accent.withOpacity(.07), Colors.white)),
         useMaterial3: true,
       ),
       routes: {
         '/features': (_) => FeaturesScreen(bridge: _bridge),
       },
       home: HomeScreen(bridge: _bridge),
+      ),
     );
   }
 }
