@@ -288,6 +288,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       backgroundColor: Color.alphaBlend(_primaryThemeColor.withOpacity(.045), const Color(0xFFFFF5FA)),
       body: Stack(
         children: [
+          Positioned.fill(
+            child: _SettingsSilkBackground(primaryThemeColor: _primaryThemeColor),
+          ),
           Positioned(
             left: 0,
             right: 0,
@@ -314,9 +317,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 ),
               ),
             ),
-          ),
-          Positioned.fill(
-            child: _SettingsSilkBackground(primaryThemeColor: _primaryThemeColor),
           ),
           SafeArea(
             bottom: false,
