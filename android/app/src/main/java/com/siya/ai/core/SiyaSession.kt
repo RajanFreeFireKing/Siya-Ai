@@ -90,6 +90,7 @@ class SiyaSession(
         focus = VoiceFocus(prefs.getString("voice_focus", "normal").orEmpty().ifBlank { "normal" })
         audioOut = LivePlayer(AudioRouter.btActive).also { it.start() }
         setState(State.CONNECTING)
+        startHeartbeat()
         connect()
         return true
     }
@@ -98,6 +99,7 @@ class SiyaSession(
         if (!active && state == State.IDLE) return
         active = false
         if (current === this) current = null
+        stopHeartbeat()
         cancelSilenceTimers()
         endRunnable?.let { main.removeCallbacks(it) }
         flushUser(); flushSiya()
@@ -229,21 +231,41 @@ class SiyaSession(
         }
     }
 
+    private var heartbeatRunnable: Runnable? = null
+    private fun startHeartbeat() {
+        stopHeartbeat()
+        heartbeatRunnable = object : Runnable {
+            override fun run() {
+                if (!active) return
+                try {
+                    // Periodic keepalive so connection stays persistently online
+                    if (state == State.LISTENING && mic != null && !micMuted) {
+                        client?.sendAudio(SILENCE, 320)
+                    }
+                } catch (_: Exception) {}
+                main.postDelayed(this, 25000)
+            }
+        }
+        main.postDelayed(heartbeatRunnable!!, 25000)
+    }
+
+    private fun stopHeartbeat() {
+        heartbeatRunnable?.let { main.removeCallbacks(it) }
+        heartbeatRunnable = null
+    }
+
     private var silencePokeRunnable: Runnable? = null
-    private var silenceSleepRunnable: Runnable? = null
 
     private fun cancelSilenceTimers() {
         silencePokeRunnable?.let { main.removeCallbacks(it) }
         silencePokeRunnable = null
-        silenceSleepRunnable?.let { main.removeCallbacks(it) }
-        silenceSleepRunnable = null
     }
 
     private fun startSilenceTimers() {
         cancelSilenceTimers()
         if (!active || micMuted || paused) return
 
-        // 5s silence: cute poke
+        // 18s continuous silence: subtle poke without disconnecting
         val poke = Runnable {
             if (!active || state != State.LISTENING || audioOut?.isPlaying == true) return@Runnable
             val pokeMsg = "Kahan kho gaye? Sun rahe ho na?"
@@ -251,24 +273,40 @@ class SiyaSession(
             com.siya.ai.utils.FemaleHindiTts(ctx).speak(pokeMsg, "poke-silence")
         }
         silencePokeRunnable = poke
-        main.postDelayed(poke, 5000)
-
-        // 10s silence: polite reminder and safely enter sleep mode
-        val sleep = Runnable {
-            if (!active || state != State.LISTENING) return@Runnable
-            val sleepMsg = "Lagta hai aap thode busy ho gaye, jab baat karni ho 'Hey Siya' bol dena!"
-            emit(mapOf("type" to "caption", "who" to "siya", "text" to sleepMsg))
-            com.siya.ai.utils.FemaleHindiTts(ctx).speak(sleepMsg, "sleep-silence")
-            main.postDelayed({
-                if (active) stop()
-            }, 3000)
-        }
-        silenceSleepRunnable = sleep
-        main.postDelayed(sleep, 10000)
+        main.postDelayed(poke, 18000)
     }
 
     override fun onUserText(text: String) {
         cancelSilenceTimers()
+        val lower = text.lowercase().trim()
+
+        // Respect silence: immediate mute/shutdown on "chup", "shaant", "stop", "quiet"
+        if (lower.contains("chup") || lower.contains("shaant") || lower.contains("shant") ||
+            lower.contains("quiet") || lower.contains("bas karo") || lower.contains("chup raho") ||
+            (lower.contains("stop") && !lower.contains("non-stop"))) {
+            audioOut?.flush()
+            com.siya.ai.utils.FemaleHindiTts.stopActive()
+            main.post {
+                flushUser()
+                flushSiya()
+                if (active) setState(State.LISTENING)
+                emit(mapOf("type" to "caption", "who" to "siya", "text" to "🤫 (Shaant)"))
+            }
+            return
+        }
+
+        // Explicit exit command
+        if (lower.contains("band karo") || lower.contains("alvida") || lower.contains("bye bye")) {
+            audioOut?.flush()
+            com.siya.ai.utils.FemaleHindiTts.stopActive()
+            main.post {
+                emit(mapOf("type" to "caption", "who" to "siya", "text" to "Theek hai, jab zaroorat ho awaaz de dena!"))
+                com.siya.ai.utils.FemaleHindiTts(ctx).speak("Theek hai, jab zaroorat ho awaaz de dena!", "bye")
+                main.postDelayed({ if (active) stop() }, 2000)
+            }
+            return
+        }
+
         try { HabitTracker.onUserText(ctx, text) } catch (_: Exception) {}
         val full = synchronized(userBuf) { userBuf.append(text); userBuf.toString().trim() }
         emit(mapOf("type" to "caption", "who" to "user", "text" to full.takeLast(120)))

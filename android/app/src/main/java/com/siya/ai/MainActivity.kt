@@ -403,10 +403,15 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun toggleMic() {
-        if (!SiyaService.hasMic(this)) { requestAllPermissions(null); return }
-        val svc = SiyaService.instance
-        if (svc != null && svc.isSessionActive()) SiyaService.send(this, SiyaService.ACTION_STOP)
-        else SiyaService.send(this, SiyaService.ACTION_START, "app")
+        Thread {
+            if (!SiyaService.hasMic(this)) {
+                ui.post { requestAllPermissions(null) }
+                return@Thread
+            }
+            val svc = SiyaService.instance
+            if (svc != null && svc.isSessionActive()) SiyaService.send(this, SiyaService.ACTION_STOP)
+            else SiyaService.send(this, SiyaService.ACTION_START, "app")
+        }.start()
     }
 
     // ── Permissions ─────────────────────────────────────────────────────

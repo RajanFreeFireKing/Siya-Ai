@@ -184,11 +184,7 @@ class _PowerScreenState extends State<PowerScreen> {
                         title: 'AI Browser',
                         subtitle: 'In-app automated web viewer aur live web search',
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AiBrowserScreen(bridge: widget.bridge),
-                            ),
-                          );
+                          widget.bridge.openBrowser('https://www.google.com');
                         },
                       ),
                       const SizedBox(height: 14),
@@ -396,13 +392,17 @@ class _PowerScreenState extends State<PowerScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Color(0xFF2A1C25),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15.5,
-                          letterSpacing: -0.2,
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF2A1C25),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15.5,
+                            letterSpacing: -0.2,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -414,6 +414,8 @@ class _PowerScreenState extends State<PowerScreen> {
                         ),
                         child: Text(
                           badge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: _primaryThemeColor,
                             fontWeight: FontWeight.w800,

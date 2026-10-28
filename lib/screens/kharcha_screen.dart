@@ -211,7 +211,8 @@ class _KharchaScreenState extends State<KharchaScreen> {
                       else if (entries.isEmpty)
                         _buildEmptyState()
                       else
-                        ...entries.map((entry) => _buildTransactionTile(entry as Map)),
+                        for (final entry in entries)
+                          if (entry is Map) _buildTransactionTile(entry),
                     ],
                   ),
                 ),
@@ -368,11 +369,17 @@ class _KharchaScreenState extends State<KharchaScreen> {
   }
 
   Widget _buildTransactionTile(Map entry) {
-    final sender = (entry['sender'] as String?) ?? 'Bank SMS';
-    final amount = ((entry['amount'] as num?) ?? 0).toDouble();
-    final isDebit = (entry['isDebit'] as bool?) ?? true;
-    final body = (entry['body'] as String?) ?? '';
-    final date = (entry['date'] as String?) ?? '';
+    final sender = (entry['sender']?.toString()) ?? 'Bank SMS';
+    double amount = 0.0;
+    final rawAmount = entry['amount'];
+    if (rawAmount is num) {
+      amount = rawAmount.toDouble();
+    } else if (rawAmount != null) {
+      amount = double.tryParse(rawAmount.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    }
+    final isDebit = entry['isDebit'] != false;
+    final body = (entry['body']?.toString()) ?? '';
+    final date = (entry['date']?.toString()) ?? '';
 
     final color = isDebit ? const Color(0xFFE53935) : const Color(0xFF2E7D32);
     final sign = isDebit ? '-' : '+';

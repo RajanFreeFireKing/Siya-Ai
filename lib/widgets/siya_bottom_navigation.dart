@@ -212,7 +212,11 @@ class SiyaBottomNavigation extends StatelessWidget {
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
-                          onTap: onMic,
+                          onTap: () {
+                            Future.microtask(() async {
+                              await onMic();
+                            });
+                          },
                           child: Container(
                             width: micSize,
                             height: micSize,
@@ -223,9 +227,9 @@ class SiyaBottomNavigation extends StatelessWidget {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Color.lerp(primaryColor, Colors.white, 0.32)!,
+                                  Color.lerp(primaryColor, Colors.white, 0.45)!,
                                   primaryColor,
-                                  Color.lerp(primaryColor, Colors.black, 0.25)!,
+                                  Color.lerp(primaryColor, const Color(0xFF881254), 0.3)!,
                                 ],
                               ),
                               boxShadow: [
@@ -245,9 +249,17 @@ class SiyaBottomNavigation extends StatelessWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFF0D0208),
+                                gradient: RadialGradient(
+                                  center: const Alignment(-0.25, -0.25),
+                                  radius: 0.95,
+                                  colors: [
+                                    Color.lerp(primaryColor, Colors.white, 0.42)!,
+                                    primaryColor.withOpacity(0.95),
+                                    Color.lerp(primaryColor, const Color(0xFF650B3E), 0.4)!,
+                                  ],
+                                ),
                                 border: Border.all(
-                                  color: Color.lerp(primaryColor, Colors.white, 0.4)!,
+                                  color: Color.lerp(primaryColor, Colors.white, 0.55)!,
                                   width: 2.2,
                                 ),
                                 boxShadow: [

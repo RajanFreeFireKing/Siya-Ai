@@ -13,7 +13,10 @@ class FemaleHindiTts(
     @Volatile private var ready = false
     private var engine: TextToSpeech? = null
 
-    init { engine = TextToSpeech(context.applicationContext, this) }
+    init {
+        activeInstance = this
+        engine = TextToSpeech(context.applicationContext, this)
+    }
 
     override fun onInit(status: Int) {
         val tts = engine
@@ -43,6 +46,12 @@ class FemaleHindiTts(
     }
 
     companion object {
+        @Volatile var activeInstance: FemaleHindiTts? = null
+
+        fun stopActive() {
+            try { activeInstance?.stop() } catch (_: Exception) {}
+        }
+
         fun sanitize(raw: String): String {
             var s = raw.replace(Regex("(?i)\\b(ajay)\\b"), "")
             s = s.replace(Regex("(?i)\\[/?inst\\]"), "")

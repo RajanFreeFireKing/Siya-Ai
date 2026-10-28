@@ -31,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen>
   final FocusNode _messageFocus = FocusNode();
 
   int _activeTab = 0; // 0: Home, 1: Chat, 2: Tools (Features), 3: Settings
+  bool _revealed = false;
 
   String _wpType = 'none';
   String _wpPath = '';
@@ -64,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen>
     widget.bridge.addListener(_onBridgeChanged);
     widget.bridge.error.addListener(_onError);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) setState(() => _revealed = true);
       await widget.bridge.init();
       _loadWallpaper();
       try {
@@ -175,71 +177,79 @@ class _HomeScreenState extends State<HomeScreen>
           child: Scaffold(
             backgroundColor: Color.alphaBlend(accent.withOpacity(.045), const Color(0xFFFFF7FB)),
             resizeToAvoidBottomInset: false,
-            body: LayoutBuilder(builder: (context, constraints) {
-              final w = constraints.maxWidth;
-              final h = constraints.maxHeight;
-              final safeBottom = MediaQuery.of(context).viewInsets.bottom > 0
-                  ? 10.0
-                  : MediaQuery.of(context).padding.bottom;
-              final compact = h < 730;
-              final ring = math.min(w * 0.55, h * (compact ? 0.245 : 0.275));
+            body: AnimatedOpacity(
+              opacity: _revealed ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+              child: Transform.scale(
+                scale: _revealed ? 1.0 : 0.94,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final w = constraints.maxWidth;
+                  final h = constraints.maxHeight;
+                  final safeBottom = MediaQuery.of(context).viewInsets.bottom > 0
+                      ? 10.0
+                      : MediaQuery.of(context).padding.bottom;
+                  final compact = h < 730;
+                  final ring = math.min(w * 0.55, h * (compact ? 0.245 : 0.275));
 
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Persistent body depending on active tab
-                  IndexedStack(
-                    index: _activeTab,
+                  return Stack(
+                    fit: StackFit.expand,
                     children: [
-                      // Tab 0: Home view
-                      _buildHomeView(w, h, compact, ring, safeBottom, accent),
+                      // Persistent body depending on active tab
+                      IndexedStack(
+                        index: _activeTab,
+                        children: [
+                          // Tab 0: Home view
+                          _buildHomeView(w, h, compact, ring, safeBottom, accent),
 
-                      // Tab 1: Chat view
-                      _buildChatView(w, h, compact, safeBottom, accent),
+                          // Tab 1: Chat view
+                          _buildChatView(w, h, compact, safeBottom, accent),
 
-                      // Tab 2: Tools (Power Tools) view (embedded with persistent dock)
-                      PowerScreen(
-                        bridge: widget.bridge,
-                        embedded: true,
-                        onBackToHome: () => setState(() => _activeTab = 0),
+                          // Tab 2: Tools (Power Tools) view (embedded with persistent dock)
+                          PowerScreen(
+                            bridge: widget.bridge,
+                            embedded: true,
+                            onBackToHome: () => setState(() => _activeTab = 0),
+                          ),
+
+                          // Tab 3: Settings view (embedded with persistent dock)
+                          SettingsScreen(
+                            bridge: widget.bridge,
+                            embedded: true,
+                            onBackToHome: () => setState(() => _activeTab = 0),
+                          ),
+                        ],
                       ),
 
-                      // Tab 3: Settings view (embedded with persistent dock)
-                      SettingsScreen(
-                        bridge: widget.bridge,
-                        embedded: true,
-                        onBackToHome: () => setState(() => _activeTab = 0),
+                      // Single Persistent Floating Bottom Navigation Dock
+                      Positioned(
+                        left: 14,
+                        right: 14,
+                        bottom: math.max(12.0, safeBottom + 6.0),
+                        child: FadeTransition(
+                          opacity: _iv(.25, 1, Curves.easeOut),
+                          child: SiyaBottomNavigation(
+                            width: w * .93,
+                            primaryColor: accent,
+                            time: _ctrl,
+                            active: widget.bridge.isActive,
+                            homeActive: _activeTab == 0,
+                            chatActive: _activeTab == 1,
+                            toolsActive: _activeTab == 2,
+                            settingsActive: _activeTab == 3,
+                            onHome: () => setState(() => _activeTab = 0),
+                            onChat: () => setState(() => _activeTab = 1),
+                            onMic: widget.bridge.toggleMic,
+                            onTools: () => setState(() => _activeTab = 2),
+                            onSettings: () => setState(() => _activeTab = 3),
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-
-                  // Single Persistent Floating Bottom Navigation Dock
-                  Positioned(
-                    left: 14,
-                    right: 14,
-                    bottom: math.max(12.0, safeBottom + 6.0),
-                    child: FadeTransition(
-                      opacity: _iv(.25, 1, Curves.easeOut),
-                      child: SiyaBottomNavigation(
-                        width: w * .93,
-                        primaryColor: accent,
-                        time: _ctrl,
-                        active: widget.bridge.isActive,
-                        homeActive: _activeTab == 0,
-                        chatActive: _activeTab == 1,
-                        toolsActive: _activeTab == 2,
-                        settingsActive: _activeTab == 3,
-                        onHome: () => setState(() => _activeTab = 0),
-                        onChat: () => setState(() => _activeTab = 1),
-                        onMic: widget.bridge.toggleMic,
-                        onTools: () => setState(() => _activeTab = 2),
-                        onSettings: () => setState(() => _activeTab = 3),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }),
+                  );
+                }),
+              ),
+            ),
           ),
         );
       },
@@ -952,7 +962,13 @@ class _BrandTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _VectorBrandTitle(width: width, accent: accent);
+    return Image.asset(
+      'assets/images/siya_ai_logo.png',
+      height: 32,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          _VectorBrandTitle(width: width, accent: accent),
+    );
   }
 }
 
