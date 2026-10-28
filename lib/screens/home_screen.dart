@@ -267,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _BrandTitle(width: w),
+                    _BrandTitle(width: w, accent: accent),
                     _NotificationButton(
                       accent: accent,
                       onTap: () {
@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _BrandTitle(width: w),
+                    _BrandTitle(width: w, accent: accent),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -702,51 +702,59 @@ class _OrbSideWavesPainter extends CustomPainter {
 }
 
 class _BrandTitle extends StatelessWidget {
-  const _BrandTitle({required this.width});
+  const _BrandTitle({required this.width, required this.accent});
   final double width;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/siya_logo.png',
-      height: 38,
-      fit: BoxFit.contain,
-      alignment: Alignment.centerLeft,
-      errorBuilder: (context, error, stackTrace) => _VectorBrandTitle(width: width),
-    );
+    return _VectorBrandTitle(width: width, accent: accent);
   }
 }
 
 class _VectorBrandTitle extends StatelessWidget {
-  const _VectorBrandTitle({required this.width});
+  const _VectorBrandTitle({required this.width, required this.accent});
   final double width;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) => FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Text('SIYA', style: TextStyle(
+            Text(
+              'SIYA',
+              style: TextStyle(
                 fontSize: (width * .083).clamp(36.0, 52.0),
-                height: .96, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic,
-                letterSpacing: -2, color: const Color(0xFF08070D),
-                shadows: const [Shadow(color: Color(0x44FF649B), blurRadius: 8)],
-              )),
-              const SizedBox(width: 7),
-              ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF1854), Color(0xFFFF0077)]).createShader(r),
-                child: Text('AI', style: TextStyle(
-                  fontSize: (width * .083).clamp(36.0, 52.0),
-                  height: .96, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic,
-                  letterSpacing: -1.5,
-                )),
+                height: .96,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                letterSpacing: -2,
+                color: const Color(0xFF08070D),
+                shadows: [
+                  Shadow(color: accent.withOpacity(0.30), blurRadius: 8),
+                ],
               ),
-            ]),
+            ),
+            const SizedBox(width: 7),
+            ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (r) => LinearGradient(
+                colors: [accent, Color.lerp(accent, Colors.white, 0.45)!],
+              ).createShader(r),
+              child: Text(
+                'AI',
+                style: TextStyle(
+                  fontSize: (width * .083).clamp(36.0, 52.0),
+                  height: .96,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: -1.5,
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -842,35 +850,18 @@ class _CoreLogo extends StatelessWidget {
                   ),
                 ),
 
-                // Center Hologram Orb
+                // Center Hologram Orb (100% Vector Code - Dynamic Theme Color)
                 Transform.scale(
                   scale: 1.0 + pulse,
-                  child: Container(
+                  child: SizedBox(
                     width: size,
                     height: size,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withOpacity(active ? 0.85 : 0.50),
-                          blurRadius: active ? 38 : 26,
-                          spreadRadius: active ? 5 : 2,
-                        ),
-                        BoxShadow(
-                          color: Color.lerp(accent, Colors.white, 0.6)!.withOpacity(0.35),
-                          blurRadius: 16,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Image.asset(
-                      'assets/images/siya_orb.png',
-                      width: size,
-                      height: size,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _VectorCoreLogo(size: size, time: time, level: level, active: active, accent: accent);
-                      },
+                    child: _VectorCoreLogo(
+                      size: size,
+                      time: time,
+                      level: level,
+                      active: active,
+                      accent: accent,
                     ),
                   ),
                 ),
@@ -881,6 +872,24 @@ class _CoreLogo extends StatelessWidget {
       },
     );
   }
+}
+
+void _drawSparkle(Canvas canvas, Offset center, double radius, Color color) {
+  final path = Path()
+    ..moveTo(center.dx, center.dy - radius)
+    ..cubicTo(center.dx, center.dy - radius * 0.2, center.dx + radius * 0.2, center.dy, center.dx + radius, center.dy)
+    ..cubicTo(center.dx + radius * 0.2, center.dy, center.dx, center.dy + radius * 0.2, center.dx, center.dy + radius)
+    ..cubicTo(center.dx, center.dy + radius * 0.2, center.dx - radius * 0.2, center.dy, center.dx - radius, center.dy)
+    ..cubicTo(center.dx - radius * 0.2, center.dy, center.dx, center.dy - radius * 0.2, center.dx, center.dy - radius)
+    ..close();
+
+  canvas.drawPath(
+    path,
+    Paint()
+      ..color = color.withOpacity(0.65)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+  );
+  canvas.drawPath(path, Paint()..color = Colors.white);
 }
 
 class _VectorCoreLogo extends StatelessWidget {
@@ -899,51 +908,146 @@ class _VectorCoreLogo extends StatelessWidget {
   final Color accent;
 
   @override
-  Widget build(BuildContext context) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle, color: const Color(0xFF080207),
-              border: Border.all(color: accent, width: 2.5),
-              boxShadow: [
-                BoxShadow(color: accent.withOpacity(0.44), blurRadius: 20, spreadRadius: 2),
+  Widget build(BuildContext context) {
+    final deepAccentShade = Color.lerp(accent, const Color(0xFF0C0612), 0.88)!;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Deep Glossy Hologram Sphere with dynamic glow
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 0.85,
+              colors: [
+                deepAccentShade,
+                const Color(0xFF060308),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withOpacity(active ? 0.75 : 0.45),
+                blurRadius: active ? 36 : 24,
+                spreadRadius: active ? 4 : 2,
+              ),
+              BoxShadow(
+                color: Color.lerp(accent, Colors.white, 0.45)!.withOpacity(0.30),
+                blurRadius: 16,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+        ),
+
+        // Floating dynamic sparks & twinkling stars
+        Positioned.fill(
+          child: RepaintBoundary(
+            child: CustomPaint(
+              painter: _OrbSparksPainter(time: time, level: level, accent: accent),
+            ),
+          ),
+        ),
+
+        // Dynamic S-Flame Vector Logo with glowing halo & 4-point star sparkle
+        Positioned(
+          top: size * .18,
+          left: size * .16,
+          right: size * .16,
+          bottom: size * .22,
+          child: CustomPaint(
+            painter: _SiyaGlyphPainter(time: time, active: active, accent: accent),
+          ),
+        ),
+
+        // "SIYA AI" Futuristic Brand Text
+        Positioned(
+          bottom: size * .185,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'SIYA',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: size * .095,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                    fontStyle: FontStyle.italic,
+                    shadows: [
+                      Shadow(color: Colors.black.withOpacity(0.8), blurRadius: 4, offset: const Offset(0, 1)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.auto_awesome, color: accent, size: size * .055),
+                const SizedBox(width: 4),
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (r) => LinearGradient(
+                    colors: [accent, Color.lerp(accent, Colors.white, 0.65)!],
+                  ).createShader(r),
+                  child: Text(
+                    'AI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: size * .095,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
-          Positioned(
-            top: size * .19, left: size * .16, right: size * .16, bottom: size * .22,
-            child: CustomPaint(painter: _SiyaGlyphPainter(time: time, active: active)),
-          ),
-          Positioned(
-            bottom: size * .19,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('SIYA', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w800, letterSpacing: -1)),
-                const SizedBox(width: 5),
-                ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (r) => LinearGradient(colors: [accent, Color.lerp(accent, Colors.white, 0.4)!]).createShader(r),
-                  child: Text('AI', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w900, letterSpacing: -.8)),
-                ),
-              ]),
+        ),
+
+        // Glowing horizontal beam underline below SIYA AI
+        Positioned(
+          bottom: size * .135,
+          child: Container(
+            width: size * .34,
+            height: 1.8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  accent.withOpacity(0.85),
+                  Color.lerp(accent, Colors.white, 0.7)!,
+                  accent.withOpacity(0.85),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(color: accent.withOpacity(0.6), blurRadius: 6),
+              ],
             ),
           ),
-          Positioned(bottom: size * .135, child: Container(
-            width: size * .30, height: 1.5,
-            decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, accent, Colors.transparent])),
-          )),
-          Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
-        ],
-      );
+        ),
+
+        // Outer Neon Ring with Rotating SweepGradient & Multiple Bloom Glows
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _OrbRingPainter(time: time, level: level, accent: accent),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SiyaGlyphPainter extends CustomPainter {
-  const _SiyaGlyphPainter({required this.time, required this.active});
+  const _SiyaGlyphPainter({required this.time, required this.active, required this.accent});
   final Animation<double> time;
   final bool active;
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -962,68 +1066,129 @@ class _SiyaGlyphPainter extends CustomPainter {
       ..cubicTo(w * .30, h * .22, w * .48, h * .12, w * .68, h * .12)
       ..close();
 
-    final paint = Paint()
-      ..shader = const LinearGradient(
+    // Outer glow under flame
+    final glowPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = accent.withOpacity(active ? 0.65 : 0.40)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawPath(p, glowPaint);
+
+    // Dynamic gradient flame matching accent
+    final flamePaint = Paint()
+      ..shader = LinearGradient(
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
-        colors: [Color(0xFFFF95BE), Color(0xFFFF1B6B), Color(0xFFC0003E)],
+        colors: [
+          Color.lerp(accent, Colors.white, 0.65)!,
+          accent,
+          Color.lerp(accent, Colors.black, 0.35)!,
+        ],
+        stops: const [0.0, 0.55, 1.0],
       ).createShader(Offset.zero & size);
-    canvas.drawPath(p, paint);
+    canvas.drawPath(p, flamePaint);
+
+    // Inner highlight rim along top edge
+    final rimPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..color = Color.lerp(accent, Colors.white, 0.85)!;
+    final rimPath = Path()
+      ..moveTo(w * .68, h * .12)
+      ..cubicTo(w * .48, h * .12, w * .30, h * .22, w * .38, h * .36)
+      ..cubicTo(w * .46, h * .50, w * .78, h * .48, w * .88, h * .64);
+    canvas.drawPath(rimPath, rimPaint);
+
+    // 4-point sparkle star on upper right curve of S
+    final sparkleCenter = Offset(w * 0.78, h * 0.32);
+    _drawSparkle(canvas, sparkleCenter, 5.5, accent);
   }
 
   @override
-  bool shouldRepaint(covariant _SiyaGlyphPainter oldDelegate) => oldDelegate.active != active;
+  bool shouldRepaint(covariant _SiyaGlyphPainter oldDelegate) =>
+      oldDelegate.active != active || oldDelegate.accent != accent;
 }
 
 class _OrbRingPainter extends CustomPainter {
-  const _OrbRingPainter({required this.time, required this.level});
+  const _OrbRingPainter({required this.time, required this.level, required this.accent});
   final Animation<double> time;
   final ValueListenable<double> level;
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
     final r = size.width * .485;
+
+    // Deep neon glow halo
     final glow = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5
-      ..color = const Color(0xFFFF2E7A)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      ..strokeWidth = 4.5
+      ..color = accent.withOpacity(0.85)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     canvas.drawCircle(c, r, glow);
 
+    // Inner bright bloom
+    final innerBloom = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..color = Color.lerp(accent, Colors.white, 0.5)!.withOpacity(0.9)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawCircle(c, r, innerBloom);
+
+    // Rotating SweepGradient ring line
     final line = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.4
       ..shader = SweepGradient(
-        colors: const [Color(0xFFFF5292), Color(0xFFFF1464), Color(0xFFFF85B8), Color(0xFFFF5292)],
+        colors: [
+          Color.lerp(accent, Colors.white, 0.7)!,
+          accent,
+          Color.lerp(accent, Colors.white, 0.2)!,
+          Color.lerp(accent, Colors.black, 0.3)!,
+          Color.lerp(accent, Colors.white, 0.7)!,
+        ],
+        stops: const [0.0, 0.3, 0.6, 0.85, 1.0],
         transform: GradientRotation(time.value * math.pi * 2),
       ).createShader(Rect.fromCircle(center: c, radius: r));
     canvas.drawCircle(c, r, line);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _OrbRingPainter oldDelegate) => true;
 }
 
 class _OrbSparksPainter extends CustomPainter {
-  const _OrbSparksPainter({required this.time, required this.level});
+  const _OrbSparksPainter({required this.time, required this.level, required this.accent});
   final Animation<double> time;
   final ValueListenable<double> level;
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
     final baseR = size.width * .38;
-    final p = Paint()..color = const Color(0xFFFF5B99).withOpacity(.55);
-    for (int i = 0; i < 18; i++) {
-      final angle = (i / 18) * math.pi * 2 + time.value * math.pi * 2 * (i.isEven ? 1 : -1) * .2;
-      final dist = baseR * (.4 + .55 * ((i * 37) % 100 / 100.0));
+    final dotPaint = Paint()..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 20; i++) {
+      final speed = i.isEven ? 1.0 : -0.7;
+      final angle = (i / 20) * math.pi * 2 + time.value * math.pi * 2 * speed * 0.15;
+      final distFrac = 0.35 + 0.55 * ((i * 47) % 100 / 100.0);
+      final dist = baseR * distFrac;
       final pos = Offset(c.dx + math.cos(angle) * dist, c.dy + math.sin(angle) * dist);
-      final r = 1.0 + 1.6 * math.sin(time.value * math.pi * 4 + i).abs();
-      canvas.drawCircle(pos, r, p);
+
+      final pulse = math.sin(time.value * math.pi * 3 + i * 1.5).abs();
+      final alpha = (0.35 + 0.65 * pulse).clamp(0.0, 1.0);
+
+      if (i % 5 == 0) {
+        _drawSparkle(canvas, pos, 2.5 + pulse * 2.0, accent);
+      } else {
+        final r = 1.0 + 1.8 * pulse;
+        dotPaint.color = Color.lerp(accent, Colors.white, i % 3 == 0 ? 0.7 : 0.2)!.withOpacity(alpha);
+        canvas.drawCircle(pos, r, dotPaint);
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _OrbSparksPainter oldDelegate) => true;
 }

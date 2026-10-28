@@ -11,3 +11,6 @@ android/app/profile/
 android/app/release/
 .idea/
 *.iml
+*.zip
+extracted_apk*
+automate_release*.py
