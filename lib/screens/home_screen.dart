@@ -143,28 +143,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _openSettings() async {
     await Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        transitionDuration: const Duration(milliseconds: 320),
-        reverseTransitionDuration: const Duration(milliseconds: 260),
-        pageBuilder: (_, animation, secondaryAnimation) =>
-            SettingsScreen(bridge: widget.bridge),
-        transitionsBuilder: (_, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          return FadeTransition(
-            opacity: curved,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(.035, 0),
-                end: Offset.zero,
-              ).animate(curved),
-              child: child,
-            ),
-          );
-        },
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(bridge: widget.bridge),
       ),
     );
     if (mounted) _loadWallpaper();
@@ -187,16 +167,16 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
+      value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.045), const Color(0xFFFFF7FB)),
+        systemNavigationBarColor: Color(0xFFFFF7FB),
         systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-        backgroundColor: Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.045), const Color(0xFFFFF7FB)),
+        backgroundColor: const Color(0xFFFFF7FB),
         resizeToAvoidBottomInset: true,
         body: LayoutBuilder(builder: (context, constraints) {
           final w = constraints.maxWidth;
@@ -209,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              ColorFiltered(colorFilter: ColorFilter.mode(Color.alphaBlend(SiyaTheme.accent.value.withOpacity(.16), Colors.white), BlendMode.modulate), child: const _ReferenceBackground()),
+              const _ReferenceBackground(),
               Positioned.fill(
                 child: IgnorePointer(
                   child: WallpaperLayer(type: _wpType, path: _wpPath, sound: _wpSound, dim: _wpDim),
@@ -219,11 +199,14 @@ class _HomeScreenState extends State<HomeScreen>
                 bottom: false,
                 child: Column(
                   children: [
+                    // Top header: Brand logo + circular notification button
                     Padding(
-                      padding: EdgeInsets.fromLTRB(w * 0.065, 6, w * 0.055, 0),
+                      padding: EdgeInsets.fromLTRB(w * 0.055, 8, w * 0.055, 0),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(child: Align(alignment: Alignment.centerLeft, child: _BrandTitle(width: w))),
+                          _BrandTitle(width: w),
                           _NotificationButton(onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                               content: Text('Abhi koi nayi notification nahi hai.'),
@@ -233,7 +216,9 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.024 : 0.034)),
+                    SizedBox(height: h * (compact ? 0.020 : 0.030)),
+
+                    // Center Glowing Orb
                     FadeTransition(
                       opacity: _iv(0.05, 0.72, Curves.easeOut),
                       child: ScaleTransition(
@@ -253,48 +238,64 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.008 : 0.014)),
+                    SizedBox(height: h * (compact ? 0.016 : 0.024)),
+
+                    // Heading "Hello!"
                     Text(
                       _greeting,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: const Color(0xFF09090F),
-                        fontSize: (w * 0.078).clamp(26.0, 36.0),
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1.2,
-                        height: 1.08,
+                        color: const Color(0xFF0C0D15),
+                        fontSize: (w * 0.088).clamp(30.0, 38.0),
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1.0,
+                        height: 1.05,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
+
+                    // Subtitle "How can I help you today?"
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         _subtitle,
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: const Color(0xFF596071),
-                          fontSize: (w * 0.045).clamp(15.0, 20.0),
-                          letterSpacing: -.35,
+                          color: const Color(0xFF4E5565),
+                          fontSize: (w * 0.046).clamp(16.0, 19.5),
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: -0.3,
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.026 : 0.038)),
+                    SizedBox(height: h * (compact ? 0.022 : 0.032)),
+
+                    // Audio Waveform Visualizer in frosted pill capsule
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: w * .055),
                       child: Container(
-                        height: compact ? 64 : 78,
+                        height: compact ? 64 : 76,
                         decoration: BoxDecoration(
-                          color: const Color(0x33FFFFFF),
+                          color: const Color(0x35FFFFFF),
                           borderRadius: BorderRadius.circular(38),
-                          border: Border.all(color: const Color(0x77FFFFFF), width: 1.1),
+                          border: Border.all(color: const Color(0x88FFFFFF), width: 1.2),
                           boxShadow: const [
-                            BoxShadow(color: Color(0x22FF4D91), blurRadius: 22, spreadRadius: 1, offset: Offset(0, 5)),
-                            BoxShadow(color: Color(0xAAFFFFFF), blurRadius: 8, spreadRadius: -2),
+                            BoxShadow(
+                              color: Color(0x1FFF357B),
+                              blurRadius: 20,
+                              spreadRadius: 1,
+                              offset: Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Color(0x88FFFFFF),
+                              blurRadius: 8,
+                              spreadRadius: -2,
+                            ),
                           ],
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         child: AnimatedBuilder(
                           animation: _ctrl,
                           builder: (_, __) => CustomPaint(
@@ -304,17 +305,79 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
+                    SizedBox(height: h * (compact ? 0.016 : 0.024)),
+
+                    // Frosted dialogue / card area matching reference screenshot
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: w * .055),
+                      child: Container(
+                        width: double.infinity,
+                        constraints: BoxConstraints(minHeight: compact ? 65 : 84),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0x28FFFFFF),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0x55FFFFFF), width: 1.2),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x10FF2B6C),
+                              blurRadius: 16,
+                              spreadRadius: 0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: widget.bridge.isActive
+                            ? ValueListenableBuilder<String>(
+                                valueListenable: widget.bridge.transcript,
+                                builder: (context, text, _) => Center(
+                                  child: Text(
+                                    text.isEmpty ? 'Listening to you…' : text,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1E232F),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 18,
+                                    color: const Color(0xFFE5004C).withOpacity(0.85),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Tap mic to speak with Siya',
+                                    style: TextStyle(
+                                      color: Color(0xFF586070),
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+
                     const Spacer(),
+
+                    // Floating Glassmorphic Bottom Dock Bar
                     if (MediaQuery.viewInsetsOf(context).bottom == 0)
                       Padding(
-                        padding: EdgeInsets.fromLTRB(w * .035, 0, w * .035, math.max(8, safeBottom * .3)),
+                        padding: EdgeInsets.fromLTRB(w * .035, 0, w * .035, math.max(6, safeBottom * .3)),
                         child: FadeTransition(
                           opacity: _iv(.25, 1, Curves.easeOut),
                           child: SiyaBottomNavigation(
                             width: w * .93,
                             time: _ctrl,
                             active: widget.bridge.isActive,
-                            primaryColor: SiyaTheme.accent.value,
                             onHome: () {},
                             onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                               content: Text('Voice mode ke liye center mic tap karein.'),
@@ -434,31 +497,54 @@ class _BrandTitle extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: width * .42,
-        height: width * .145,
-        child: RepaintBoundary(
-          child: ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              SiyaTheme.accent.value,
-              BlendMode.srcATop,
-            ),
-            child: Image.asset(
-              'android/app/Image/Ai name.png',
-              fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
-              semanticLabel: 'Siya AI logo',
-              filterQuality: FilterQuality.high,
-              errorBuilder: (_, __, ___) => const Text(
-                'SIYA AI',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                ),
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/images/siya_logo.png',
+      height: 38,
+      fit: BoxFit.contain,
+      alignment: Alignment.centerLeft,
+      errorBuilder: (context, error, stackTrace) => _VectorBrandTitle(width: width),
+    );
+  }
+}
+
+class _VectorBrandTitle extends StatelessWidget {
+  const _VectorBrandTitle({required this.width});
+  final double width;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('SIYA', style: TextStyle(
+                fontSize: (width * .083).clamp(36.0, 52.0),
+                height: .96, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic,
+                letterSpacing: -2, color: const Color(0xFF08070D),
+                shadows: const [Shadow(color: Color(0x44FF649B), blurRadius: 8)],
+              )),
+              const SizedBox(width: 7),
+              ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF003D), Color(0xFFE60077)]).createShader(r),
+                child: Text('AI', style: TextStyle(
+                  fontSize: (width * .092).clamp(40.0, 58.0), height: .92,
+                  fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, letterSpacing: -1.8,
+                )),
               ),
+            ]),
+            SizedBox(height: width * .012),
+            Container(
+              height: 3, width: width * .30,
+              decoration: const BoxDecoration(gradient: LinearGradient(
+                colors: [Color(0xFFED0044), Color(0xFFFF4E9C), Colors.transparent],
+              )),
             ),
-          ),
+          ],
         ),
       );
 }
@@ -469,24 +555,45 @@ class _NotificationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.white.withOpacity(.87),
+        color: Colors.white,
         shape: const CircleBorder(),
+        elevation: 1,
+        shadowColor: const Color(0x22FF2065),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Container(
-            width: 58, height: 58,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              shape: BoxShape.circle, border: Border.all(color: const Color(0xFFFFE1ED)),
-              boxShadow: const [BoxShadow(color: Color(0x22FF3C83), blurRadius: 20, spreadRadius: 2)],
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFF2E2EC), width: 1.2),
+              boxShadow: const [
+                BoxShadow(color: Color(0x18FF2065), blurRadius: 14, offset: Offset(0, 3)),
+              ],
             ),
-            child: Stack(alignment: Alignment.center, children: [
-              const Icon(Icons.notifications_none_rounded, color: Color(0xFF111118), size: 30),
-              Positioned(right: 13, top: 11, child: Container(
-                width: 9, height: 9,
-                decoration: const BoxDecoration(color: Color(0xFFE50035), shape: BoxShape.circle),
-              )),
-            ]),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(Icons.notifications_none_rounded, color: Color(0xFF16161D), size: 26),
+                Positioned(
+                  right: 11,
+                  top: 9,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE50035),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Color(0x66E50035), blurRadius: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -498,37 +605,102 @@ class _CoreLogo extends StatelessWidget {
   final Animation<double> time;
   final ValueListenable<double> level;
   final bool active;
+
   @override
   Widget build(BuildContext context) {
-    final accent = SiyaTheme.accent.value;
-    return Stack(alignment: Alignment.center, children: [
-      Container(decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF080207),
-        border: Border.all(color: accent, width: 2.5),
-        boxShadow: [BoxShadow(color: accent.withOpacity(.28), blurRadius: 20, spreadRadius: 2), BoxShadow(color: accent.withOpacity(.14), blurRadius: 7)])),
-      Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
-      Padding(
-        padding: EdgeInsets.all(size * .135),
-        child: RepaintBoundary(
-          child: ColorFiltered(
-            colorFilter: ColorFilter.mode(accent, BlendMode.srcATop),
-            child: Image.asset(
-              'android/app/Image/ home page program.png',
-              width: size * .73,
-              height: size * .73,
-              fit: BoxFit.contain,
-              alignment: Alignment.center,
-              filterQuality: FilterQuality.high,
-              semanticLabel: 'Siya AI hologram core',
-              errorBuilder: (_, __, ___) => CustomPaint(
-                painter: _SiyaGlyphPainter(time: time, active: active),
+    return ValueListenableBuilder<double>(
+      valueListenable: level,
+      builder: (context, lvl, _) {
+        return AnimatedBuilder(
+          animation: time,
+          builder: (context, child) {
+            final pulse = (active ? 0.035 : 0.015) * math.sin(time.value * math.pi * 2) + lvl * 0.04;
+            return Transform.scale(
+              scale: 1.0 + pulse,
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(active ? 0x99FF004C : 0x55FF1758),
+                      blurRadius: active ? 34 : 24,
+                      spreadRadius: active ? 4 : 2,
+                    ),
+                    const BoxShadow(
+                      color: Color(0x33FFA0CC),
+                      blurRadius: 14,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/siya_orb.png',
+                  width: size,
+                  height: size,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _VectorCoreLogo(size: size, time: time, level: level, active: active);
+                  },
+                ),
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _VectorCoreLogo extends StatelessWidget {
+  const _VectorCoreLogo({required this.size, required this.time, required this.level, required this.active});
+  final double size;
+  final Animation<double> time;
+  final ValueListenable<double> level;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, color: const Color(0xFF080207),
+              border: Border.all(color: const Color(0xFFFF5B99), width: 2.5),
+              boxShadow: const [
+                BoxShadow(color: Color(0x44FF004C), blurRadius: 20, spreadRadius: 2),
+                BoxShadow(color: Color(0x22FF6AB6), blurRadius: 7, spreadRadius: 0),
+              ],
             ),
           ),
-        ),
-      ),
-      Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
-    ]);
-  }
+          Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: _OrbSparksPainter(time: time, level: level)))),
+          Positioned(
+            top: size * .19, left: size * .16, right: size * .16, bottom: size * .22,
+            child: CustomPaint(painter: _SiyaGlyphPainter(time: time, active: active)),
+          ),
+          Positioned(
+            bottom: size * .19,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('SIYA', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                const SizedBox(width: 5),
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (r) => const LinearGradient(colors: [Color(0xFFFF174F), Color(0xFFFF00A0)]).createShader(r),
+                  child: Text('AI', style: TextStyle(color: Colors.white, fontSize: size * .092, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+                ),
+              ]),
+            ),
+          ),
+          Positioned(bottom: size * .135, child: Container(
+            width: size * .30, height: 1.5,
+            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, Color(0xFFFF1B67), Colors.transparent])),
+          )),
+          Positioned.fill(child: CustomPaint(painter: _OrbRingPainter(time: time, level: level))),
+        ],
+      );
 }
 
 class _SiyaGlyphPainter extends CustomPainter {
