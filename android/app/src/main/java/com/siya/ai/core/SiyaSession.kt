@@ -98,6 +98,7 @@ class SiyaSession(
         if (!active && state == State.IDLE) return
         active = false
         if (current === this) current = null
+        cancelSilenceTimers()
         endRunnable?.let { main.removeCallbacks(it) }
         flushUser(); flushSiya()
         try { mic?.stop() } catch (_: Exception) {}; mic = null
@@ -177,6 +178,7 @@ class SiyaSession(
         val speaking = audioOut?.isPlaying == true
         if (!speaking && now - lastAmp > 50) {
             lastAmp = now
+            if (level > 0.05f) cancelSilenceTimers()
             emit(mapOf("type" to "amp", "v" to (level * 7f).coerceIn(0f, 1f).toDouble()))
         }
         // Speaker ki awaaz wapas mic mein na jaye: jab Siya bol rahi ho, sirf tez (asli) awaaz hi jaane do.
@@ -227,19 +229,61 @@ class SiyaSession(
         }
     }
 
+    private var silencePokeRunnable: Runnable? = null
+    private var silenceSleepRunnable: Runnable? = null
+
+    private fun cancelSilenceTimers() {
+        silencePokeRunnable?.let { main.removeCallbacks(it) }
+        silencePokeRunnable = null
+        silenceSleepRunnable?.let { main.removeCallbacks(it) }
+        silenceSleepRunnable = null
+    }
+
+    private fun startSilenceTimers() {
+        cancelSilenceTimers()
+        if (!active || micMuted || paused) return
+
+        // 5s silence: cute poke
+        val poke = Runnable {
+            if (!active || state != State.LISTENING || audioOut?.isPlaying == true) return@Runnable
+            val pokeMsg = "Kahan kho gaye? Sun rahe ho na?"
+            emit(mapOf("type" to "caption", "who" to "siya", "text" to pokeMsg))
+            com.siya.ai.utils.FemaleHindiTts(ctx).speak(pokeMsg, "poke-silence")
+        }
+        silencePokeRunnable = poke
+        main.postDelayed(poke, 5000)
+
+        // 10s silence: polite reminder and safely enter sleep mode
+        val sleep = Runnable {
+            if (!active || state != State.LISTENING) return@Runnable
+            val sleepMsg = "Lagta hai aap thode busy ho gaye, jab baat karni ho 'Hey Siya' bol dena!"
+            emit(mapOf("type" to "caption", "who" to "siya", "text" to sleepMsg))
+            com.siya.ai.utils.FemaleHindiTts(ctx).speak(sleepMsg, "sleep-silence")
+            main.postDelayed({
+                if (active) stop()
+            }, 3000)
+        }
+        silenceSleepRunnable = sleep
+        main.postDelayed(sleep, 10000)
+    }
+
     override fun onUserText(text: String) {
+        cancelSilenceTimers()
         try { HabitTracker.onUserText(ctx, text) } catch (_: Exception) {}
         val full = synchronized(userBuf) { userBuf.append(text); userBuf.toString().trim() }
         emit(mapOf("type" to "caption", "who" to "user", "text" to full.takeLast(120)))
     }
 
     override fun onSiyaText(text: String) {
+        cancelSilenceTimers()
         main.post { flushUser() }
-        val full = synchronized(siyaBuf) { siyaBuf.append(text); siyaBuf.toString().trim() }
+        val clean = com.siya.ai.utils.FemaleHindiTts.sanitize(text)
+        val full = synchronized(siyaBuf) { siyaBuf.append(clean); com.siya.ai.utils.FemaleHindiTts.sanitize(siyaBuf.toString()).trim() }
         emit(mapOf("type" to "caption", "who" to "siya", "text" to full.takeLast(160)))
     }
 
     override fun onInterrupted() {
+        cancelSilenceTimers()
         audioOut?.flush()
         main.post { flushSiya(); if (active) setState(State.LISTENING) }
     }
@@ -251,8 +295,13 @@ class SiyaSession(
     private fun waitForPlaybackEnd() {
         if (!active) return
         if (audioOut?.isPlaying == true) { main.postDelayed({ waitForPlaybackEnd() }, 200); return }
-        if (state == State.SPEAKING || state == State.THINKING) setState(State.LISTENING)
-        emit(mapOf("type" to "amp", "v" to 0.0))
+        // 400ms delay after TTS/audio completes before automatically turning mic back to LISTENING
+        main.postDelayed({
+            if (!active) return@postDelayed
+            if (state == State.SPEAKING || state == State.THINKING) setState(State.LISTENING)
+            emit(mapOf("type" to "amp", "v" to 0.0))
+            startSilenceTimers()
+        }, 400)
     }
 
     override fun onToolCall(id: String, name: String, args: JSONObject) {

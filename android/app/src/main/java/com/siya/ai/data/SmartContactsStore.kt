@@ -126,7 +126,7 @@ object SmartContactsStore {
             val aliases = (c["aliases"] as? List<String>) ?: emptyList()
             for (a in aliases) {
                 val al = a.trim().lowercase()
-                if (al == q || q == al.replace(" ", "") || q.contains(al)) {
+                if (al == q || q == al.replace(" ", "") || q.contains(al) || al.contains(q)) {
                     if (num.isNotEmpty()) return num to (if (name.isNotEmpty()) name else a)
                 }
             }

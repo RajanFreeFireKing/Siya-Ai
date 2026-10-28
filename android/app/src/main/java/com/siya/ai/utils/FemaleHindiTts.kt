@@ -42,9 +42,20 @@ class FemaleHindiTts(
         }
     }
 
+    companion object {
+        fun sanitize(raw: String): String {
+            var s = raw.replace(Regex("(?i)\\b(ajay)\\b"), "")
+            s = s.replace(Regex("(?i)\\[/?inst\\]"), "")
+            s = s.replace(Regex("(?i)<\\|.*?\\|>"), "")
+            s = s.replace(Regex("(?i)\\b(model|assistant|developer|system):"), "")
+            return s.trim()
+        }
+    }
+
     fun speak(text: String, utteranceId: String = "siya-local") {
-        if (!ready || text.isBlank()) return
-        try { engine?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId) } catch (e: Exception) {
+        val clean = sanitize(text)
+        if (!ready || clean.isBlank()) return
+        try { engine?.speak(clean, TextToSpeech.QUEUE_FLUSH, null, utteranceId) } catch (e: Exception) {
             Log.w("SIYA_TTS", "speak failed: ${e.message}")
         }
     }

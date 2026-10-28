@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/wallpaper_layer.dart';
 import '../widgets/wave_painter.dart';
 import '../widgets/siya_bottom_navigation.dart';
+import '../widgets/permission_explanation_sheet.dart';
 import 'power_screen.dart';
 import 'settings_screen.dart';
 
@@ -68,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen>
       try {
         if (await widget.bridge.consumeFirstRun()) {
           await Future<void>.delayed(const Duration(milliseconds: 900));
-          if (mounted) await widget.bridge.requestPermissions();
+          if (mounted) await showThemedPermissionSheet(context, widget.bridge);
         }
       } catch (_) {}
     });
@@ -961,46 +962,122 @@ class _VectorBrandTitle extends StatelessWidget {
   final Color accent;
 
   @override
-  Widget build(BuildContext context) => FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
+  Widget build(BuildContext context) {
+    final fontSize = (width * .078).clamp(32.0, 48.0);
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // "SIYA" with modern geometric aesthetic & soft ambient glow
             Text(
               'SIYA',
               style: TextStyle(
-                fontSize: (width * .083).clamp(36.0, 52.0),
-                height: .96,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.italic,
-                letterSpacing: -2,
-                color: const Color(0xFF08070D),
+                letterSpacing: 2.2,
+                color: const Color(0xFF0F172A),
                 shadows: [
-                  Shadow(color: accent.withOpacity(0.30), blurRadius: 8),
+                  Shadow(
+                    color: accent.withOpacity(0.40),
+                    blurRadius: 14,
+                    offset: const Offset(0, 2),
+                  ),
+                  Shadow(
+                    color: Colors.white.withOpacity(0.9),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 7),
+            const SizedBox(width: 8),
+
+            // "AI" with dynamic glowing accent gradient (Pink/Purple to Neon Cyan)
             ShaderMask(
               blendMode: BlendMode.srcIn,
-              shaderCallback: (r) => LinearGradient(
-                colors: [accent, Color.lerp(accent, Colors.white, 0.45)!],
-              ).createShader(r),
+              shaderCallback: (bounds) => LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent,
+                  Color.lerp(accent, const Color(0xFFFF5CF2), 0.6)!,
+                  const Color(0xFF00E5FF),
+                ],
+              ).createShader(bounds),
               child: Text(
                 'AI',
                 style: TextStyle(
-                  fontSize: (width * .083).clamp(36.0, 52.0),
-                  height: .96,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: -1.5,
+                  letterSpacing: 2.2,
+                  shadows: [
+                    Shadow(
+                      color: accent.withOpacity(0.50),
+                      blurRadius: 16,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
+              ),
+            ),
+            const SizedBox(width: 6),
+
+            // Sleek Micro-Sparkle ✨ & Glowing Pulse Dot Indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accent.withOpacity(0.18),
+                    const Color(0xFF00E5FF).withOpacity(0.12),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: accent.withOpacity(0.35), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent,
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withOpacity(0.8),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  const Text(
+                    '✨',
+                    style: TextStyle(fontSize: 10, height: 1.1),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _NotificationButton extends StatelessWidget {

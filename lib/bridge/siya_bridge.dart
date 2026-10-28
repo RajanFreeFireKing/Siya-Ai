@@ -60,7 +60,10 @@ class SiyaBridge extends ChangeNotifier {
         notifyListeners();
         break;
       case 'transcript':
-        transcript.value = (e['text'] as String?) ?? '';
+      case 'caption':
+        String raw = (e['text'] as String?) ?? '';
+        raw = raw.replaceAll(RegExp(r'\b(Ajay|ajay)\b', caseSensitive: false), '').trim();
+        transcript.value = raw;
         notifyListeners();
         break;
       case 'amp':

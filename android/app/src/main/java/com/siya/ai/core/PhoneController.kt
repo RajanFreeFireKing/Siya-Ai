@@ -220,7 +220,7 @@ object PhoneController {
         if (!has(ctx, Manifest.permission.CALL_PHONE)) return "ERROR: Call permission nahi hai"
         val (num, who) = findNumber(ctx, name) ?: return "NOT_FOUND: '$name' contact nahi mila"
         val ok = launch(ctx, Intent(Intent.ACTION_CALL, Uri.parse("tel:" + Uri.encode(num))))
-        return if (ok) "OK: $who ko call laga diya" else "ERROR: call shuru nahi hui"
+        return if (ok) "Haanji, $who ko call laga rahi hoon!" else "ERROR: call shuru nahi hui"
     }
 
     fun directCall(ctx: Context, number: String): Boolean {

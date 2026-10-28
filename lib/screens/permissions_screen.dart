@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
+import '../widgets/permission_explanation_sheet.dart';
 
 class _PermissionsSilkBackground extends StatelessWidget {
   const _PermissionsSilkBackground({required this.primaryThemeColor});
@@ -172,10 +173,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   }
 
   Future<void> _grantAll() async {
-    final left = await widget.bridge.requestPermissions();
-    if (!mounted) return;
-    setState(() => _missing = left);
-    await _refreshStatus();
+    await showThemedPermissionSheet(context, widget.bridge, onAllowed: () async {
+      if (mounted) await _refreshStatus();
+    });
   }
 
   @override
