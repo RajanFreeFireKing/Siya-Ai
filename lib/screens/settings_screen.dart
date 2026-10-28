@@ -6,10 +6,10 @@ import '../bridge/siya_bridge.dart';
 import '../theme.dart';
 import '../widgets/siya_bottom_navigation.dart';
 
-import 'features_screen.dart';
+import 'permissions_screen.dart';
+import 'power_screen.dart';
 import 'location_screen.dart';
 import 'memory_screen.dart';
-import 'power_features_screen.dart';
 import 'profile_screen.dart';
 import 'wallpaper_screen.dart';
 
@@ -204,6 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   bool _callDetect = false; // default band
   bool _keepAwake = true;
   bool _aiBrowser = false;
+  bool _callScreener = false;
+  bool _locationPerm = false;
+  bool _callScreenerRole = false;
   bool _allFiles = false;
   bool _loaded = false;
   bool _hideKeys = true;
@@ -254,6 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       _callDetect = (s['call_detect_enabled'] as bool?) ?? false;
       _keepAwake = (s['keep_screen_on'] as bool?) ?? true;
       _aiBrowser = (s['ai_browser_enabled'] as bool?) ?? false;
+      _callScreener = (s['call_screener'] as bool?) ?? false;
       _loaded = true;
     });
   }
@@ -270,6 +274,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       _notif = (st['notifications'] as bool?) ?? true;
       _memCount = (st['memory_count'] as int?) ?? 0;
       _allFiles = (st['all_files'] as bool?) ?? false;
+      _locationPerm = (st['location_perm'] as bool?) ?? false;
+      _callScreenerRole = (st['call_screener_role'] as bool?) ?? false;
     });
   }
 
@@ -342,129 +348,146 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           padding: EdgeInsets.fromLTRB(16, 4, 16, bottomInset + 120),
                           children: [
                             _section('AI & Keys'),
-                          _keyCard(),
-                          _card([
-                            _action(Icons.tune, 'Features', 'Hey Siya, Browser, Screen on, Call detect, Awaaz focus', null, () async {
-                              await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => FeaturesScreen(bridge: widget.bridge)));
-                              _load();
-                            }),
-                            _action(Icons.person_outline, 'Profile', 'Naam, prime contact', null, () async {
-                              await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => ProfileScreen(bridge: widget.bridge)));
-                            }),
-                            _action(Icons.wallpaper_outlined, 'Wallpaper', 'Photo, video aur live wallpaper', null, () async {
-                              await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => WallpaperScreen(bridge: widget.bridge)));
-                            }),
-                            _action(Icons.public, 'AI Browser',
-                                _aiBrowser ? 'ON - tap karke browser kholo' : 'Band - Features mein ON karo', _aiBrowser, () async {
-                              if (!_aiBrowser) {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Pehle Features mein AI Browser ON karo')));
-                                return;
-                              }
-                              await widget.bridge.openBrowser();
-                            }),
-                            _action(Icons.location_on_outlined, 'Location', 'Map, search, location set karo', null, () async {
-                              await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => LocationScreen(bridge: widget.bridge)));
-                            }),
-                          ]),
-                          _section('Personality'),
-                          _personalityGrid(),
-                          const SizedBox(height: 10),
-                          _section('Theme Color'),
-                          _themeColorOption(),
-                          _section('Access & Security'),
-                          _card([
-                            _action(
-                              Icons.accessibility_new,
-                              'Accessibility',
-                              _accessibility ? 'Full control on' : 'Off - tap to enable',
-                              _accessibility,
-                              () async {
-                                await widget.bridge.openAccessibility();
-                              },
-                            ),
-                            _action(
-                              Icons.admin_panel_settings_outlined,
-                              'Device admin',
-                              _admin ? 'Active' : 'Inactive - tap to enable',
-                              _admin,
-                              () async {
-                                await widget.bridge.toggleAdmin();
-                                _refreshStatus();
-                              },
-                            ),
-                            _action(
-                              Icons.verified_user_outlined,
-                              'Permissions',
-                              _missing == 0 ? 'All granted' : '$_missing pending - tap to grant',
-                              _missing == 0,
-                              _grantPermissions,
-                            ),
-                            _action(
-                              Icons.notifications_active_outlined,
-                              'Notifications',
-                              _notif ? 'On - background mein chalne ke liye' : 'Off - tap karke Permissions do',
-                              _notif,
-                              _grantPermissions,
-                            ),
-                            _action(
-                              Icons.layers_outlined,
-                              'Display over other apps',
-                              _overlay ? 'On - dusre app ke upar Siya dikhegi' : 'Off - app kholne / orb ke liye ON karo',
-                              _overlay,
-                              () async {
-                                await widget.bridge.openOverlaySettings();
-                              },
-                            ),
-                            _action(
-                              Icons.battery_charging_full_outlined,
-                              'Background chalne do',
-                              _batteryOk ? 'Battery optimization off' : 'Tap karo - Siya ko band hone se roko',
-                              _batteryOk,
-                              () async {
-                                await widget.bridge.requestBatteryExemption();
-                              },
-                            ),
-                            _action(
-                              Icons.folder_open_outlined,
-                              'All files access',
-                              _allFiles ? 'ON - Siya files dekh, badal aur share kar sakti hai' : 'Off - tap karke ON karo',
-                              _allFiles,
-                              () async {
-                                await widget.bridge.openAllFilesSettings();
-                              },
-                            ),
-                            _action(
-                              Icons.assistant_outlined,
-                              'Default assistant',
-                              'Power button se Siya start karo',
-                              null,
-                              widget.bridge.setDefaultAssistant,
-                            ),
-                            _action(
-                              Icons.lock_outline,
-                              'Security settings',
-                              'App lock, pattern, fingerprint',
-                              null,
-                              widget.bridge.openSecurity,
-                            ),
-                          ]),
-                          const SizedBox(height: 18),
-                          _aiDataTile(),
-                          const SizedBox(height: 8),
-                          ListTile(
-                            leading: const Icon(Icons.bolt_rounded, color: const Color(0xFFD6004C)),
-                            title: const Text('Power Features', style: TextStyle(color: const Color(0xFF2A1C25), fontWeight: FontWeight.w600)),
-                            subtitle: const Text('WhatsApp reply, call screener, SOS, Ghost Mode, Gaming HUD', style: TextStyle(color: const Color(0xFF6F6470), fontSize: 12)),
-                            trailing: const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
-                            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PowerFeaturesScreen(bridge: widget.bridge))),
-                          ),
-                          const SizedBox(height: 24),
+                            _keyCard(),
+                            const SizedBox(height: 10),
+
+                            // 2. Feature Controls (Configurations & Toggles Only)
+                            _section('Feature Controls'),
+                            _card([
+                              _switchRow(
+                                'AI Browser Access',
+                                _aiBrowser
+                                    ? 'Chalu - in-app automated browser active'
+                                    : 'Band - automated web browsing access',
+                                _aiBrowser,
+                                (v) {
+                                  setState(() => _aiBrowser = v);
+                                  widget.bridge.saveSettings({'ai_browser_enabled': v});
+                                },
+                              ),
+                              _switchRow(
+                                'Location Access',
+                                _locationPerm
+                                    ? 'Chalu - GPS aur maps access allowed'
+                                    : 'Band - tap karke permission grant karein',
+                                _locationPerm,
+                                (v) async {
+                                  if (v && !_locationPerm) {
+                                    await widget.bridge.requestPermissions();
+                                    await _refreshStatus();
+                                  }
+                                },
+                              ),
+                              _switchRow(
+                                '"Hey Siya" Wake Word',
+                                _wake
+                                    ? 'Chalu - background mein "Hey Siya" sun rahi hai'
+                                    : 'Band - "Hey Siya" bolkar jagane ke liye chalu karein',
+                                _wake,
+                                (v) {
+                                  setState(() => _wake = v);
+                                  widget.bridge.saveSettings({'wake_word_enabled': v});
+                                },
+                              ),
+                              _switchRow(
+                                'Screen WakeLock',
+                                _keepAwake
+                                    ? 'Chalu - AI chalne tak screen on rahegi'
+                                    : 'Band - normal timeout par screen band hogi',
+                                _keepAwake,
+                                (v) {
+                                  setState(() => _keepAwake = v);
+                                  widget.bridge.saveSettings({'keep_screen_on': v});
+                                },
+                              ),
+                              _switchRow(
+                                'Unknown Call Screening',
+                                _callScreener
+                                    ? 'Chalu - anjaan number par AI call screen karegi'
+                                    : 'Band - calls normal tarike se aayengi',
+                                _callScreener,
+                                (v) async {
+                                  setState(() => _callScreener = v);
+                                  await widget.bridge.saveSettings({'call_screener': v});
+                                  if (v && !_callScreenerRole) {
+                                    await widget.bridge.requestCallScreening();
+                                  }
+                                  await _refreshStatus();
+                                },
+                              ),
+                            ]),
+                            const SizedBox(height: 10),
+
+                            // 3. Personality
+                            _section('Personality'),
+                            _personalityGrid(),
+                            const SizedBox(height: 10),
+
+                            // 4. Theme Color
+                            _section('Theme Color'),
+                            _themeColorOption(),
+                            const SizedBox(height: 10),
+
+                            // 5. Access & Preferences
+                            _section('Access & Preferences'),
+                            _card([
+                              // Clean App Permissions Card (Single Option Navigating to PermissionsScreen)
+                              _action(
+                                Icons.verified_user_rounded,
+                                'App Permissions',
+                                'Mic, Phone, Storage, Location aur sabhi permissions manage karein',
+                                _missing == 0,
+                                () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => PermissionsScreen(bridge: widget.bridge),
+                                    ),
+                                  );
+                                  _refreshStatus();
+                                },
+                              ),
+                              // Security Settings
+                              _action(
+                                Icons.lock_outline_rounded,
+                                'Security Settings',
+                                'App lock, pattern, fingerprint',
+                                null,
+                                widget.bridge.openSecurity,
+                              ),
+                              // Profile
+                              _action(
+                                Icons.person_outline_rounded,
+                                'Profile',
+                                'Naam, prime contact',
+                                null,
+                                () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => ProfileScreen(bridge: widget.bridge),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Wallpaper
+                              _action(
+                                Icons.wallpaper_outlined,
+                                'Wallpaper',
+                                'Photo, video aur live wallpaper',
+                                null,
+                                () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => WallpaperScreen(bridge: widget.bridge),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ]),
+                            const SizedBox(height: 16),
+
+                            // 6. AI Data Tile
+                            _aiDataTile(),
+                            const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -490,7 +513,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   behavior: SnackBarBehavior.floating,
                 )),
                 onMic: widget.bridge.toggleMic,
-                onTools: () => Navigator.of(context).pushNamed('/features'),
+                onTools: () => Navigator.of(context).pushNamed('/power'),
                 onSettings: () {},
               ),
             ),

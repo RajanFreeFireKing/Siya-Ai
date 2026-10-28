@@ -44,4 +44,21 @@ object SmsLedger {
         if (lines.isEmpty()) return "Is ${if (which == "month") "mahine" else "din"} koi UPI / bank SMS nahi mila"
         return "Kharcha ₹${out.toInt()}, aaya ₹${inn.toInt()}.\n" + lines.takeLast(15).joinToString("\n")
     }
+
+    fun getEntries(ctx: Context): List<Map<String, Any>> {
+        val arr = load(ctx)
+        val list = ArrayList<Map<String, Any>>()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            list.add(mapOf(
+                "t" to o.optLong("t", 0L),
+                "day" to o.optString("day", ""),
+                "kind" to o.optString("kind", "debit"),
+                "amount" to o.optDouble("amount", 0.0),
+                "from" to o.optString("from", ""),
+                "note" to o.optString("note", "")
+            ))
+        }
+        return list.reversed()
+    }
 }

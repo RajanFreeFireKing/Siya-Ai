@@ -265,9 +265,51 @@ class MainActivity : FlutterFragmentActivity() {
                     Thread { val m = LocationHelper.search(this, q); ui.post { result.success(m) } }.start()
                 }
                 "openBrowser" -> {
-                    if (!AiBrowser.isEnabled(this)) result.success(false)
-                    else Thread { AiBrowser.open(this, "https://www.google.com", "full"); ui.post { result.success(true) } }.start()
+                    val url = call.argument<String>("url") ?: "https://www.google.com"
+                    prefs.edit().putBoolean("ai_browser_enabled", true).apply()
+                    Thread { AiBrowser.open(this, url, "full"); ui.post { result.success(true) } }.start()
                 }
+                "getSmsLedger" -> Thread {
+                    val entries = com.siya.ai.data.SmsLedger.getEntries(this)
+                    val daySummary = com.siya.ai.data.SmsLedger.summary(this, "day")
+                    val monthSummary = com.siya.ai.data.SmsLedger.summary(this, "month")
+                    ui.post {
+                        result.success(mapOf(
+                            "entries" to entries,
+                            "daySummary" to daySummary,
+                            "monthSummary" to monthSummary
+                        ))
+                    }
+                }.start()
+                "getCallLogs" -> Thread {
+                    val list = ArrayList<Map<String, Any>>()
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            contentResolver.query(
+                                android.provider.CallLog.Calls.CONTENT_URI,
+                                arrayOf(
+                                    android.provider.CallLog.Calls.CACHED_NAME,
+                                    android.provider.CallLog.Calls.NUMBER,
+                                    android.provider.CallLog.Calls.DATE,
+                                    android.provider.CallLog.Calls.DURATION,
+                                    android.provider.CallLog.Calls.TYPE
+                                ),
+                                null, null, "${android.provider.CallLog.Calls.DATE} DESC LIMIT 40"
+                            )?.use { c ->
+                                while (c.moveToNext()) {
+                                    list.add(mapOf(
+                                        "name" to (c.getString(0) ?: ""),
+                                        "number" to (c.getString(1) ?: ""),
+                                        "date" to c.getLong(2),
+                                        "duration" to c.getLong(3),
+                                        "type" to c.getInt(4)
+                                    ))
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                    ui.post { result.success(list) }
+                }.start()
                 "getStatus" -> result.success(readStatus())
                 "requestPermissions" -> requestAllPermissions(result)
                 "openAccessibility" -> { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); result.success(null) }
@@ -451,7 +493,17 @@ class MainActivity : FlutterFragmentActivity() {
             "all_files" to FileTools.hasAccess(),
             "media_access" to MediaTools.hasAccess(this),
             "ppn_model" to PorcupineWakeEngine.hasModel(this),
-            "location_perm" to LocationHelper.hasPermission(this)
+            "location_perm" to LocationHelper.hasPermission(this),
+            "mic_perm" to (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED),
+            "phone_perm" to (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED),
+            "call_log_perm" to (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED),
+            "sms_perm" to (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED),
+            "call_screener_role" to if (Build.VERSION.SDK_INT >= 29) {
+                try {
+                    val rm = getSystemService(android.app.role.RoleManager::class.java)
+                    rm.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING)
+                } catch (_: Exception) { false }
+            } else false
         )
     }
 

@@ -9,7 +9,7 @@ import '../theme.dart';
 import '../widgets/wallpaper_layer.dart';
 import '../widgets/wave_painter.dart';
 import '../widgets/siya_bottom_navigation.dart';
-import 'features_screen.dart';
+import 'power_screen.dart';
 import 'settings_screen.dart';
 
 /// Siya AI persistent root shell with home screen and integrated tab navigation.
@@ -196,8 +196,8 @@ class _HomeScreenState extends State<HomeScreen>
                       // Tab 1: Chat view
                       _buildChatView(w, h, compact, safeBottom, accent),
 
-                      // Tab 2: Tools (Features) view (embedded with persistent dock)
-                      FeaturesScreen(
+                      // Tab 2: Tools (Power Tools) view (embedded with persistent dock)
+                      PowerScreen(
                         bridge: widget.bridge,
                         embedded: true,
                         onBackToHome: () => setState(() => _activeTab = 0),

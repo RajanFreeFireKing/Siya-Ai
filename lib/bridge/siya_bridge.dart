@@ -183,9 +183,18 @@ class SiyaBridge extends ChangeNotifier {
 
   Future<Uint8List?> mediaFull(String uri) => _method.invokeMethod<Uint8List>('mediaFull', {'uri': uri});
 
-  Future<void> openNotificationAccess() => _method.invokeMethod<void>('openNotificationAccess');
+  Future<bool> openBrowser([String? url]) async =>
+      (await _method.invokeMethod<bool>('openBrowser', url != null ? {'url': url} : null)) ?? false;
 
-  Future<bool> openBrowser() async => (await _method.invokeMethod<bool>('openBrowser')) ?? false;
+  Future<Map<String, dynamic>> getSmsLedger() async =>
+      (await _method.invokeMapMethod<String, dynamic>('getSmsLedger')) ?? {};
+
+  Future<List<Map<String, dynamic>>> getCallLogs() async {
+    final list = await _method.invokeListMethod<dynamic>('getCallLogs') ?? const [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> requestCallScreening() => _method.invokeMethod<void>('requestCallScreening');
 
   // ── AI Data / Memory ──────────────────────────────────────
   Future<MemoryData> getMemory() async {

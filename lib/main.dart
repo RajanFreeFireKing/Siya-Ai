@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'bridge/siya_bridge.dart';
 import 'screens/home_screen.dart';
-import 'screens/features_screen.dart';
+import 'screens/power_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -57,7 +57,8 @@ class _SiyaAppState extends State<SiyaApp> {
         useMaterial3: true,
       ),
       routes: {
-        '/features': (_) => FeaturesScreen(bridge: _bridge),
+        '/features': (_) => PowerScreen(bridge: _bridge),
+        '/power': (_) => PowerScreen(bridge: _bridge),
       },
       home: HomeScreen(bridge: _bridge),
       ),
