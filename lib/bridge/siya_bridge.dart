@@ -17,6 +17,7 @@ class SiyaBridge extends ChangeNotifier {
   String status = '';
   bool micMuted = false;
   final ValueNotifier<double> amp = ValueNotifier<double>(0);
+  final ValueNotifier<String> transcript = ValueNotifier<String>('');
 
   /// Native se aayi error ka code (no_key, no_mic, connection...). UI dikhane ke baad null kar deta hai.
   final ValueNotifier<String?> error = ValueNotifier<String?>(null);
@@ -56,6 +57,10 @@ class SiyaBridge extends ChangeNotifier {
         break;
       case 'status':
         status = (e['text'] as String?) ?? '';
+        notifyListeners();
+        break;
+      case 'transcript':
+        transcript.value = (e['text'] as String?) ?? '';
         notifyListeners();
         break;
       case 'amp':
@@ -200,6 +205,7 @@ class SiyaBridge extends ChangeNotifier {
   void dispose() {
     _sub?.cancel();
     amp.dispose();
+    transcript.dispose();
     error.dispose();
     super.dispose();
   }

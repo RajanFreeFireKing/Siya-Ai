@@ -328,18 +328,17 @@ class _HomeScreenState extends State<HomeScreen>
                           ],
                         ),
                         child: widget.bridge.isActive
-                            ? ValueListenableBuilder<String>(
-                                valueListenable: widget.bridge.transcript,
-                                builder: (context, text, _) => Center(
-                                  child: Text(
-                                    text.isEmpty ? 'Listening to you…' : text,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1E232F),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -0.2,
-                                    ),
+                            ? Center(
+                                child: Text(
+                                  widget.bridge.status.isNotEmpty
+                                      ? widget.bridge.status
+                                      : 'Listening to you…',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFF1E232F),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: -0.2,
                                   ),
                                 ),
                               )
