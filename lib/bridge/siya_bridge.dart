@@ -183,6 +183,8 @@ class SiyaBridge extends ChangeNotifier {
 
   Future<Uint8List?> mediaFull(String uri) => _method.invokeMethod<Uint8List>('mediaFull', {'uri': uri});
 
+  Future<void> openNotificationAccess() => _method.invokeMethod<void>('openNotificationAccess');
+
   Future<bool> openBrowser([String? url]) async =>
       (await _method.invokeMethod<bool>('openBrowser', url != null ? {'url': url} : null)) ?? false;
 
