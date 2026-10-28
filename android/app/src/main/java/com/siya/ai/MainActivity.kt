@@ -379,7 +379,7 @@ class MainActivity : FlutterFragmentActivity() {
     // ── Settings ────────────────────────────────────────────────────────
     private val defaults: Map<String, Any> = mapOf(
         "api_key" to "", "user_name" to "Sir", "prime_name" to "", "prime_number" to "",
-        "personality_mode" to "gf", "live_voice" to "Aoede",
+        "personality_mode" to "love", "selected_personality" to "love", "live_voice" to "Aoede",
         "memory_enabled" to true, "wake_word_enabled" to false,
         "call_detect_enabled" to false,          // call detect default BAND (privacy)
         "keep_screen_on" to true, "ai_browser_enabled" to false,
@@ -394,7 +394,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     /** In keys ke badalne par live session dobara connect hota hai. */
     private val reloadKeys = setOf("api_key", "user_name", "prime_name", "prime_number", "personality_mode",
-        "live_voice", "memory_enabled", "ai_browser_enabled", "loc_mode", "loc_name", "voice_focus")
+        "selected_personality", "live_voice", "memory_enabled", "ai_browser_enabled", "loc_mode", "loc_name", "voice_focus")
 
     private fun readSettings(): Map<String, Any?> {
         val out = HashMap<String, Any?>(defaults)

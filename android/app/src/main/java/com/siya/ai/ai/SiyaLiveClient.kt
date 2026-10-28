@@ -22,7 +22,8 @@ class SiyaLiveClient(
     private val voiceName: String,
     private val systemPrompt: String,
     private val tools: JSONArray,
-    private val callback: Listener
+    private val callback: Listener,
+    private val temperature: Double = 0.88
 ) {
     interface Listener {
         fun onReady()
@@ -74,6 +75,7 @@ class SiyaLiveClient(
                 put("model", if (model.startsWith("models/")) model else "models/$model")
                 put("generationConfig", JSONObject().apply {
                     put("responseModalities", JSONArray().put("AUDIO"))
+                    put("temperature", temperature)
                     put("speechConfig", JSONObject().put("voiceConfig",
                         JSONObject().put("prebuiltVoiceConfig", JSONObject().put("voiceName", voiceName))))
                 })

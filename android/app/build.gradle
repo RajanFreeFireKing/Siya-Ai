@@ -17,12 +17,24 @@ android {
         versionName flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            storeFile file('siya-release-key.jks')
+            storePassword 'siya12345'
+            keyAlias 'siya-key'
+            keyPassword 'siya12345'
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            signingConfig signingConfigs.debug
+        }
+        debug {
+            signingConfig signingConfigs.release
         }
     }
 

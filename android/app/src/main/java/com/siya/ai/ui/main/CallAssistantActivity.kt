@@ -226,12 +226,18 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         return if (isWhatsAppCall) {
             // WhatsApp call announcement
-            when (personality) {
-                "gf" -> when {
+            when (personality.lowercase()) {
+                "love", "gf" -> when {
                     isKnownContact ->
                         "$userName, $callerName ka WhatsApp call aa raha hai. Uthana hai ya nahi?"
                     else ->
                         "$userName, ek anjaan number se WhatsApp call aa rahi hai. Uthana hai ya nahi?"
+                }
+                "friendly" -> when {
+                    isKnownContact ->
+                        "Arre $userName, $callerName ka WhatsApp call aa raha hai! Uthana hai kya?"
+                    else ->
+                        "Bhai $userName, anjaan number se WhatsApp call hai. Pick karna hai?"
                 }
                 "professional" -> when {
                     isKnownContact ->
@@ -244,12 +250,18 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         } else {
             // Normal call announcement
-            when (personality) {
-                "gf" -> when {
+            when (personality.lowercase()) {
+                "love", "gf" -> when {
                     isKnownContact ->
                         "$userName, $callerName ka call aa raha hai. Uthana hai ya nahi?"
                     else ->
                         "$userName, ek anjaan number se call aa rahi hai. Uthana hai ya nahi?"
+                }
+                "friendly" -> when {
+                    isKnownContact ->
+                        "Arre $userName, $callerName ka call aa raha hai! Uthana hai kya?"
+                    else ->
+                        "Bhai $userName, anjaan number se call aa rahi hai. Pick karein?"
                 }
                 "professional" -> when {
                     isKnownContact ->
@@ -532,9 +544,11 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             isAnswer && !isReject -> performAnswer()
             isReject -> performReject()
             else -> {
-                val confusion = when (personality) {
-                    "gf"  -> "Jaan, samajh nahi aaya. 'Uthao' ya 'Nahi' bolo."
-                    else  -> "Please say 'Answer' or 'Reject'."
+                val confusion = when (personality.lowercase()) {
+                    "love", "gf"  -> "Jaan, samajh nahi aaya. 'Uthao' ya 'Nahi' bolo."
+                    "friendly"    -> "Arre yaar samajh nahi aaya, 'Uthao' ya 'Kat do' bolo."
+                    "professional"-> "Please state 'Answer' or 'Decline'."
+                    else          -> "Please say 'Answer' or 'Reject'."
                 }
                 speakViaWebSocket(confusion)
                 handler.postDelayed({ if (!isDecisionMade) repeatAnnouncement() }, 4000)
@@ -551,9 +565,11 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         isCallAnswered = true
         stopListening()
 
-        val confirmMsg = when (personality) {
-            "gf"  -> "Ji \$userName, call utha rahi hoon! 📞"
-            else  -> "Answering the call, \$userName."
+        val confirmMsg = when (personality.lowercase()) {
+            "love", "gf"  -> "Ji \$userName, call utha rahi hoon! 📞"
+            "friendly"    -> "Haan \$userName, call utha rahi hoon! 📞"
+            "professional"-> "Answering the call for you, \$userName."
+            else          -> "Answering the call, \$userName."
         }
         speakViaWebSocket(confirmMsg)
         statusText.text = "Answering... 📞"
@@ -659,9 +675,11 @@ class CallAssistantActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         isDecisionMade = true
         stopListening()
 
-        val confirmMsg = when (personality) {
-            "gf"  -> "Theek hai \$userName, call reject kar diya. ❌"
-            else  -> "Call declined, \$userName."
+        val confirmMsg = when (personality.lowercase()) {
+            "love", "gf"  -> "Theek hai \$userName, call reject kar diya. ❌"
+            "friendly"    -> "Theek hai \$userName, call cut kar diya. ❌"
+            "professional"-> "Call declined, \$userName."
+            else          -> "Call declined, \$userName."
         }
         speakViaWebSocket(confirmMsg)
         statusText.text = "Rejecting... ❌"

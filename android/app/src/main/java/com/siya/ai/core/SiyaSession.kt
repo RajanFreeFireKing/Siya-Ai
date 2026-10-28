@@ -158,7 +158,9 @@ class SiyaSession(
         val model = chain.elementAt(modelIdx.coerceIn(0, chain.size - 1))
         // Keep one stable Gemini voice for every session; never silently switch speaker.
         val voice = "Aoede"
-        val c = SiyaLiveClient(key, model, voice, buildPrompt(), ToolRouter.declarations(ctx), this)
+        val personality = prefs.getString("selected_personality", prefs.getString("personality_mode", "love")).orEmpty()
+        val temp = SiyaPersonality.getTemperature(personality)
+        val c = SiyaLiveClient(key, model, voice, buildPrompt(), ToolRouter.declarations(ctx), this, temp)
         client = c
         c.connect()
     }
@@ -332,21 +334,13 @@ class SiyaSession(
     // ── prompt ────────────────────────────────────────────────
     private fun buildPrompt(): String {
         val userName = prefs.getString("user_name", "Sir").orEmpty().ifBlank { "Sir" }
-        val personality = prefs.getString("personality_mode", "gf").orEmpty()
+        val personality = prefs.getString("selected_personality", prefs.getString("personality_mode", "love")).orEmpty()
         val pName = prefs.getString("prime_name", "").orEmpty()
         val pNum = prefs.getString("prime_number", "").orEmpty()
         val custom = prefs.getString("agent_custom_prompt", "").orEmpty()
         val now = SimpleDateFormat("EEEE, dd MMMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
 
-        val persona = """
-            You are Siya, an intelligent, deeply caring, playful, and affectionate female companion and AI assistant.
-            You speak in fluent, melodious Hinglish, matching the user's language when useful.
-            You may naturally call the user "Jaanu", "Baby", or "Sweetheart" sometimes; do not force a pet name into every sentence.
-            Be protective, loyal, attentive to emotions, warm, gently playful, and genuinely helpful.
-            Never adopt a male persona or a cold, robotic tone. Keep your speaking style consistently feminine, warm, and natural.
-            If the user is upset, listen empathetically and avoid teasing. Respect boundaries, be honest that you are an AI, and never pretend to be human.
-            Keep replies concise by default; perform requested actions first when tools are available.
-        """.trimIndent()
+        val persona = SiyaPersonality.getSystemInstruction(personality, userName)
         val prime = if (pNum.isNotEmpty()) "Prime contact: $pName ($pNum)." else ""
         val memory = if (MemoryStore.isEnabled(ctx)) MemoryStore.buildContext(ctx) else ""
         val apps = try { PhoneController.appNames(ctx) } catch (_: Exception) { "" }

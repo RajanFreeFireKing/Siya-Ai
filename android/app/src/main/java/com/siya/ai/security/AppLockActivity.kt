@@ -447,11 +447,12 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val apiKey = prefs.getString("api_key", "") ?: ""
         if (apiKey.isEmpty()) return
 
-        val personality = prefs.getString("personality_mode", "gf") ?: "gf"
-        val systemPrompt = when(personality) {
-            "gf" -> "You are SIYA, the user's caring and emotional girlfriend. Keep security responses short, sweet, and in Hinglish. Use words like 'jaan', 'babu' occasionally but keep it professional for security."
-            "professional" -> "You are SIYA, a professional security assistant. Keep responses very short, formal and in English."
-            else -> "You are SIYA, a friendly assistant. Keep responses short and balanced."
+        val personality = prefs.getString("selected_personality", prefs.getString("personality_mode", "love")) ?: "love"
+        val systemPrompt = when(personality.lowercase()) {
+            "love", "gf" -> "You are SIYA, the user's deeply affectionate, caring partner/girlfriend. Keep security responses short, sweet, and in natural Hinglish with sweet warmth."
+            "friendly" -> "You are SIYA, the user's cool and lively best friend. Keep security responses casual, upbeat, and in everyday Hinglish."
+            "professional" -> "You are SIYA, an elite professional security advisor. Keep responses very short, formal, and articulate."
+            else -> "You are SIYA, a fast and helpful security assistant. Keep responses polite, neutral, and clear."
         }
 
         geminiClient = GeminiLiveClient(apiKey, systemPrompt, object : GeminiLiveClient.LiveListener {
@@ -461,8 +462,14 @@ class AppLockActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 isGeminiConnected = true 
                 Log.d("SIYA_LOCK", "Gemini WebSocket Connected ✅")
                 runOnUiThread {
-                    val mode = getSharedPreferences("siya_prefs", MODE_PRIVATE).getString("personality_mode", "gf") ?: "gf"
-                    val greeting = if (mode == "gf") "Pehle unlock karo jaan, phir use karne dungi." else "Please unlock to continue."
+                    val mode = getSharedPreferences("siya_prefs", MODE_PRIVATE).getString("selected_personality",
+                        getSharedPreferences("siya_prefs", MODE_PRIVATE).getString("personality_mode", "love")) ?: "love"
+                    val greeting = when(mode.lowercase()) {
+                        "love", "gf" -> "Pehle unlock karo jaan, phir use karne dungi."
+                        "friendly" -> "Arre pehle unlock kar le yaar, fir chalana."
+                        "professional" -> "Please authenticate to proceed."
+                        else -> "Please unlock to continue."
+                    }
                     speak(greeting, true)
                 }
             }

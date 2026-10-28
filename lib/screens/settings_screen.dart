@@ -197,7 +197,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   final _apiKey = TextEditingController();
 
-  String _personality = 'gf';
+  String _personality = 'love';
   String _voice = 'Aoede';
   bool _memory = true;
   bool _wake = false;
@@ -246,7 +246,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       _apiKey.text = (s['api_key'] as String?) ?? '';
       _primaryThemeColor = SiyaTheme.parseAccent(s['app_accent_color'] ?? SiyaTheme.accent.value.value);
       SiyaTheme.accent.value = _primaryThemeColor;
-      _personality = (s['personality_mode'] as String?) ?? 'gf';
+      final rawMode = (s['selected_personality'] ?? s['personality_mode'] as String?) ?? 'love';
+      _personality = (rawMode == 'gf') ? 'love' : rawMode;
       _voice = (s['live_voice'] as String?) ?? 'Aoede';
       _memory = (s['memory_enabled'] as bool?) ?? true;
       _wake = (s['wake_word_enabled'] as bool?) ?? false;
@@ -276,6 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     await widget.bridge.saveSettings({
       'api_key': _apiKey.text,
       'personality_mode': _personality,
+      'selected_personality': _personality,
       'memory_enabled': _memory,
       'app_accent_color': _primaryThemeColor.value,
     });
@@ -796,9 +798,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   Widget _personalityGrid() {
     const choices = <(String, String, IconData)>[
-      ('gf', 'Friendly', Icons.check_circle_rounded),
-      ('professional', 'Professional', Icons.work_outline_rounded),
-      ('assistant', 'Assistant', Icons.smart_toy_outlined),
+      ('friendly', 'Friendly 😊', Icons.sentiment_very_satisfied_rounded),
+      ('professional', 'Professional 💼', Icons.work_outline_rounded),
+      ('assistant', 'Assistant 🤖', Icons.smart_toy_outlined),
       ('love', 'Love ❤️', Icons.favorite_rounded),
     ];
     return _card([
@@ -809,7 +811,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             spacing: 10,
             runSpacing: 10,
             children: choices.map((choice) {
-              final selected = _personality == choice.$1;
+              final norm = _personality.toLowerCase();
+              final isChoiceLove = (norm == 'gf' || norm == 'love') && choice.$1 == 'love';
+              final selected = norm == choice.$1 || isChoiceLove;
               return SizedBox(
                 width: itemWidth,
                 child: _PersonalityChip(
@@ -821,6 +825,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     setState(() => _personality = choice.$1);
                     await widget.bridge.saveSettings({
                       'personality_mode': choice.$1,
+                      'selected_personality': choice.$1,
                     });
                   },
                 ),
@@ -1142,10 +1147,10 @@ class _PersonalityChipState extends State<_PersonalityChip> {
               children: [
                 Icon(
                   widget.icon,
-                  size: 21,
+                  size: 20,
                   color: widget.selected ? Colors.white : widget.color,
                 ),
-                const SizedBox(width: 7),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     widget.title,
@@ -1154,10 +1159,18 @@ class _PersonalityChipState extends State<_PersonalityChip> {
                     style: TextStyle(
                       color: widget.selected ? Colors.white : const Color(0xFF2A1C25),
                       fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
+                      fontSize: 12.0,
                     ),
                   ),
                 ),
+                if (widget.selected) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 15,
+                    color: Colors.white,
+                  ),
+                ],
               ],
             ),
           ),
