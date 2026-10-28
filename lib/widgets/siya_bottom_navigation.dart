@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// Centralized design and labels for Siya AI's bottom navigation.
-/// Edit this file to change button names, icons, colors, sizes, or dock styling.
 class SiyaNavLabels {
   const SiyaNavLabels._();
 
@@ -28,6 +27,8 @@ class SiyaBottomNavigation extends StatelessWidget {
     required this.onSettings,
     this.primaryColor = const Color(0xFFE6004C),
     this.homeActive = true,
+    this.chatActive = false,
+    this.toolsActive = false,
     this.settingsActive = false,
   });
 
@@ -41,6 +42,8 @@ class SiyaBottomNavigation extends StatelessWidget {
   final VoidCallback onSettings;
   final Color primaryColor;
   final bool homeActive;
+  final bool chatActive;
+  final bool toolsActive;
   final bool settingsActive;
 
   @override
@@ -48,7 +51,7 @@ class SiyaBottomNavigation extends StatelessWidget {
     final barHeight = (width * .17).clamp(66.0, 80.0);
     final micSize = (width * .21).clamp(80.0, 98.0);
     return SizedBox(
-      height: barHeight + micSize * .42,
+      height: barHeight + micSize * .45,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
@@ -62,24 +65,24 @@ class SiyaBottomNavigation extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xF0FFF1F7),
-                    Color(0xE6FEE4EE),
+                    Color.alphaBlend(primaryColor.withOpacity(0.06), const Color(0xFFFFF9FB)),
+                    Color.alphaBlend(primaryColor.withOpacity(0.12), const Color(0xFFFDE8F1)),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(barHeight * .50),
                 border: Border.all(color: const Color(0xCCFFFFFF), width: 1.5),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x35FF2A75),
+                    color: primaryColor.withOpacity(0.24),
                     blurRadius: 26,
                     spreadRadius: 2,
-                    offset: Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
-                  BoxShadow(
+                  const BoxShadow(
                     color: Color(0x99FFFFFF),
                     blurRadius: 10,
                     spreadRadius: -2,
@@ -103,6 +106,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                   _SiyaNavItem(
                     icon: Icons.chat_bubble_rounded,
                     tooltip: SiyaNavLabels.chat,
+                    active: chatActive,
                     primaryColor: primaryColor,
                     onTap: onChat,
                   ),
@@ -110,15 +114,16 @@ class SiyaBottomNavigation extends StatelessWidget {
                   // Spacer to accommodate elevated central mic
                   SizedBox(width: micSize * .84),
 
-                  // 4. Tools / Actions Button
+                  // 4. Tools / Actions Button (to the left of Settings)
                   _SiyaNavItem(
                     icon: Icons.bolt_rounded,
                     tooltip: SiyaNavLabels.tools,
+                    active: toolsActive,
                     primaryColor: primaryColor,
                     onTap: onTools,
                   ),
 
-                  // 5. Settings Button (Properly highlights active card when on Settings screen)
+                  // 5. Settings Button
                   _SiyaNavItem(
                     icon: Icons.settings_rounded,
                     tooltip: SiyaNavLabels.settings,
@@ -131,84 +136,146 @@ class SiyaBottomNavigation extends StatelessWidget {
             ),
           ),
 
-          // 3. Central Elevated Glowing Microphone
+          // 3. Central Elevated Glowing Microphone with Light Ripple Animation
           Positioned(
             top: 0,
-            child: AnimatedBuilder(
-              animation: time,
-              builder: (context, child) => Transform.scale(
-                scale: 1 + (active ? .035 : .018) * math.sin(time.value * math.pi * 2),
-                child: child,
-              ),
-              child: Semantics(
-                button: true,
-                label: active ? SiyaNavLabels.stopVoice : SiyaNavLabels.startVoice,
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: onMic,
-                    child: Container(
-                      width: micSize,
-                      height: micSize,
-                      padding: const EdgeInsets.all(4.5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFF528E),
-                            Color(0xFFFF1B67),
-                            Color(0xFFE50040),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(active ? 0xCCFF003C : 0x88FF1B67),
-                            blurRadius: active ? 28 : 22,
-                            spreadRadius: active ? 4 : 2,
-                            offset: const Offset(0, 4),
-                          ),
-                          const BoxShadow(
-                            color: Color(0x66FFA0C8),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF0D0208),
-                          border: Border.all(
-                            color: const Color(0xFFFF4884),
-                            width: 2.2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x66FF003C),
-                              blurRadius: 12,
-                              spreadRadius: 1,
+            child: SizedBox(
+              width: micSize * 1.5,
+              height: micSize * 1.5,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // Expanding radiating neon ripples when mic is active
+                  if (active)
+                    AnimatedBuilder(
+                      animation: time,
+                      builder: (context, _) {
+                        final t1 = (time.value * 2.2) % 1.0;
+                        final t2 = (time.value * 2.2 + 0.5) % 1.0;
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: micSize * (1.0 + t1 * 0.44),
+                              height: micSize * (1.0 + t1 * 0.44),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: primaryColor.withOpacity((1.0 - t1) * 0.65),
+                                  width: 2.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity((1.0 - t1) * 0.35),
+                                    blurRadius: 18,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: micSize * (1.0 + t2 * 0.44),
+                              height: micSize * (1.0 + t2 * 0.44),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: primaryColor.withOpacity((1.0 - t2) * 0.65),
+                                  width: 2.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity((1.0 - t2) * 0.35),
+                                    blurRadius: 18,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
-                        child: Center(
-                          child: Icon(
-                            active ? Icons.graphic_eq_rounded : Icons.mic_rounded,
-                            color: Colors.white,
-                            size: micSize * .42,
-                            shadows: const [
-                              Shadow(color: Color(0xFFFF1758), blurRadius: 14),
-                              Shadow(color: Colors.white, blurRadius: 4),
-                            ],
+                        );
+                      },
+                    ),
+
+                  // Mic Button Main Container
+                  AnimatedBuilder(
+                    animation: time,
+                    builder: (context, child) => Transform.scale(
+                      scale: 1 + (active ? .045 : .020) * math.sin(time.value * math.pi * 2),
+                      child: child,
+                    ),
+                    child: Semantics(
+                      button: true,
+                      label: active ? SiyaNavLabels.stopVoice : SiyaNavLabels.startVoice,
+                      child: Material(
+                        color: Colors.transparent,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: onMic,
+                          child: Container(
+                            width: micSize,
+                            height: micSize,
+                            padding: const EdgeInsets.all(4.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color.lerp(primaryColor, Colors.white, 0.32)!,
+                                  primaryColor,
+                                  Color.lerp(primaryColor, Colors.black, 0.25)!,
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(active ? 0.85 : 0.50),
+                                  blurRadius: active ? 32 : 22,
+                                  spreadRadius: active ? 4 : 2,
+                                  offset: const Offset(0, 4),
+                                ),
+                                BoxShadow(
+                                  color: Color.lerp(primaryColor, Colors.white, 0.55)!.withOpacity(0.6),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF0D0208),
+                                border: Border.all(
+                                  color: Color.lerp(primaryColor, Colors.white, 0.4)!,
+                                  width: 2.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.55),
+                                    blurRadius: 14,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.mic_rounded,
+                                  color: Colors.white,
+                                  size: micSize * .44,
+                                  shadows: [
+                                    Shadow(color: primaryColor, blurRadius: active ? 22 : 14),
+                                    const Shadow(color: Colors.white, blurRadius: 4),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -220,7 +287,7 @@ class SiyaBottomNavigation extends StatelessWidget {
 
 /// Unified navigation item widget.
 /// When active: renders the highlighted white squircle card with primary color icon + underline bar.
-/// When inactive: renders the circular frosted pink glass button with white icon.
+/// When inactive: renders the circular frosted pink/accent glass button with white icon.
 class _SiyaNavItem extends StatelessWidget {
   const _SiyaNavItem({
     required this.icon,
@@ -259,15 +326,15 @@ class _SiyaNavItem extends StatelessWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFFFFC2D8),
+                            color: Color.lerp(primaryColor, Colors.white, 0.7)!,
                             width: 1.2,
                           ),
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
-                              color: Color(0x28FF1F68),
+                              color: primaryColor.withOpacity(0.24),
                               blurRadius: 10,
                               spreadRadius: 1,
-                              offset: Offset(0, 3),
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -301,26 +368,26 @@ class _SiyaNavItem extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const RadialGradient(
-                        center: Alignment(-0.2, -0.3),
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.2, -0.3),
                         radius: 0.9,
                         colors: [
-                          Color(0xFFFE3D82),
-                          Color(0xFFE60048),
+                          Color.lerp(primaryColor, Colors.white, 0.28)!,
+                          primaryColor,
                         ],
                       ),
                       border: Border.all(
                         color: const Color(0x99FFFFFF),
                         width: 1.2,
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Color(0x30FF1E64),
+                          color: primaryColor.withOpacity(0.30),
                           blurRadius: 10,
                           spreadRadius: 1,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
-                        BoxShadow(
+                        const BoxShadow(
                           color: Color(0x44FFFFFF),
                           blurRadius: 4,
                           spreadRadius: -1,
@@ -348,5 +415,3 @@ class _SiyaNavItem extends StatelessWidget {
     );
   }
 }
-
-

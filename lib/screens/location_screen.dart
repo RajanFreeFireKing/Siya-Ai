@@ -123,10 +123,11 @@ class _LocationScreenState extends State<LocationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = SiyaTheme.accent.value;
     return SiyaPage(
       title: 'Location',
       child: !_ready
-          ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+          ? Center(child: CircularProgressIndicator(color: accent))
           : Column(
               children: [
                 Padding(
@@ -136,7 +137,7 @@ class _LocationScreenState extends State<LocationScreen> {
                       Expanded(
                         child: TextField(
                           controller: _search,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Color(0xFF1E232F)),
                           textInputAction: TextInputAction.search,
                           onSubmitted: (_) => _doSearch(),
                           decoration: siyaInput('Kahin ka bhi naam search karo', Icons.search),
@@ -176,7 +177,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                   height: 44,
                                   alignment: Alignment.topCenter,
                                   child: Icon(Icons.location_on,
-                                      size: 44, color: _mode == 'custom' ? SiyaColors.purple : SiyaColors.cyan),
+                                      size: 44, color: accent),
                                 ),
                               ]),
                             ],
@@ -189,23 +190,30 @@ class _LocationScreenState extends State<LocationScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xE6071826),
+                                  color: Colors.white.withOpacity(0.92),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: SiyaColors.cyan.withOpacity(0.7)),
+                                  border: Border.all(color: accent.withOpacity(0.35)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.06),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Icon(_satellite ? Icons.map_outlined : Icons.satellite_alt, size: 16, color: SiyaColors.cyanSoft),
+                                  Icon(_satellite ? Icons.map_outlined : Icons.satellite_alt, size: 16, color: accent),
                                   const SizedBox(width: 6),
-                                  Text(_satellite ? 'Map' : 'Satellite', style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                  Text(_satellite ? 'Map' : 'Satellite', style: const TextStyle(color: Color(0xFF2A1C25), fontSize: 12.5, fontWeight: FontWeight.w600)),
                                 ]),
                               ),
                             ),
                           ),
                           if (_busy)
-                            const Positioned.fill(
-                              child: ColoredBox(
-                                color: Color(0x55000000),
-                                child: Center(child: CircularProgressIndicator(color: SiyaColors.cyan)),
+                            Positioned.fill(
+                              child: const ColoredBox(
+                                color: Color(0x33000000),
+                                child: Center(child: CircularProgressIndicator()),
                               ),
                             ),
                         ],
@@ -219,7 +227,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   child: SizedBox(
                     height: 30,
                     child: Center(
-                      child: Container(width: 64, height: 5, decoration: BoxDecoration(color: SiyaColors.cyan.withOpacity(0.7), borderRadius: BorderRadius.circular(4))),
+                      child: Container(width: 64, height: 5, decoration: BoxDecoration(color: accent.withOpacity(0.4), borderRadius: BorderRadius.circular(4))),
                     ),
                   ),
                 ),
@@ -230,19 +238,19 @@ class _LocationScreenState extends State<LocationScreen> {
                     child: Row(
                       children: [
                         Icon(_mode == 'custom' ? Icons.push_pin_outlined : Icons.gps_fixed,
-                            color: SiyaColors.cyanSoft, size: 22),
+                            color: accent, size: 22),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(_mode == 'custom' ? 'Aapki chuni hui location' : 'Phone ki asli location',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                  style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700)),
                               const SizedBox(height: 2),
                               Text(_name.isEmpty ? 'Map par tap karke set karo' : _name,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12.5)),
+                                  style: const TextStyle(color: Color(0xFF6F6470), fontSize: 12.5)),
                             ],
                           ),
                         ),

@@ -6,9 +6,16 @@ import '../widgets/siya_ui.dart';
 
 /// Features: saare on/off switch ek alag screen mein. Har badlaav turant save hota hai.
 class FeaturesScreen extends StatefulWidget {
-  const FeaturesScreen({super.key, required this.bridge});
+  const FeaturesScreen({
+    super.key,
+    required this.bridge,
+    this.embedded = false,
+    this.onBackToHome,
+  });
 
   final SiyaBridge bridge;
+  final bool embedded;
+  final VoidCallback? onBackToHome;
 
   @override
   State<FeaturesScreen> createState() => _FeaturesScreenState();
@@ -71,38 +78,44 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
 
   Future<void> _put(Map<String, Object?> m) => widget.bridge.saveSettings(m);
 
-  Widget _switchRow(String title, String sub, bool v, ValueChanged<bool> on) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(sub, style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12.5)),
-                ],
-              ),
+  Widget _switchRow(String title, String sub, bool v, ValueChanged<bool> on) {
+    final accent = SiyaTheme.accent.value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Color(0xFF2A1C25), fontSize: 16, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(sub, style: const TextStyle(color: Color(0xFF6F6470), fontSize: 12.5)),
+              ],
             ),
-            Switch(
-              value: v,
-              activeColor: SiyaColors.cyanSoft,
-              activeTrackColor: SiyaColors.purple.withOpacity(0.6),
-              onChanged: on,
-            ),
-          ],
-        ),
-      );
+          ),
+          Switch(
+            value: v,
+            activeColor: accent,
+            activeTrackColor: accent.withOpacity(0.35),
+            onChanged: on,
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final accent = SiyaTheme.accent.value;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return SiyaPage(
       title: 'Features',
+      onBack: widget.embedded ? widget.onBackToHome : null,
       child: !_loaded
-          ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+          ? Center(child: CircularProgressIndicator(color: accent))
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+              padding: EdgeInsets.fromLTRB(16, 4, 16, widget.embedded ? bottomInset + 120 : 28),
               children: [
                 SiyaCard(
                   child: Column(
@@ -134,10 +147,10 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Awaaz focus', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      const Text('Awaaz focus', style: TextStyle(color: Color(0xFF2A1C25), fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text('Sirf aapki awaaz sune, peeche ki TV / bheed ki nahi',
-                          style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12.5)),
+                      const Text('Sirf aapki awaaz sune, peeche ki TV / bheed ki nahi',
+                          style: TextStyle(color: Color(0xFF6F6470), fontSize: 12.5)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
@@ -150,10 +163,13 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                               setState(() => _focus = e.key);
                               _put({'voice_focus': e.key});
                             },
-                            selectedColor: SiyaColors.cyan.withOpacity(0.35),
-                            backgroundColor: const Color(0xFF071826),
-                            labelStyle: const TextStyle(color: Colors.white),
-                            side: BorderSide(color: SiyaColors.cyan.withOpacity(0.35)),
+                            selectedColor: accent.withOpacity(0.20),
+                            backgroundColor: const Color(0xFFFFF9FC),
+                            labelStyle: TextStyle(
+                              color: sel ? accent : const Color(0xFF2A1C25),
+                              fontWeight: sel ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            side: BorderSide(color: sel ? accent : accent.withOpacity(0.25)),
                           );
                         }).toList(),
                       ),
@@ -165,24 +181,24 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('"Hey Siya" engine (offline)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      const Text('"Hey Siya" engine (offline)', style: TextStyle(color: Color(0xFF2A1C25), fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Text(
                         _ppnModel
                             ? 'hey_siya.ppn mil gayi. AccessKey daalo.'
                             : 'hey_siya.ppn abhi app mein nahi hai (assets folder mein daalo) - tab tak purana wake word chalega.',
-                        style: TextStyle(color: _ppnModel ? SiyaColors.ok : Colors.white.withOpacity(0.55), fontSize: 12.5),
+                        style: TextStyle(color: _ppnModel ? const Color(0xFF00C853) : const Color(0xFF6F6470), fontSize: 12.5),
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _ppnKey,
                         obscureText: _hideKey,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Color(0xFF2A1C25)),
                         onSubmitted: (v) => _put({'picovoice_key': v}),
                         onEditingComplete: () => _put({'picovoice_key': _ppnKey.text}),
                         decoration: siyaInput('Picovoice AccessKey', Icons.key_outlined).copyWith(
                           suffixIcon: IconButton(
-                            icon: Icon(_hideKey ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white54),
+                            icon: Icon(_hideKey ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xFF8B7180)),
                             onPressed: () => setState(() => _hideKey = !_hideKey),
                           ),
                         ),
@@ -203,22 +219,22 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                     behavior: HitTestBehavior.opaque,
                     child: Row(
                       children: [
-                        const Icon(Icons.music_note_outlined, color: SiyaColors.cyanSoft),
+                        Icon(Icons.music_note_outlined, color: accent),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Media access', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                              const Text('Media access', style: TextStyle(color: Color(0xFF2A1C25), fontSize: 16, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 2),
                               Text(
                                 _mediaAccess ? 'ON - Siya dekh sakti hai kya chal raha hai' : 'Off - tap karke "Siya" ko allow karo',
-                                style: TextStyle(color: _mediaAccess ? SiyaColors.ok : Colors.white.withOpacity(0.55), fontSize: 12.5),
+                                style: TextStyle(color: _mediaAccess ? const Color(0xFF00C853) : const Color(0xFF6F6470), fontSize: 12.5),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Colors.white38),
+                        const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
                       ],
                     ),
                   ),

@@ -179,9 +179,16 @@ class _SettingsSilkPainter extends CustomPainter {
 /// Settings - purani SettingsActivity ke saare features, naye dark neon style mein.
 /// Data Kotlin ke SharedPreferences ("siya_prefs") mein save hota hai.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.bridge});
+  const SettingsScreen({
+    super.key,
+    required this.bridge,
+    this.embedded = false,
+    this.onBackToHome,
+  });
 
   final SiyaBridge bridge;
+  final bool embedded;
+  final VoidCallback? onBackToHome;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -278,6 +285,33 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
+  Future<void> _saveApiKey() async {
+    final key = _apiKey.text.trim();
+    await widget.bridge.saveSettings({'api_key': key});
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Gemini API Key saved successfully!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  Future<void> _saveThemeColor() async {
+    await SiyaTheme.setAccent(_primaryThemeColor, widget.bridge.saveSettings);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Theme color updated and saved across app!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   Future<void> _grantPermissions() async {
     final left = await widget.bridge.requestPermissions();
     if (!mounted) return;
@@ -340,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           _personalityGrid(),
                           const SizedBox(height: 10),
                           _section('Theme Color'),
-                          _themeColorPicker(),
+                          _themeColorOption(),
                           _section('Access & Security'),
                           _card([
                             _action(
@@ -428,36 +462,36 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             trailing: const Icon(Icons.chevron_right, color: Color(0xFF8B7180)),
                             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PowerFeaturesScreen(bridge: widget.bridge))),
                           ),
-                          const SizedBox(height: 12),
-                          _saveButton(),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
                   ],
                 ),
           ),
-          // Floating bottom navigation bar on top of the list view with proper safe elevation
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: math.max(12.0, bottomInset + 6.0),
-            child: SiyaBottomNavigation(
-              width: MediaQuery.sizeOf(context).width * .93,
-              primaryColor: _primaryThemeColor,
-              time: const AlwaysStoppedAnimation<double>(0),
-              active: widget.bridge.isActive,
-              homeActive: false,
-              settingsActive: true,
-              onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
-              onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Voice chat ke liye center mic tap karein.'),
-                behavior: SnackBarBehavior.floating,
-              )),
-              onMic: widget.bridge.toggleMic,
-              onTools: () => Navigator.of(context).pushNamed('/features'),
-              onSettings: () {},
+          // Floating bottom navigation bar on top of the list view with proper safe elevation (only when not embedded)
+          if (!widget.embedded)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: math.max(12.0, bottomInset + 6.0),
+              child: SiyaBottomNavigation(
+                width: MediaQuery.sizeOf(context).width * .93,
+                primaryColor: _primaryThemeColor,
+                time: const AlwaysStoppedAnimation<double>(0),
+                active: widget.bridge.isActive,
+                homeActive: false,
+                settingsActive: true,
+                onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Voice chat ke liye center mic tap karein.'),
+                  behavior: SnackBarBehavior.floating,
+                )),
+                onMic: widget.bridge.toggleMic,
+                onTools: () => Navigator.of(context).pushNamed('/features'),
+                onSettings: () {},
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -523,15 +557,54 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Gemini API Key',
-              style: TextStyle(
-                color: Color(0xFF151019),
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Gemini API Key',
+                  style: TextStyle(
+                    color: Color(0xFF151019),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _saveApiKey,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [_primaryThemeColor, Color.lerp(_primaryThemeColor, const Color(0xFFFF0077), 0.5)!],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _primaryThemeColor.withOpacity(0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Save',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
             _field(_apiKey, 'Paste your API key', Icons.vpn_key_rounded, secret: true),
           ],
         ),
@@ -544,7 +617,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             Row(
               children: [
                 _iconBtn(Icons.arrow_back_ios_new_rounded, () {
-                  if (Navigator.of(context).canPop()) {
+                  if (widget.onBackToHome != null) {
+                    widget.onBackToHome!();
+                  } else if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
                 }),
@@ -757,67 +832,143 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     ]);
   }
 
-  Widget _themeColorPicker() {
-    const colors = <Color>[
-      Color(0xFFFF2A6D),
-      Color(0xFFE91E63),
-      Color(0xFFFF6B35),
-      Color(0xFF8B5CF6),
-      Color(0xFF02A3FC),
-      Color(0xFF00A884),
-      Color(0xFF111827),
-      Color(0xFFCE2DDF),
-    ];
+  Widget _themeColorOption() {
     return _card([
-      Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: colors.map((color) {
-          final selected = color.value == _primaryThemeColor.value;
-          return Semantics(
-            button: true,
-            label: 'Choose theme color',
-            child: GestureDetector(
-              onTap: () async {
-                setState(() => _primaryThemeColor = color);
-                await SiyaTheme.setAccent(color, widget.bridge.saveSettings);
-              },
-              child: AnimatedScale(
-                scale: selected ? 1.08 : 1,
-                duration: const Duration(milliseconds: 190),
-                curve: Curves.easeOutBack,
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: selected ? 3 : 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withOpacity(selected ? .38 : .15),
-                        blurRadius: selected ? 13 : 7,
-                      ),
-                    ],
-                  ),
-                  child: selected
-                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
-                      : null,
+      Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _primaryThemeColor,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: _primaryThemeColor.withOpacity(0.4),
+                  blurRadius: 10,
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Theme Accent Color',
+                  style: TextStyle(
+                    color: Color(0xFF151019),
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Pura app ka color badlo (Home, Dock, Settings)',
+                  style: TextStyle(color: Color(0xFF6F6470), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: _saveThemeColor,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_primaryThemeColor, Color.lerp(_primaryThemeColor, const Color(0xFFFF0077), 0.5)!],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryThemeColor.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                  SizedBox(width: 4),
+                  Text(
+                    'Save Color',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
-      const SizedBox(height: 8),
-      const Text(
-        'Theme accent updates this screen immediately.',
-        style: TextStyle(color: Color(0xFF756A76), fontSize: 12),
-      ),
+      const SizedBox(height: 14),
+      _themeColorPicker(),
     ]);
+  }
+
+  Widget _themeColorPicker() {
+    const colors = <Color>[
+      Color(0xFFFF2A6D), // Neon Rose
+      Color(0xFFE50040), // Crimson Red
+      Color(0xFFFF6B35), // Sunset Orange
+      Color(0xFF8B5CF6), // Royal Purple
+      Color(0xFF02A3FC), // Electric Cyan
+      Color(0xFF00C896), // Emerald Mint
+      Color(0xFFE91E63), // Fuchsia Pink
+      Color(0xFFFFB800), // Amber Gold
+    ];
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: colors.map((color) {
+        final selected = color.value == _primaryThemeColor.value;
+        return Semantics(
+          button: true,
+          label: 'Choose theme color',
+          child: GestureDetector(
+            onTap: () {
+              setState(() => _primaryThemeColor = color);
+              SiyaTheme.setAccent(color, widget.bridge.saveSettings);
+            },
+            child: AnimatedScale(
+              scale: selected ? 1.12 : 1,
+              duration: const Duration(milliseconds: 190),
+              curve: Curves.easeOutBack,
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: selected ? 3.2 : 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(selected ? .45 : .15),
+                      blurRadius: selected ? 13 : 7,
+                    ),
+                  ],
+                ),
+                child: selected
+                    ? const Center(
+                        child: Icon(Icons.check_rounded, color: Colors.white, size: 22),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 
   Widget _switchRow(String title, String sub, bool v, ValueChanged<bool> on) => Row(
@@ -917,21 +1068,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       ),
     );
   }
-
-  Widget _saveButton() => GestureDetector(
-        onTap: _save,
-        child: Container(
-          height: 54,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [_primaryThemeColor, Color.lerp(_primaryThemeColor, const Color(0xFFFF00A8), .75)!]),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [BoxShadow(color: _primaryThemeColor.withOpacity(0.35), blurRadius: 16)],
-          ),
-          child: const Text('Save',
-              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-        ),
-      );
 }
 
 class _PersonalityChip extends StatefulWidget {

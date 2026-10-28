@@ -67,10 +67,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = SiyaTheme.accent.value;
     return SiyaPage(
       title: 'Profile',
       child: !_loaded
-          ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+          ? Center(child: CircularProgressIndicator(color: accent))
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
@@ -82,8 +83,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 84,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple]),
-                          boxShadow: [BoxShadow(color: SiyaColors.cyan.withOpacity(0.35), blurRadius: 18)],
+                          gradient: LinearGradient(colors: [accent, Color.lerp(accent, Colors.white, 0.45)!]),
+                          boxShadow: [BoxShadow(color: accent.withOpacity(0.35), blurRadius: 18)],
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -95,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextField(
                         controller: _name,
                         onChanged: (_) => setState(() {}),
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Color(0xFF1E232F)),
                         decoration: siyaInput('Your name', Icons.person_outline),
                       ),
                     ],
@@ -111,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _primeName,
-                              style: const TextStyle(color: Colors.white),
+                              style: const TextStyle(color: Color(0xFF1E232F)),
                               decoration: siyaInput('Prime contact', Icons.star_outline),
                             ),
                           ),
@@ -126,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextField(
                         controller: _primeNumber,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Color(0xFF1E232F)),
                         decoration: siyaInput('Prime number', Icons.phone_outlined),
                       ),
                     ],

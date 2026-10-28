@@ -149,15 +149,15 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.brightness_6_outlined, color: SiyaColors.cyanSoft, size: 20),
+                      Icon(Icons.brightness_6_outlined, color: SiyaTheme.accent.value, size: 20),
                       const SizedBox(width: 10),
-                      const Text('Dim', style: TextStyle(color: Colors.white)),
+                      const Text('Dim', style: TextStyle(color: Color(0xFF2A1C25))),
                       Expanded(
                         child: Slider(
                           value: _dim,
                           min: 0,
                           max: 0.8,
-                          activeColor: SiyaColors.cyan,
+                          activeColor: SiyaTheme.accent.value,
                           onChanged: (v) => setState(() => _dim = v),
                           onChangeEnd: (_) => _saveOpts(),
                         ),
@@ -166,13 +166,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.volume_up_outlined, color: SiyaColors.cyanSoft, size: 20),
+                      Icon(Icons.volume_up_outlined, color: SiyaTheme.accent.value, size: 20),
                       const SizedBox(width: 10),
-                      const Expanded(child: Text('Live wallpaper ki awaaz', style: TextStyle(color: Colors.white))),
+                      const Expanded(child: Text('Live wallpaper ki awaaz', style: TextStyle(color: Color(0xFF2A1C25)))),
                       Switch(
                         value: _sound,
-                        activeColor: SiyaColors.cyanSoft,
-                        activeTrackColor: SiyaColors.purple.withOpacity(0.6),
+                        activeColor: SiyaTheme.accent.value,
+                        activeTrackColor: SiyaTheme.accent.value.withOpacity(0.35),
                         onChanged: (v) {
                           setState(() => _sound = v);
                           _saveOpts();
@@ -186,7 +186,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+                ? Center(child: CircularProgressIndicator(color: SiyaTheme.accent.value))
                 : _items.isEmpty
                     ? _empty()
                     : GridView.builder(
@@ -208,6 +208,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   }
 
   Widget _saveBar() {
+    final accent = SiyaTheme.accent.value;
     final status = _curType == 'none' ? 'Abhi koi wallpaper nahi' : (_curType == 'video' ? 'Abhi: Live wallpaper lagi hai' : 'Abhi: Photo wallpaper lagi hai');
     return AnimatedSize(
       duration: const Duration(milliseconds: 180),
@@ -215,8 +216,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF06182A),
-          border: Border(top: BorderSide(color: SiyaColors.cyan.withOpacity(0.25))),
+          color: Colors.white.withOpacity(0.95),
+          border: Border(top: BorderSide(color: accent.withOpacity(0.25))),
+          boxShadow: [
+            BoxShadow(color: accent.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, -4)),
+          ],
         ),
         child: _hasSel
             ? Row(
@@ -232,10 +236,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       children: [
                         Text(_justSaved ? 'Save ho gayi \u2713' : 'Select ki hui ${_selKind == 'video' ? 'video' : 'photo'}',
                             style: TextStyle(
-                                color: _justSaved ? SiyaColors.ok : Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                                color: _justSaved ? const Color(0xFF00C853) : const Color(0xFF2A1C25), fontWeight: FontWeight.w700, fontSize: 14)),
                         const SizedBox(height: 2),
                         Text(_justSaved ? 'Home screen par lag gayi' : 'Abhi lagi nahi - Save dabao',
-                            style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
+                            style: const TextStyle(color: Color(0xFF6F6470), fontSize: 12)),
                       ],
                     ),
                   ),
@@ -247,32 +251,33 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                 ],
               )
             : Text('$status. Photo chuno, phir Save dabao.',
-                textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13)),
+                textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF6F6470), fontSize: 13)),
       ),
     );
   }
 
   Widget _previewThumb() {
     if (_selPath != null && _selKind == 'image') {
-      return Image.file(File(_selPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF0A1826)));
+      return Image.file(File(_selPath!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFFEFE8ED)));
     }
     if (_selItem != null) {
       return FutureBuilder<Uint8List?>(
         future: _thumb(_selItem!, size: 200),
-        builder: (_, s) => s.data == null ? const ColoredBox(color: Color(0xFF0A1826)) : Image.memory(s.data!, fit: BoxFit.cover),
+        builder: (_, s) => s.data == null ? const ColoredBox(color: Color(0xFFEFE8ED)) : Image.memory(s.data!, fit: BoxFit.cover),
       );
     }
-    return const ColoredBox(color: Color(0xFF0A1826), child: Icon(Icons.movie_outlined, color: Colors.white54));
+    return const ColoredBox(color: Color(0xFFEFE8ED), child: Icon(Icons.movie_outlined, color: Color(0xFF6F6470)));
   }
 
   Widget _tile(MediaItem m) {
+    final accent = SiyaTheme.accent.value;
     final sel = _selItem?.uri == m.uri;
     return GestureDetector(
       onTap: () => _select(m),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: sel ? SiyaColors.cyan : Colors.transparent, width: 2.5),
+          border: Border.all(color: sel ? accent : Colors.transparent, width: 2.5),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
@@ -282,19 +287,19 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
               FutureBuilder<Uint8List?>(
                 future: _thumb(m),
                 builder: (_, s) => s.data == null
-                    ? const ColoredBox(color: Color(0xFF0A1826))
+                    ? const ColoredBox(color: Color(0xFFEFE8ED))
                     : Image.memory(s.data!, fit: BoxFit.cover, gaplessPlayback: true),
               ),
               if (m.kind == 'video')
-                const Positioned(right: 6, bottom: 6, child: Icon(Icons.play_circle_fill, color: Colors.white70, size: 22)),
+                const Positioned(right: 6, bottom: 6, child: Icon(Icons.play_circle_fill, color: Colors.white, size: 22)),
               if (sel)
                 Positioned(
                   top: 6,
                   right: 6,
                   child: Container(
                     padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(color: SiyaColors.cyan, shape: BoxShape.circle),
-                    child: const Icon(Icons.check, size: 15, color: Colors.black),
+                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                    child: const Icon(Icons.check, size: 15, color: Colors.white),
                   ),
                 ),
             ],
@@ -304,28 +309,32 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
     );
   }
 
-  Widget _empty() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.photo_library_outlined, color: Colors.white38, size: 48),
-              const SizedBox(height: 12),
-              Text(_denied ? 'Gallery ki permission chahiye' : 'Gallery mein kuch nahi mila',
-                  style: const TextStyle(color: Colors.white70, fontSize: 15)),
-              const SizedBox(height: 16),
-              SiyaButton(
-                label: _denied ? 'Permission do' : 'Upload karo',
-                icon: _denied ? Icons.lock_open : Icons.upload_file_outlined,
-                onTap: _denied ? _loadMedia : _upload,
-              ),
-            ],
-          ),
+  Widget _empty() {
+    final accent = SiyaTheme.accent.value;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.photo_library_outlined, color: accent.withOpacity(0.4), size: 48),
+            const SizedBox(height: 12),
+            Text(_denied ? 'Gallery ki permission chahiye' : 'Gallery mein kuch nahi mila',
+                style: const TextStyle(color: Color(0xFF6F6470), fontSize: 15)),
+            const SizedBox(height: 16),
+            SiyaButton(
+              label: _denied ? 'Permission do' : 'Upload karo',
+              icon: _denied ? Icons.lock_open : Icons.upload_file_outlined,
+              onTap: _denied ? _loadMedia : _upload,
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   Widget _tabBtn(String k, String label, IconData icon) {
+    final accent = SiyaTheme.accent.value;
     final sel = _tab == k;
     return Expanded(
       child: GestureDetector(
@@ -339,17 +348,26 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: sel ? const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple]) : null,
-            color: sel ? null : const Color(0xFF071826),
+            gradient: sel ? LinearGradient(colors: [accent, Color.lerp(accent, Colors.white, 0.45)!]) : null,
+            color: sel ? null : Colors.white.withOpacity(0.85),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: SiyaColors.cyan.withOpacity(sel ? 0 : 0.3)),
+            border: Border.all(color: accent.withOpacity(sel ? 0 : 0.25)),
+            boxShadow: [
+              BoxShadow(color: accent.withOpacity(sel ? 0.25 : 0.05), blurRadius: 10),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 18),
+              Icon(icon, color: sel ? Colors.white : const Color(0xFF2A1C25), size: 18),
               const SizedBox(width: 6),
-              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: sel ? Colors.white : const Color(0xFF2A1C25),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),

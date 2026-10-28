@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
+import '../widgets/siya_ui.dart';
 import 'people_screen.dart';
 
 /// AI Data: Siya ki poori yaaddaasht - chat history (date + time ke saath), facts, search, export.
@@ -32,7 +33,6 @@ class _MemoryScreenState extends State<MemoryScreen> {
   void initState() {
     super.initState();
     _load();
-    // Live baatcheet chal rahi ho to history apne aap update hoti rahe
     _timer = Timer.periodic(const Duration(seconds: 4), (_) => _load(silent: true));
   }
 
@@ -77,14 +77,21 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        backgroundColor: SiyaColors.card,
-        title: const Text('Saara data hatayein?'),
-        content: const Text('Siya ki poori chat history aur yaad ki hui baatein hamesha ke liye delete ho jayengi.'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Saara data hatayein?', style: TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700)),
+        content: const Text(
+          'Siya ki poori chat history aur yaad ki hui baatein hamesha ke liye delete ho jayengi.',
+          style: TextStyle(color: Color(0xFF6F6470)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Nahi')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Nahi', style: TextStyle(color: Color(0xFF6F6470))),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Haan, hata do', style: TextStyle(color: SiyaColors.bad)),
+            child: const Text('Haan, hata do', style: TextStyle(color: SiyaColors.bad, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -107,111 +114,86 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final list = _visible;
     final days = _data.messages.map((m) => m.day).toSet().length;
 
-    return Scaffold(
-      backgroundColor: SiyaColors.bg,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF06182A), Color(0xFF020A14)],
-          ),
-        ),
-        child: SafeArea(
+    return ValueListenableBuilder<Color>(
+      valueListenable: SiyaTheme.accent,
+      builder: (context, accent, _) {
+        return SiyaPage(
+          title: 'AI Data',
+          actions: [
+            SiyaIconBtn(
+              icon: Icons.face_outlined,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => PeopleScreen(bridge: widget.bridge)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SiyaIconBtn(icon: Icons.copy_all_outlined, onTap: _copy),
+            const SizedBox(width: 8),
+            SiyaIconBtn(icon: Icons.delete_outline, onTap: _clear, danger: true),
+          ],
           child: Column(
             children: [
-              _header(),
-              _stats(days),
-              _searchBar(),
-              _filters(),
-              if (_data.facts.isNotEmpty) _factsCard(),
+              _stats(days, accent),
+              _searchBar(accent),
+              _filters(accent),
+              if (_data.facts.isNotEmpty) _factsCard(accent),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+                    ? Center(child: CircularProgressIndicator(color: accent))
                     : list.isEmpty
-                        ? _empty()
+                        ? _empty(accent)
                         : RefreshIndicator(
-                            color: SiyaColors.cyan,
-                            backgroundColor: SiyaColors.card,
+                            color: accent,
+                            backgroundColor: Colors.white,
                             onRefresh: _load,
-                            child: _messages(list),
+                            child: _messages(list, accent),
                           ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _header() => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+  Widget _stats(int days, Color accent) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
         child: Row(
           children: [
-            _iconBtn(Icons.arrow_back_ios_new_rounded, () => Navigator.of(context).pop()),
-            const SizedBox(width: 14),
-            Expanded(
-              child: ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (r) => const LinearGradient(colors: [SiyaColors.cyanSoft, SiyaColors.violet]).createShader(r),
-                child: const Text('AI Data', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-              ),
-            ),
-            _iconBtn(Icons.face_outlined, () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => PeopleScreen(bridge: widget.bridge)))),
-            const SizedBox(width: 8),
-            _iconBtn(Icons.copy_all_outlined, _copy),
-            const SizedBox(width: 8),
-            _iconBtn(Icons.delete_outline, _clear, danger: true),
+            _stat('Messages', '${_data.total}', Icons.chat_bubble_outline, accent),
+            const SizedBox(width: 10),
+            _stat('Din', '$days', Icons.calendar_today_outlined, accent),
+            const SizedBox(width: 10),
+            _stat('Facts', '${_data.facts.length}', Icons.bookmark_outline, accent),
           ],
         ),
       );
 
-  Widget _iconBtn(IconData icon, VoidCallback onTap, {bool danger = false}) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: const Color(0xFF071826),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: (danger ? SiyaColors.bad : SiyaColors.cyan).withOpacity(0.6)),
-          ),
-          child: Icon(icon, color: danger ? SiyaColors.bad : Colors.white, size: 20),
-        ),
-      );
-
-  Widget _stats(int days) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-        child: Row(
-          children: [
-            _stat('Messages', '${_data.total}', Icons.chat_bubble_outline),
-            const SizedBox(width: 10),
-            _stat('Din', '$days', Icons.calendar_today_outlined),
-            const SizedBox(width: 10),
-            _stat('Facts', '${_data.facts.length}', Icons.bookmark_outline),
-          ],
-        ),
-      );
-
-  Widget _stat(String label, String value, IconData icon) => Expanded(
+  Widget _stat(String label, String value, IconData icon, Color accent) => Expanded(
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
-            color: SiyaColors.card,
+            color: Colors.white.withOpacity(0.88),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: SiyaColors.cyan.withOpacity(0.18)),
+            border: Border.all(color: accent.withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: SiyaColors.cyanSoft),
+              Icon(icon, size: 18, color: accent),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                    Text(label, style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 11)),
+                    Text(value, style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(label, style: const TextStyle(color: Color(0xFF6F6470), fontSize: 11)),
                   ],
                 ),
               ),
@@ -220,44 +202,46 @@ class _MemoryScreenState extends State<MemoryScreen> {
         ),
       );
 
-  Widget _searchBar() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+  Widget _searchBar(Color accent) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
         child: TextField(
           controller: _search,
           onChanged: (_) => setState(() {}),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF2A1C25)),
           decoration: InputDecoration(
             hintText: 'Chat mein dhundo...',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-            prefixIcon: Icon(Icons.search, color: SiyaColors.cyanSoft.withOpacity(0.8)),
+            hintStyle: const TextStyle(color: Color(0xFF9E929E)),
+            prefixIcon: Icon(Icons.search, color: accent),
             suffixIcon: _search.text.isEmpty
                 ? null
                 : IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+                    icon: const Icon(Icons.close, color: Color(0xFF6F6470), size: 18),
                     onPressed: () => setState(_search.clear),
                   ),
             filled: true,
-            fillColor: const Color(0xFF071420),
+            fillColor: Colors.white.withOpacity(0.92),
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: accent.withOpacity(0.2))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: accent, width: 1.5)),
           ),
         ),
       );
 
-  Widget _filters() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+  Widget _filters(Color accent) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         child: Row(
           children: [
-            _chip('Sab', _Filter.all),
+            _chip('Sab', _Filter.all, accent),
             const SizedBox(width: 8),
-            _chip('Aap', _Filter.you),
+            _chip('Aap', _Filter.you, accent),
             const SizedBox(width: 8),
-            _chip('Siya', _Filter.siya),
+            _chip('Siya', _Filter.siya, accent),
           ],
         ),
       );
 
-  Widget _chip(String label, _Filter f) {
+  Widget _chip(String label, _Filter f, Color accent) {
     final sel = _filter == f;
     return GestureDetector(
       onTap: () => setState(() => _filter = f),
@@ -265,23 +249,44 @@ class _MemoryScreenState extends State<MemoryScreen> {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          gradient: sel ? const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple]) : null,
-          color: sel ? null : const Color(0xFF071420),
+          color: sel ? accent : Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: SiyaColors.cyan.withOpacity(sel ? 0 : 0.25)),
+          border: Border.all(color: accent.withOpacity(sel ? 0 : 0.25)),
+          boxShadow: [
+            if (sel)
+              BoxShadow(
+                color: accent.withOpacity(0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+          ],
         ),
-        child: Text(label, style: TextStyle(color: Colors.white, fontWeight: sel ? FontWeight.w700 : FontWeight.w500, fontSize: 13)),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: sel ? Colors.white : const Color(0xFF2A1C25),
+            fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _factsCard() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+  Widget _factsCard(Color accent) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
         child: Container(
           decoration: BoxDecoration(
-            color: SiyaColors.card,
+            color: Colors.white.withOpacity(0.92),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: SiyaColors.purple.withOpacity(0.35)),
+            border: Border.all(color: accent.withOpacity(0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -292,13 +297,15 @@ class _MemoryScreenState extends State<MemoryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   child: Row(
                     children: [
-                      const Icon(Icons.bookmark_added_outlined, size: 18, color: SiyaColors.violet),
+                      Icon(Icons.bookmark_added_outlined, size: 18, color: accent),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text('Siya ko yaad hai (${_data.facts.length})',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          'Siya ko yaad hai (${_data.facts.length})',
+                          style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700),
+                        ),
                       ),
-                      Icon(_factsOpen ? Icons.expand_less : Icons.expand_more, color: Colors.white54),
+                      Icon(_factsOpen ? Icons.expand_less : Icons.expand_more, color: const Color(0xFF6F6470)),
                     ],
                   ),
                 ),
@@ -312,7 +319,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                       for (final f in _data.facts)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 6),
-                          child: Text('• $f', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13)),
+                          child: Text('• $f', style: const TextStyle(color: Color(0xFF6F6470), fontSize: 13)),
                         ),
                     ],
                   ),
@@ -322,35 +329,35 @@ class _MemoryScreenState extends State<MemoryScreen> {
         ),
       );
 
-  Widget _empty() => Center(
+  Widget _empty(Color accent) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.forum_outlined, size: 56, color: SiyaColors.cyanSoft.withOpacity(0.5)),
+              Icon(Icons.forum_outlined, size: 56, color: accent.withOpacity(0.5)),
               const SizedBox(height: 14),
               Text(
                 _data.messages.isEmpty
                     ? 'Abhi koi chat history nahi hai.\nSiya se baat karo, yahan sab save hoga.'
                     : 'Koi message nahi mila.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.6), height: 1.4),
+                style: const TextStyle(color: Color(0xFF6F6470), height: 1.4),
               ),
             ],
           ),
         ),
       );
 
-  Widget _messages(List<MemoryMsg> list) {
+  Widget _messages(List<MemoryMsg> list, Color accent) {
     final items = <Widget>[];
     String? lastDay;
     for (final m in list) {
       if (m.day != lastDay) {
         lastDay = m.day;
-        items.add(_dayHeader(m.day));
+        items.add(_dayHeader(m.day, accent));
       }
-      items.add(_bubble(m));
+      items.add(_bubble(m, accent));
     }
     return ListView(
       controller: _scroll,
@@ -360,21 +367,21 @@ class _MemoryScreenState extends State<MemoryScreen> {
     );
   }
 
-  Widget _dayHeader(String day) => Padding(
+  Widget _dayHeader(String day, Color accent) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFF0B2236),
+              color: accent.withOpacity(0.12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Text(day, style: TextStyle(color: SiyaColors.cyanSoft.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text(day, style: TextStyle(color: accent, fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ),
       );
 
-  Widget _bubble(MemoryMsg m) {
+  Widget _bubble(MemoryMsg m, Color accent) {
     final user = m.isUser;
     return Align(
       alignment: user ? Alignment.centerRight : Alignment.centerLeft,
@@ -383,32 +390,46 @@ class _MemoryScreenState extends State<MemoryScreen> {
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.fromLTRB(13, 9, 13, 7),
         decoration: BoxDecoration(
-          gradient: user
-              ? const LinearGradient(colors: [Color(0xFF0E5E78), Color(0xFF1B4FA8)])
-              : const LinearGradient(colors: [Color(0xFF241A4F), Color(0xFF3B2478)]),
+          color: user ? accent : Colors.white.withOpacity(0.92),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
             bottomLeft: Radius.circular(user ? 18 : 4),
             bottomRight: Radius.circular(user ? 4 : 18),
           ),
+          border: user ? null : Border.all(color: accent.withOpacity(0.18)),
+          boxShadow: [
+            BoxShadow(
+              color: (user ? accent : Colors.black).withOpacity(user ? 0.22 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(user ? 'Aap' : 'Siya',
-                style: TextStyle(
-                  color: user ? SiyaColors.cyanSoft : SiyaColors.violet,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                )),
+            Text(
+              user ? 'Aap' : 'Siya',
+              style: TextStyle(
+                color: user ? Colors.white.withOpacity(0.85) : accent,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 2),
-            _highlight(m.text),
+            _highlight(m.text, user ? Colors.white : const Color(0xFF2A1C25)),
             const SizedBox(height: 3),
             Align(
               alignment: Alignment.centerRight,
-              child: Text(m.clock, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
+              child: Text(
+                m.clock,
+                style: TextStyle(
+                  color: (user ? Colors.white : const Color(0xFF6F6470)).withOpacity(0.65),
+                  fontSize: 10,
+                ),
+              ),
             ),
           ],
         ),
@@ -416,9 +437,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
     );
   }
 
-  Widget _highlight(String text) {
+  Widget _highlight(String text, Color textColor) {
     final q = _search.text.trim();
-    const base = TextStyle(color: Colors.white, fontSize: 14.5, height: 1.35);
+    final base = TextStyle(color: textColor, fontSize: 14.5, height: 1.35);
     if (q.isEmpty) return SelectableText(text, style: base);
     final lower = text.toLowerCase();
     final ql = q.toLowerCase();
@@ -433,7 +454,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
       if (j > i) spans.add(TextSpan(text: text.substring(i, j)));
       spans.add(TextSpan(
         text: text.substring(j, j + ql.length),
-        style: const TextStyle(backgroundColor: Color(0x8822D3EE), fontWeight: FontWeight.w700),
+        style: const TextStyle(backgroundColor: Color(0x66FFEB3B), fontWeight: FontWeight.w700),
       ));
       i = j + ql.length;
     }

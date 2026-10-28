@@ -45,16 +45,17 @@ class _FaceSearchScreenState extends State<FaceSearchScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        backgroundColor: SiyaColors.card,
-        title: const Text('Gallery search', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Gallery search', style: TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700)),
         content: const Text(
           'Match dhundne ke liye gallery ki chhoti photos aur reference photo aapke Gemini API key se Google ke AI ko bheji jaayengi. '
           'Photos phone par hi rehti hain, koi photo badli ya delete nahi hoti.\n\nSirf apni / ghar walon ki photos ke liye use karo. Aage badhein?',
-          style: TextStyle(color: Colors.white70, height: 1.4),
+          style: TextStyle(color: Color(0xFF6F6470), height: 1.4),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Nahi')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Haan, dhundo')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Nahi', style: TextStyle(color: Color(0xFF6F6470)))),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text('Haan, dhundo', style: TextStyle(color: SiyaTheme.accent.value, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -78,6 +79,7 @@ class _FaceSearchScreenState extends State<FaceSearchScreen> {
     final running = st?.running ?? false;
     final matches = st?.matches ?? const <MediaItem>[];
     final progress = (st != null && st.total > 0) ? st.done / st.total : null;
+    final accent = SiyaTheme.accent.value;
     return SiyaPage(
       title: widget.person.name,
       child: Column(
@@ -88,10 +90,10 @@ class _FaceSearchScreenState extends State<FaceSearchScreen> {
               child: Column(
                 children: [
                   if (running) ...[
-                    LinearProgressIndicator(value: progress, color: SiyaColors.cyan, backgroundColor: Colors.white12),
+                    LinearProgressIndicator(value: progress, color: accent, backgroundColor: accent.withOpacity(0.15)),
                     const SizedBox(height: 10),
                     Text('Dhundh rahi hoon... ${st?.done ?? 0} / ${st?.total ?? 0}   (mili: ${matches.length})',
-                        style: const TextStyle(color: Colors.white70)),
+                        style: const TextStyle(color: Color(0xFF6F6470))),
                     const SizedBox(height: 10),
                     SiyaButton(label: 'Rok do', outlined: true, onTap: () => widget.bridge.faceSearchCancel()),
                   ] else ...[
@@ -99,7 +101,7 @@ class _FaceSearchScreenState extends State<FaceSearchScreen> {
                       matches.isEmpty
                           ? 'Gallery mein is insaan ki photos dhundo'
                           : '${matches.length} photos mili',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700),
                     ),
                     if ((st?.error ?? '').isNotEmpty) ...[
                       const SizedBox(height: 6),
@@ -122,7 +124,7 @@ class _FaceSearchScreenState extends State<FaceSearchScreen> {
             child: matches.isEmpty
                 ? Center(
                     child: Text(running ? 'Photos aate hi yahan dikhengi' : 'Abhi koi result nahi',
-                        style: TextStyle(color: Colors.white.withOpacity(0.45))),
+                        style: const TextStyle(color: Color(0xFF6F6470))),
                   )
                 : GridView.builder(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),

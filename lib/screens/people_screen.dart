@@ -52,12 +52,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        backgroundColor: SiyaColors.card,
-        title: Text('${p.name} hatao?', style: const TextStyle(color: Colors.white)),
-        content: const Text('Photo aur naam phone se hat jayega.', style: TextStyle(color: Colors.white70)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text('${p.name} hatao?', style: const TextStyle(color: Color(0xFF2A1C25), fontWeight: FontWeight.w700)),
+        content: const Text('Photo aur naam phone se hat jayega.', style: TextStyle(color: Color(0xFF6F6470))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Nahi')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hatao', style: TextStyle(color: SiyaColors.bad))),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Nahi', style: TextStyle(color: Color(0xFF6F6470)))),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hatao', style: TextStyle(color: SiyaColors.bad, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -69,11 +70,12 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = SiyaTheme.accent.value;
     return SiyaPage(
       title: 'User Data',
       actions: [SiyaIconBtn(icon: Icons.person_add_alt_1_outlined, onTap: () => _edit())],
       child: _loading
-          ? const Center(child: CircularProgressIndicator(color: SiyaColors.cyan))
+          ? Center(child: CircularProgressIndicator(color: accent))
           : _people.isEmpty
               ? Center(
                   child: Padding(
@@ -81,12 +83,12 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.face_retouching_natural, color: Colors.white38, size: 54),
+                        Icon(Icons.face_retouching_natural, color: accent.withOpacity(0.4), size: 54),
                         const SizedBox(height: 12),
                         const Text(
                           'Apni ya ghar walon ki photo aur naam daalo.\nSiya camera mein unhe pehchanegi.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white70, height: 1.4),
+                          style: TextStyle(color: Color(0xFF6F6470), height: 1.4),
                         ),
                         const SizedBox(height: 18),
                         SiyaButton(label: 'Add karo', icon: Icons.add, onTap: () => _edit()),
@@ -112,9 +114,9 @@ class _PeopleScreenState extends State<PeopleScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(p.name,
-                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                                      style: const TextStyle(color: Color(0xFF2A1C25), fontSize: 16, fontWeight: FontWeight.w700)),
                                   const SizedBox(height: 2),
-                                  Text(p.relation, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12.5)),
+                                  Text(p.relation, style: const TextStyle(color: Color(0xFF6F6470), fontSize: 12.5)),
                                 ],
                               ),
                             ),
@@ -138,13 +140,14 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
 Widget _avatar(String photo, String name, double size) {
   final has = photo.isNotEmpty && File(photo).existsSync();
+  final accent = SiyaTheme.accent.value;
   return Container(
     width: size,
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      border: Border.all(color: SiyaColors.cyan.withOpacity(0.6), width: 1.5),
-      gradient: has ? null : const LinearGradient(colors: [SiyaColors.cyan, SiyaColors.purple]),
+      border: Border.all(color: accent.withOpacity(0.6), width: 1.5),
+      gradient: has ? null : LinearGradient(colors: [accent, const Color(0xFF8B5CF6)]),
       image: has ? DecorationImage(image: FileImage(File(photo)), fit: BoxFit.cover) : null,
     ),
     alignment: Alignment.center,
@@ -199,12 +202,17 @@ class _PersonSheetState extends State<_PersonSheet> {
   @override
   Widget build(BuildContext context) {
     final photo = _newPhoto ?? widget.person?.photo ?? '';
-    return Padding(
+    final accent = SiyaTheme.accent.value;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
       padding: EdgeInsets.fromLTRB(20, 18, 20, MediaQuery.of(context).viewInsets.bottom + 22),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(4))),
           const SizedBox(height: 18),
           GestureDetector(
             onTap: _pick,
@@ -216,21 +224,21 @@ class _PersonSheetState extends State<_PersonSheet> {
                   bottom: 0,
                   child: Container(
                     padding: const EdgeInsets.all(7),
-                    decoration: const BoxDecoration(color: SiyaColors.cyan, shape: BoxShape.circle),
-                    child: const Icon(Icons.photo_camera_outlined, color: Colors.black, size: 18),
+                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                    child: const Icon(Icons.photo_camera_outlined, color: Colors.white, size: 18),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 6),
-          Text('Saaf, seedhe chehre wali photo behtar rehti hai',
-              style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 11.5)),
+          const Text('Saaf, seedhe chehre wali photo behtar rehti hai',
+              style: TextStyle(color: Color(0xFF6F6470), fontSize: 11.5)),
           const SizedBox(height: 16),
           TextField(
             controller: _name,
             onChanged: (_) => setState(() {}),
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Color(0xFF2A1C25)),
             decoration: siyaInput('Naam', Icons.person_outline),
           ),
           const SizedBox(height: 12),
@@ -242,10 +250,13 @@ class _PersonSheetState extends State<_PersonSheet> {
                 label: Text(e.value),
                 selected: sel,
                 onSelected: (_) => setState(() => _relation = e.key),
-                selectedColor: SiyaColors.cyan.withOpacity(0.35),
-                backgroundColor: const Color(0xFF071826),
-                labelStyle: const TextStyle(color: Colors.white),
-                side: BorderSide(color: SiyaColors.cyan.withOpacity(0.35)),
+                selectedColor: accent.withOpacity(0.18),
+                backgroundColor: const Color(0xFFF7F5F8),
+                labelStyle: TextStyle(
+                  color: sel ? accent : const Color(0xFF2A1C25),
+                  fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                ),
+                side: BorderSide(color: sel ? accent : Colors.black12),
               );
             }).toList(),
           ),
