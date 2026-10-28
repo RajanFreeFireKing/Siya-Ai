@@ -115,6 +115,25 @@ class SiyaBridge extends ChangeNotifier {
   Future<Map<String, String>?> pickContact() async =>
       _method.invokeMapMethod<String, String>('pickContact');
 
+  // ── Smart Contacts & Nicknames ──────────────────────────
+  Future<List<SmartContact>> getSmartContacts() async {
+    final list = await _method.invokeListMethod<dynamic>('getSmartContacts');
+    if (list == null) return [];
+    return list.map((e) => SmartContact.fromMap(Map<String, dynamic>.from(e as Map))).toList();
+  }
+
+  Future<SmartContact?> saveSmartContact(SmartContact contact) async {
+    final r = await _method.invokeMapMethod<String, dynamic>('saveSmartContact', contact.toMap());
+    if (r == null) return null;
+    return SmartContact.fromMap(Map<String, dynamic>.from(r));
+  }
+
+  Future<void> deleteSmartContact(String id) =>
+      _method.invokeMethod<void>('deleteSmartContact', {'id': id});
+
+  Future<bool> directCall(String number) async =>
+      (await _method.invokeMethod<bool>('directCall', {'number': number})) ?? false;
+
   Future<void> openAccessibility() => _method.invokeMethod<void>('openAccessibility');
   Future<void> openOverlaySettings() => _method.invokeMethod<void>('openOverlaySettings');
   Future<void> requestBatteryExemption() => _method.invokeMethod<void>('requestBatteryExemption');
@@ -288,3 +307,53 @@ class FaceSearchStatus {
   final String error;
   final List<MediaItem> matches;
 }
+
+class SmartContact {
+  SmartContact({
+    required this.id,
+    required this.name,
+    required this.number,
+    this.aliases = const [],
+  });
+
+  factory SmartContact.fromMap(Map<String, dynamic> m) {
+    final aliasesRaw = m['aliases'];
+    List<String> parsedAliases = [];
+    if (aliasesRaw is List) {
+      parsedAliases = aliasesRaw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    }
+    return SmartContact(
+      id: (m['id'] as String?) ?? '',
+      name: (m['name'] as String?) ?? '',
+      number: (m['number'] as String?) ?? '',
+      aliases: parsedAliases,
+    );
+  }
+
+  final String id;
+  final String name;
+  final String number;
+  final List<String> aliases;
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'number': number,
+        'aliases': aliases,
+      };
+
+  SmartContact copyWith({
+    String? id,
+    String? name,
+    String? number,
+    List<String>? aliases,
+  }) {
+    return SmartContact(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      number: number ?? this.number,
+      aliases: aliases ?? this.aliases,
+    );
+  }
+}
+

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
 import 'location_screen.dart';
+import 'smart_contacts_screen.dart';
 
 class _PowerSilkBackground extends StatelessWidget {
   const _PowerSilkBackground({required this.primaryThemeColor});
@@ -254,6 +255,22 @@ class _PowerScreenState extends State<PowerScreen> with WidgetsBindingObserver {
                       widget.embedded ? bottomInset + 120 : bottomInset + 32,
                     ),
                     children: [
+                      // 0. Smart Call & Nicknames Tool
+                      _actionCard(
+                        icon: Icons.contact_phone_rounded,
+                        badge: 'Voice Call Hub',
+                        title: 'Smart Call & Nicknames',
+                        subtitle: 'Custom numbers aur unke multiple nicknames (Papa, Dost) manage karein',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SmartContactsScreen(bridge: widget.bridge),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
                       // 1. AI Browser Tool
                       _toolCard(
                         icon: Icons.travel_explore_rounded,
@@ -899,6 +916,107 @@ class _PowerScreenState extends State<PowerScreen> with WidgetsBindingObserver {
   }
 
   // ── UI Helpers ────────────────────────────────────────────────
+  Widget _actionCard({
+    required IconData icon,
+    required String badge,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(.78),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(.95), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: _primaryThemeColor.withOpacity(.08),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_primaryThemeColor.withOpacity(0.2), _primaryThemeColor.withOpacity(0.08)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _primaryThemeColor.withOpacity(0.3)),
+              ),
+              child: Icon(icon, color: _primaryThemeColor, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF2A1C25),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _primaryThemeColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          badge,
+                          style: TextStyle(
+                            color: _primaryThemeColor,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF6B5C67),
+                      fontSize: 12,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _primaryThemeColor.withOpacity(0.09),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_forward_ios_rounded, color: _primaryThemeColor, size: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _toolCard({
     required IconData icon,
     required String badge,

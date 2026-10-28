@@ -327,6 +327,29 @@ class MainActivity : FlutterFragmentActivity() {
                     pendingContact = result
                     contactPicker.launch(Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI))
                 }
+                // ── Smart Contacts & Nickname Caller ──
+                "getSmartContacts" -> Thread {
+                    val list = com.siya.ai.data.SmartContactsStore.list(this)
+                    ui.post { result.success(list) }
+                }.start()
+                "saveSmartContact" -> Thread {
+                    val id = call.argument<String>("id")
+                    val name = call.argument<String>("name") ?: ""
+                    val number = call.argument<String>("number") ?: ""
+                    val aliases = call.argument<List<String>>("aliases") ?: emptyList()
+                    val saved = com.siya.ai.data.SmartContactsStore.save(this, id, name, number, aliases)
+                    ui.post { result.success(saved) }
+                }.start()
+                "deleteSmartContact" -> Thread {
+                    val id = call.argument<String>("id") ?: ""
+                    com.siya.ai.data.SmartContactsStore.delete(this, id)
+                    ui.post { result.success(null) }
+                }.start()
+                "directCall" -> {
+                    val number = call.argument<String>("number") ?: ""
+                    val ok = PhoneController.directCall(this, number)
+                    result.success(ok)
+                }
                 // ── AI Data / Memory ──
                 "getMemory" -> Thread {
                     val l = MemoryStore.toUiList(this)

@@ -194,6 +194,9 @@ object PhoneController {
 
     fun findNumber(ctx: Context, name: String): Pair<String, String>? {
         if (name.matches(Regex("[0-9+ \\-]{6,}"))) return name.replace(" ", "") to name
+        // 1. Smart Contacts & Nicknames store check first (voice aliases: Papa, Mera dost, etc.)
+        com.siya.ai.data.SmartContactsStore.find(ctx, name)?.let { return it }
+
         if (!has(ctx, Manifest.permission.READ_CONTACTS)) return null
         val variants = linkedSetOf(name.trim(), HindiTransliterator.transliterate(name).trim())
         variants.addAll(name.trim().split(" ").filter { it.length > 2 })
@@ -218,6 +221,17 @@ object PhoneController {
         val (num, who) = findNumber(ctx, name) ?: return "NOT_FOUND: '$name' contact nahi mila"
         val ok = launch(ctx, Intent(Intent.ACTION_CALL, Uri.parse("tel:" + Uri.encode(num))))
         return if (ok) "OK: $who ko call laga diya" else "ERROR: call shuru nahi hui"
+    }
+
+    fun directCall(ctx: Context, number: String): Boolean {
+        val clean = number.trim()
+        if (clean.isEmpty()) return false
+        val uri = Uri.parse("tel:" + Uri.encode(clean))
+        return if (has(ctx, Manifest.permission.CALL_PHONE)) {
+            launch(ctx, Intent(Intent.ACTION_CALL, uri))
+        } else {
+            launch(ctx, Intent(Intent.ACTION_DIAL, uri))
+        }
     }
 
     private fun waNumber(num: String): String {
