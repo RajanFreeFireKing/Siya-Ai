@@ -250,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        _ReferenceBackground(accent: accent),
+        _ReferenceBackground(accent: accent, time: _ctrl),
         Positioned.fill(
           child: IgnorePointer(
             child: WallpaperLayer(type: _wpType, path: _wpPath, sound: _wpSound, dim: _wpDim),
@@ -391,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        _ReferenceBackground(accent: accent),
+        _ReferenceBackground(accent: accent, time: _ctrl),
         SafeArea(
           bottom: false,
           child: Column(
@@ -558,9 +558,96 @@ class _HomeScreenState extends State<HomeScreen>
 }
 
 // ── Silk Background & Wave Ribbon Rendering ───────────────────────
+class _DropletData {
+  const _DropletData({
+    required this.dx,
+    required this.dy,
+    required this.radius,
+    required this.phase,
+    this.speed = 1.0,
+  });
+  final double dx;
+  final double dy;
+  final double radius;
+  final double phase;
+  final double speed;
+}
+
+const _kDroplets = <_DropletData>[
+  _DropletData(dx: 0.055, dy: 0.118, radius: 4.8, phase: 0.0),
+  _DropletData(dx: 0.158, dy: 0.162, radius: 3.6, phase: 1.2),
+  _DropletData(dx: 0.220, dy: 0.180, radius: 3.0, phase: 2.1),
+  _DropletData(dx: 0.645, dy: 0.145, radius: 3.8, phase: 0.8),
+  _DropletData(dx: 0.820, dy: 0.125, radius: 3.2, phase: 2.8),
+  _DropletData(dx: 0.880, dy: 0.185, radius: 4.4, phase: 1.9),
+  _DropletData(dx: 0.030, dy: 0.255, radius: 5.2, phase: 3.4),
+  _DropletData(dx: 0.118, dy: 0.375, radius: 5.6, phase: 0.4),
+  _DropletData(dx: 0.290, dy: 0.410, radius: 3.8, phase: 2.5),
+  _DropletData(dx: 0.805, dy: 0.355, radius: 4.6, phase: 1.5),
+  _DropletData(dx: 0.748, dy: 0.448, radius: 4.0, phase: 3.1),
+  _DropletData(dx: 0.086, dy: 0.585, radius: 3.4, phase: 0.9),
+  _DropletData(dx: 0.910, dy: 0.585, radius: 3.4, phase: 2.3),
+];
+
+void _draw3DDroplet(Canvas canvas, Offset center, double r, Color accent) {
+  // 1. Soft colored drop shadow on surface underneath
+  final shadowOffset = Offset(center.dx + r * 0.28, center.dy + r * 0.42);
+  canvas.drawCircle(
+    shadowOffset,
+    r * 1.18,
+    Paint()
+      ..color = Color.lerp(accent, Colors.black, 0.45)!.withOpacity(0.36)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.75),
+  );
+
+  // 2. 3D Sphere Body with Radial Gradient (focal point shifted top-left)
+  final sphereRect = Rect.fromCircle(center: center, radius: r);
+  final spherePaint = Paint()
+    ..shader = RadialGradient(
+      center: const Alignment(-0.38, -0.38),
+      radius: 0.95,
+      colors: [
+        Color.lerp(accent, Colors.white, 0.78)!,
+        accent,
+        Color.lerp(accent, Colors.black, 0.42)!,
+      ],
+      stops: const [0.0, 0.46, 1.0],
+    ).createShader(sphereRect);
+  canvas.drawCircle(center, r, spherePaint);
+
+  // 3. Ambient rim bounce light along shadow edge
+  final rimPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = (r * 0.20).clamp(0.6, 1.4)
+    ..shader = RadialGradient(
+      center: const Alignment(0.45, 0.45),
+      radius: 0.75,
+      colors: [
+        Color.lerp(accent, Colors.white, 0.6)!.withOpacity(0.60),
+        Colors.transparent,
+      ],
+    ).createShader(sphereRect);
+  canvas.drawCircle(center, r * 0.90, rimPaint);
+
+  // 4. Primary crisp white specular highlight
+  final highlightCenter = Offset(center.dx - r * 0.35, center.dy - r * 0.35);
+  canvas.drawOval(
+    Rect.fromCenter(center: highlightCenter, width: r * 0.55, height: r * 0.38),
+    Paint()..color = Colors.white.withOpacity(0.95),
+  );
+
+  // 5. Secondary micro pin-point sparkle
+  canvas.drawCircle(
+    Offset(center.dx - r * 0.15, center.dy - r * 0.48),
+    (r * 0.14).clamp(0.4, 1.0),
+    Paint()..color = Colors.white.withOpacity(0.90),
+  );
+}
+
 class _ReferenceBackground extends StatelessWidget {
-  const _ReferenceBackground({required this.accent});
+  const _ReferenceBackground({required this.accent, required this.time});
   final Color accent;
+  final Animation<double> time;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -569,88 +656,232 @@ class _ReferenceBackground extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color.alphaBlend(accent.withOpacity(.04), const Color(0xFFFFF8FC)),
+              Color.alphaBlend(accent.withOpacity(.05), const Color(0xFFFFF9FD)),
               Colors.white,
               Color.alphaBlend(accent.withOpacity(.06), const Color(0xFFFFF2F9)),
               Color.alphaBlend(accent.withOpacity(.03), const Color(0xFFFFF9FC)),
             ],
-            stops: const [0, .38, .76, 1],
+            stops: const [0, .35, .72, 1],
           ),
         ),
-        child: CustomPaint(painter: _SilkWavePainter(accent), size: Size.infinite),
+        child: CustomPaint(
+          painter: _SilkWavePainter(accent: accent, time: time),
+          size: Size.infinite,
+        ),
       );
 }
 
 class _SilkWavePainter extends CustomPainter {
-  const _SilkWavePainter(this.accent);
+  _SilkWavePainter({required this.accent, required this.time})
+      : super(repaint: time);
+
   final Color accent;
+  final Animation<double> time;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    final highlightPaint = Paint()
+    final w = size.width;
+    final h = size.height;
+    final t = time.value * math.pi * 2;
+    final breathe = math.sin(t) * 3.0;
+
+    // ── 1. Background Ambient Silk Flow ─────────────────────────
+    final baseWavePaint = Paint()..style = PaintingStyle.fill;
+    final crestPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
 
-    for (int i = 0; i < 6; i++) {
-      final y = size.height * (.10 + i * .16);
-      final path = Path()
-        ..moveTo(-size.width * .15, y - size.height * .08)
-        ..cubicTo(size.width * .20, y - size.height * .20, size.width * .40, y + size.height * .14, size.width * .68, y - size.height * .02)
-        ..cubicTo(size.width * .88, y - size.height * .12, size.width * .98, y + size.height * .10, size.width * 1.15, y - size.height * .02)
-        ..lineTo(size.width * 1.15, y + size.height * .045)
-        ..cubicTo(size.width * .86, y + size.height * .18, size.width * .68, y + size.height * .06, size.width * .40, y + size.height * .12)
-        ..cubicTo(size.width * .18, y + size.height * .16, size.width * .04, y - size.height * .03, -size.width * .15, y + size.height * .05)
+    for (int i = 0; i < 5; i++) {
+      final y = h * (0.08 + i * 0.18) + math.sin(t + i * 1.2) * 4.0;
+      final wavePath = Path()
+        ..moveTo(-w * 0.15, y - h * 0.06)
+        ..cubicTo(w * 0.22, y - h * 0.14, w * 0.42, y + h * 0.10, w * 0.68, y - h * 0.02)
+        ..cubicTo(w * 0.88, y - h * 0.08, w * 0.98, y + h * 0.07, w * 1.15, y - h * 0.02)
+        ..lineTo(w * 1.15, y + h * 0.05)
+        ..cubicTo(w * 0.86, y + h * 0.14, w * 0.68, y + h * 0.05, w * 0.40, y + h * 0.10)
+        ..cubicTo(w * 0.18, y + h * 0.14, w * 0.04, y - h * 0.02, -w * 0.15, y + h * 0.04)
         ..close();
 
-      paint.shader = LinearGradient(
+      baseWavePaint.shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
           Colors.white.withOpacity(0.01),
-          accent.withOpacity(i.isEven ? .28 : .16),
-          Color.lerp(accent, const Color(0xFFFF4893), 0.5)!.withOpacity(.14),
+          accent.withOpacity(i.isEven ? 0.22 : 0.12),
+          Color.lerp(accent, Colors.white, 0.5)!.withOpacity(0.08),
           Colors.white.withOpacity(0.01),
         ],
-      ).createShader(Rect.fromLTWH(0, y - size.height * .18, size.width, size.height * .36));
-      canvas.drawPath(path, paint);
+      ).createShader(Rect.fromLTWH(0, y - h * 0.12, w, h * 0.24));
+      canvas.drawPath(wavePath, baseWavePaint);
 
-      highlightPaint.shader = LinearGradient(
+      crestPaint.shader = LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
         colors: [
           Colors.transparent,
           accent.withOpacity(0.35),
-          Colors.white.withOpacity(0.55),
-          accent.withOpacity(0.30),
+          Colors.white.withOpacity(0.60),
+          accent.withOpacity(0.25),
           Colors.transparent,
         ],
-      ).createShader(Rect.fromLTWH(-size.width * .15, y - size.height * .15, size.width * 1.3, size.height * .3));
+      ).createShader(Rect.fromLTWH(-w * 0.15, y - h * 0.10, w * 1.3, h * 0.2));
 
       final crestPath = Path()
-        ..moveTo(-size.width * .15, y - size.height * .08)
-        ..cubicTo(size.width * .20, y - size.height * .20, size.width * .40, y + size.height * .14, size.width * .68, y - size.height * .02)
-        ..cubicTo(size.width * .88, y - size.height * .12, size.width * .98, y + size.height * .10, size.width * 1.15, y - size.height * .02);
-      canvas.drawPath(crestPath, highlightPaint);
+        ..moveTo(-w * 0.15, y - h * 0.06)
+        ..cubicTo(w * 0.22, y - h * 0.14, w * 0.42, y + h * 0.10, w * 0.68, y - h * 0.02)
+        ..cubicTo(w * 0.88, y - h * 0.08, w * 0.98, y + h * 0.07, w * 1.15, y - h * 0.02);
+      canvas.drawPath(crestPath, crestPaint);
     }
 
-    const normalizedDots = <Offset>[
-      Offset(.08, .12), Offset(.18, .20), Offset(.24, .27), Offset(.66, .16),
-      Offset(.84, .14), Offset(.90, .24), Offset(.12, .44), Offset(.83, .40),
-      Offset(.77, .58), Offset(.28, .70), Offset(.52, .32), Offset(.44, .78),
-    ];
-    for (int i = 0; i < normalizedDots.length; i++) {
-      final dot = Offset(size.width * normalizedDots[i].dx, size.height * normalizedDots[i].dy);
-      final r = size.width * (i % 3 == 0 ? .012 : .008);
-      canvas.drawCircle(dot, r * 2.5, Paint()..color = accent.withOpacity(0.25)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
-      canvas.drawCircle(dot, r, Paint()..shader = RadialGradient(
-        colors: [Color.lerp(accent, Colors.white, 0.45)!, accent],
-      ).createShader(Rect.fromCircle(center: dot, radius: r)));
+    // ── 2. Rich Voluptuous 3D Satin Silk Ribbons (Around the Orb) ───
+    // Ribbon A: Sweeping Left Ribbon (from top left down along left waist of orb)
+    final leftRibbon = Path()
+      ..moveTo(-w * 0.10, h * 0.08 + breathe)
+      ..cubicTo(w * 0.08, h * 0.16 + breathe, w * 0.22, h * 0.24 + breathe * 0.8, w * 0.24, h * 0.32 + breathe * 0.5)
+      ..cubicTo(w * 0.25, h * 0.38 + breathe * 0.3, w * 0.14, h * 0.44 + breathe * 0.2, -w * 0.05, h * 0.46)
+      ..lineTo(-w * 0.10, h * 0.42)
+      ..cubicTo(w * 0.06, h * 0.39, w * 0.15, h * 0.33, w * 0.12, h * 0.24)
+      ..cubicTo(w * 0.09, h * 0.16, -w * 0.02, h * 0.12, -w * 0.10, h * 0.08 + breathe)
+      ..close();
+
+    // Dark fold shadow under left ribbon
+    canvas.drawPath(
+      leftRibbon,
+      Paint()
+        ..color = Color.lerp(accent, Colors.black, 0.4)!.withOpacity(0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+
+    // Left Ribbon gradient: deep velvet to luminous satin highlight
+    final leftPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color.lerp(accent, Colors.black, 0.38)!.withOpacity(0.85),
+          accent.withOpacity(0.92),
+          Color.lerp(accent, Colors.white, 0.45)!.withOpacity(0.95),
+          accent.withOpacity(0.65),
+          Color.lerp(accent, Colors.black, 0.45)!.withOpacity(0.80),
+        ],
+        stops: const [0.0, 0.28, 0.58, 0.82, 1.0],
+      ).createShader(Rect.fromLTWH(-w * 0.10, h * 0.08, w * 0.40, h * 0.40));
+    canvas.drawPath(leftRibbon, leftPaint);
+
+    // Left Ribbon Satin Ridge Highlight
+    final leftRidge = Path()
+      ..moveTo(-w * 0.10, h * 0.08 + breathe)
+      ..cubicTo(w * 0.08, h * 0.16 + breathe, w * 0.22, h * 0.24 + breathe * 0.8, w * 0.24, h * 0.32 + breathe * 0.5)
+      ..cubicTo(w * 0.25, h * 0.38 + breathe * 0.3, w * 0.14, h * 0.44 + breathe * 0.2, -w * 0.05, h * 0.46);
+    canvas.drawPath(
+      leftRidge,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0
+        ..shader = LinearGradient(
+          colors: [
+            Colors.transparent,
+            Color.lerp(accent, Colors.white, 0.7)!.withOpacity(0.9),
+            Colors.white.withOpacity(0.95),
+            Color.lerp(accent, Colors.white, 0.7)!.withOpacity(0.8),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromLTWH(-w * 0.10, h * 0.08, w * 0.40, h * 0.40)),
+    );
+
+    // Ribbon B: Sweeping Right Ribbons (flowing from behind orb to right edge)
+    final rightRibbon1 = Path()
+      ..moveTo(w * 0.65, h * 0.18 + breathe * 0.6)
+      ..cubicTo(w * 0.80, h * 0.14 + breathe * 0.8, w * 0.94, h * 0.20 + breathe, w * 1.15, h * 0.26 + breathe)
+      ..lineTo(w * 1.15, h * 0.38 + breathe * 0.7)
+      ..cubicTo(w * 0.92, h * 0.30 + breathe * 0.8, w * 0.78, h * 0.26 + breathe * 0.5, w * 0.65, h * 0.24 + breathe * 0.3)
+      ..close();
+
+    // Shadow behind right ribbon 1
+    canvas.drawPath(
+      rightRibbon1,
+      Paint()
+        ..color = Color.lerp(accent, Colors.black, 0.4)!.withOpacity(0.30)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+
+    final rightPaint1 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          Color.lerp(accent, Colors.white, 0.40)!.withOpacity(0.90),
+          accent.withOpacity(0.88),
+          Color.lerp(accent, Colors.black, 0.35)!.withOpacity(0.85),
+          accent.withOpacity(0.55),
+        ],
+        stops: const [0.0, 0.40, 0.80, 1.0],
+      ).createShader(Rect.fromLTWH(w * 0.65, h * 0.14, w * 0.50, h * 0.26));
+    canvas.drawPath(rightRibbon1, rightPaint1);
+
+    // Ridge on right ribbon 1
+    final rightRidge1 = Path()
+      ..moveTo(w * 0.65, h * 0.18 + breathe * 0.6)
+      ..cubicTo(w * 0.80, h * 0.14 + breathe * 0.8, w * 0.94, h * 0.20 + breathe, w * 1.15, h * 0.26 + breathe);
+    canvas.drawPath(
+      rightRidge1,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0
+        ..shader = LinearGradient(
+          colors: [
+            Color.lerp(accent, Colors.white, 0.8)!.withOpacity(0.9),
+            Colors.white.withOpacity(0.95),
+            Color.lerp(accent, Colors.white, 0.6)!.withOpacity(0.8),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromLTWH(w * 0.65, h * 0.14, w * 0.50, h * 0.20)),
+    );
+
+    // Ribbon C: Secondary Right Fold (cascading lower-right behind orb)
+    final rightRibbon2 = Path()
+      ..moveTo(w * 0.60, h * 0.28 + breathe * 0.4)
+      ..cubicTo(w * 0.78, h * 0.28 + breathe * 0.6, w * 0.92, h * 0.36 + breathe * 0.8, w * 1.15, h * 0.42 + breathe)
+      ..lineTo(w * 1.15, h * 0.50 + breathe * 0.5)
+      ..cubicTo(w * 0.88, h * 0.44 + breathe * 0.6, w * 0.72, h * 0.38 + breathe * 0.4, w * 0.58, h * 0.34 + breathe * 0.3)
+      ..close();
+
+    final rightPaint2 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          accent.withOpacity(0.70),
+          Color.lerp(accent, Colors.black, 0.40)!.withOpacity(0.75),
+          accent.withOpacity(0.60),
+          Color.lerp(accent, Colors.white, 0.50)!.withOpacity(0.80),
+        ],
+      ).createShader(Rect.fromLTWH(w * 0.58, h * 0.28, w * 0.57, h * 0.24));
+    canvas.drawPath(rightRibbon2, rightPaint2);
+
+    // Ridge on right ribbon 2
+    final rightRidge2 = Path()
+      ..moveTo(w * 0.60, h * 0.28 + breathe * 0.4)
+      ..cubicTo(w * 0.78, h * 0.28 + breathe * 0.6, w * 0.92, h * 0.36 + breathe * 0.8, w * 1.15, h * 0.42 + breathe);
+    canvas.drawPath(
+      rightRidge2,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..color = Color.lerp(accent, Colors.white, 0.75)!.withOpacity(0.80),
+    );
+
+    // ── 3. Floating 3D Liquid Droplets / Pearls ────────────────────
+    for (int i = 0; i < _kDroplets.length; i++) {
+      final d = _kDroplets[i];
+      final bob = math.sin(t * d.speed + d.phase) * (2.0 + (i % 3) * 0.8);
+      final center = Offset(w * d.dx, h * d.dy + bob);
+      _draw3DDroplet(canvas, center, d.radius, accent);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _SilkWavePainter oldDelegate) => oldDelegate.accent != accent;
+  bool shouldRepaint(covariant _SilkWavePainter oldDelegate) => true;
 }
 
 // ── Radiating Side Sound Waves around Hologram ─────────────────────
@@ -811,6 +1042,94 @@ class _NotificationButton extends StatelessWidget {
       );
 }
 
+class _OrbGlassHaloPainter extends CustomPainter {
+  const _OrbGlassHaloPainter({
+    required this.time,
+    required this.level,
+    required this.active,
+    required this.accent,
+  });
+
+  final Animation<double> time;
+  final ValueListenable<double> level;
+  final bool active;
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final lvl = level.value;
+    final pulse = (active ? 0.035 : 0.015) * math.sin(time.value * math.pi * 2) + lvl * 0.04;
+    final r = size.width * 0.37 * (1.0 + pulse);
+    final haloR = r * 1.28;
+
+    // 1. Broad Frosted Glass Drop Shadow on silk background
+    canvas.drawCircle(
+      c,
+      haloR,
+      Paint()
+        ..color = Color.lerp(accent, Colors.black, 0.25)!.withOpacity(active ? 0.45 : 0.28)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
+    );
+
+    // 2. Translucent Fluid Glass Ring Band
+    final haloPath = Path()
+      ..addOval(Rect.fromCircle(center: c, radius: haloR))
+      ..addOval(Rect.fromCircle(center: c, radius: r))
+      ..fillType = PathFillType.evenOdd;
+
+    final glassPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = RadialGradient(
+        colors: [
+          accent.withOpacity(0.12),
+          Color.lerp(accent, Colors.white, 0.6)!.withOpacity(0.24),
+          accent.withOpacity(0.08),
+        ],
+        stops: const [0.0, 0.65, 1.0],
+      ).createShader(Rect.fromCircle(center: c, radius: haloR));
+    canvas.drawPath(haloPath, glassPaint);
+
+    // 3. Frosted Ambient Outer Blur Aura
+    canvas.drawCircle(
+      c,
+      haloR,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 12
+        ..color = accent.withOpacity(active ? 0.35 : 0.20)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+
+    // 4. Specular Glass Bevel Highlight along the top rim arc
+    final glassBevel = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..shader = SweepGradient(
+        colors: [
+          Colors.transparent,
+          Color.lerp(accent, Colors.white, 0.8)!.withOpacity(0.7),
+          Colors.white.withOpacity(0.95),
+          Color.lerp(accent, Colors.white, 0.8)!.withOpacity(0.7),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.15, 0.25, 0.35, 0.50],
+        transform: const GradientRotation(-math.pi * 0.75),
+      ).createShader(Rect.fromCircle(center: c, radius: haloR));
+
+    canvas.drawArc(
+      Rect.fromCircle(center: c, radius: haloR),
+      -math.pi * 0.85,
+      math.pi * 0.70,
+      false,
+      glassBevel,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrbGlassHaloPainter oldDelegate) => true;
+}
+
 class _CoreLogo extends StatelessWidget {
   const _CoreLogo({
     required this.size,
@@ -844,6 +1163,18 @@ class _CoreLogo extends StatelessWidget {
                   child: CustomPaint(
                     painter: _OrbSideWavesPainter(
                       time: time,
+                      active: active,
+                      accent: accent,
+                    ),
+                  ),
+                ),
+
+                // Outer Frosted Glass Aura & Elevated 3D Rim (from image 3)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _OrbGlassHaloPainter(
+                      time: time,
+                      level: level,
                       active: active,
                       accent: accent,
                     ),
