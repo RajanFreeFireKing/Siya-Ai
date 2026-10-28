@@ -216,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.020 : 0.030)),
+                    SizedBox(height: h * (compact ? 0.038 : 0.052)),
 
                     // Center Glowing Orb
                     FadeTransition(
@@ -270,9 +270,10 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.022 : 0.032)),
 
-                    // Audio Waveform Visualizer in frosted pill capsule
+                    const Spacer(),
+
+                    // Audio Waveform Visualizer in frosted pill capsule (moved down where dialogue card was)
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: w * .055),
                       child: Container(
@@ -305,78 +306,26 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
-                    SizedBox(height: h * (compact ? 0.016 : 0.024)),
-
-                    // Frosted dialogue / card area matching reference screenshot
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: w * .055),
-                      child: Container(
-                        width: double.infinity,
-                        constraints: BoxConstraints(minHeight: compact ? 65 : 84),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0x28FFFFFF),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0x55FFFFFF), width: 1.2),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x10FF2B6C),
-                              blurRadius: 16,
-                              spreadRadius: 0,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: widget.bridge.isActive
-                            ? Center(
-                                child: Text(
-                                  widget.bridge.status.isNotEmpty
-                                      ? widget.bridge.status
-                                      : 'Listening to you…',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFF1E232F),
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.auto_awesome_rounded,
-                                    size: 18,
-                                    color: const Color(0xFFE5004C).withOpacity(0.85),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Tap mic to speak with Siya',
-                                    style: TextStyle(
-                                      color: Color(0xFF586070),
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-
-                    const Spacer(),
+                    SizedBox(height: h * (compact ? 0.018 : 0.026)),
 
                     // Floating Glassmorphic Bottom Dock Bar
                     if (MediaQuery.viewInsetsOf(context).bottom == 0)
                       Padding(
-                        padding: EdgeInsets.fromLTRB(w * .035, 0, w * .035, math.max(6, safeBottom * .3)),
+                        padding: EdgeInsets.fromLTRB(
+                          w * .035,
+                          0,
+                          w * .035,
+                          math.max(12.0, safeBottom + 6.0),
+                        ),
                         child: FadeTransition(
                           opacity: _iv(.25, 1, Curves.easeOut),
                           child: SiyaBottomNavigation(
                             width: w * .93,
+                            primaryColor: SiyaTheme.accent.value,
                             time: _ctrl,
                             active: widget.bridge.isActive,
+                            homeActive: true,
+                            settingsActive: false,
                             onHome: () {},
                             onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                               content: Text('Voice mode ke liye center mic tap karein.'),

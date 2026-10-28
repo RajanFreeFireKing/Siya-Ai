@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
@@ -284,6 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: Color.alphaBlend(_primaryThemeColor.withOpacity(.045), const Color(0xFFFFF5FA)),
       body: Stack(
@@ -291,45 +294,18 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           Positioned.fill(
             child: _SettingsSilkBackground(primaryThemeColor: _primaryThemeColor),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: SiyaBottomNavigation(
-                  width: MediaQuery.sizeOf(context).width * .93,
-                  primaryColor: _primaryThemeColor,
-                  time: const AlwaysStoppedAnimation<double>(0),
-                  active: widget.bridge.isActive,
-                  homeActive: false,
-                  settingsActive: true,
-                  onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                  onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Voice chat ke liye center mic tap karein.'),
-                    behavior: SnackBarBehavior.floating,
-                  )),
-                  onMic: widget.bridge.toggleMic,
-                  onTools: () => Navigator.of(context).pushNamed('/features'),
-                  onSettings: () {},
-                ),
-              ),
-            ),
-          ),
           SafeArea(
             bottom: false,
-          child: !_loaded
-              ? const Center(child: CircularProgressIndicator(color: const Color(0xFFFF4D91)))
-              : Column(
-                  children: [
-                    _header(context),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                        children: [
-                          _section('AI & Keys'),
+            child: !_loaded
+                ? const Center(child: CircularProgressIndicator(color: const Color(0xFFFF4D91)))
+                : Column(
+                    children: [
+                      _header(context),
+                      Expanded(
+                        child: ListView(
+                          padding: EdgeInsets.fromLTRB(16, 4, 16, bottomInset + 120),
+                          children: [
+                            _section('AI & Keys'),
                           _keyCard(),
                           _card([
                             _action(Icons.tune, 'Features', 'Hey Siya, Browser, Screen on, Call detect, Awaaz focus', null, () async {
@@ -460,10 +436,33 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ],
                 ),
           ),
+          // Floating bottom navigation bar on top of the list view with proper safe elevation
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: math.max(12.0, bottomInset + 6.0),
+            child: SiyaBottomNavigation(
+              width: MediaQuery.sizeOf(context).width * .93,
+              primaryColor: _primaryThemeColor,
+              time: const AlwaysStoppedAnimation<double>(0),
+              active: widget.bridge.isActive,
+              homeActive: false,
+              settingsActive: true,
+              onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
+              onChat: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Voice chat ke liye center mic tap karein.'),
+                behavior: SnackBarBehavior.floating,
+              )),
+              onMic: widget.bridge.toggleMic,
+              onTools: () => Navigator.of(context).pushNamed('/features'),
+              onSettings: () {},
+            ),
+          ),
         ],
       ),
     );
   }
+
 
   // ── pieces ───────────────────────────────────────────────────
   Widget _aiDataTile() => GestureDetector(
