@@ -213,9 +213,7 @@ class SiyaBottomNavigation extends StatelessWidget {
                         child: InkWell(
                           customBorder: const CircleBorder(),
                           onTap: () {
-                            Future.microtask(() async {
-                              await onMic();
-                            });
+                            Future.microtask(onMic);
                           },
                           child: Container(
                             width: micSize,
