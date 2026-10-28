@@ -112,7 +112,7 @@ class SmartContactsScreen extends StatefulWidget {
 }
 
 class _SmartContactsScreenState extends State<SmartContactsScreen> {
-  Color get _accent => SiyaTheme.accent;
+  Color get _accent => SiyaTheme.accent.value;
 
   List<SmartContact> _contacts = [];
   bool _loading = true;
