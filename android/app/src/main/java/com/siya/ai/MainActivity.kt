@@ -22,6 +22,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.siya.ai.browser.AiBrowser
 import com.siya.ai.core.FileTools
 import com.siya.ai.core.MediaTools
@@ -386,6 +387,91 @@ class MainActivity : FlutterFragmentActivity() {
                     val u = call.argument<String>("url") ?: ""
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(u)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                "getDeviceInfo" -> {
+                    try {
+                        val androidId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: ""
+                        val deviceId = if (androidId.isNotBlank()) androidId else {
+                            val saved = prefs.getString("unique_device_uuid", null)
+                            if (!saved.isNullOrBlank()) saved else {
+                                val newUuid = java.util.UUID.randomUUID().toString().replace("-", "")
+                                prefs.edit().putString("unique_device_uuid", newUuid).apply()
+                                newUuid
+                            }
+                        }
+                        val rawMan = Build.MANUFACTURER.orEmpty()
+                        val manufacturer = if (rawMan.isNotEmpty()) rawMan.substring(0, 1).uppercase() + rawMan.substring(1) else "Android"
+                        val model = Build.MODEL.orEmpty()
+                        val rawBrand = Build.BRAND.orEmpty()
+                        val brand = if (rawBrand.isNotEmpty()) rawBrand.substring(0, 1).uppercase() + rawBrand.substring(1) else manufacturer
+                        val deviceName = if (model.startsWith(manufacturer, ignoreCase = true)) model else "$manufacturer $model"
+                        val deviceModel = "$deviceName ($brand / ${Build.DEVICE})"
+                        val androidRelease = Build.VERSION.RELEASE.orEmpty()
+                        val sdkInt = Build.VERSION.SDK_INT
+                        val buildDisplay = Build.DISPLAY.orEmpty()
+                        val androidVersion = "Android $androidRelease (API $sdkInt)"
+
+                        val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            packageManager.getPackageInfo(packageName, 0)
+                        }
+                        val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            pInfo.longVersionCode.toInt()
+                        } else {
+                            @Suppress("DEPRECATION")
+                            pInfo.versionCode
+                        }
+
+                        result.success(mapOf(
+                            "device_id" to deviceId,
+                            "device_name" to deviceName,
+                            "device_model" to deviceModel,
+                            "manufacturer" to manufacturer,
+                            "model" to model,
+                            "brand" to brand,
+                            "android_version" to androidVersion,
+                            "android_release" to androidRelease,
+                            "sdk_int" to sdkInt,
+                            "build_display" to buildDisplay,
+                            "app_version_code" to vCode
+                        ))
+                    } catch (e: Exception) {
+                        result.error("DEVICE_INFO_ERROR", e.message, null)
+                    }
+                }
+                "getCacheDir" -> {
+                    result.success(cacheDir.absolutePath)
+                }
+                "installApk" -> {
+                    val path = call.argument<String>("path") ?: ""
+                    val file = java.io.File(path)
+                    if (!file.exists()) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            if (!packageManager.canRequestPackageInstalls()) {
+                                try {
+                                    startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    })
+                                } catch (_: Exception) {}
+                            }
+                        }
+                        val apkUri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(apkUri, "application/vnd.android.package-archive")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         startActivity(intent)

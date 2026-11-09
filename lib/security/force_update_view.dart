@@ -1,10 +1,27 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../bridge/siya_bridge.dart';
 import 'remote_config_model.dart';
 
-/// Full-screen or modal non-dismissible force update view.
-/// Triggered when "force_update" is true and "latest_version_code" > currentVersionCode.
-class ForceUpdateView extends StatelessWidget {
+enum UpdateStatus {
+  idle,
+  downloading,
+  downloaded,
+  failed,
+}
+
+/// In-App Dynamic Force Updater Dialog/View.
+///
+/// Features:
+/// 1. Styled dynamically with the app's current theme colors (Theme.of(context).colorScheme).
+///    No static background images.
+/// 2. In-app direct download from "app_config/update_url" using 'dio'.
+/// 3. Linear progress bar showing live percentage and downloaded MB vs total MB.
+/// 4. Direct Android Package Installer intent via Android FileProvider.
+/// 5. Persistent & non-dismissible: blocks back navigation, maintains "Retry Install"
+///    if installer is dismissed so the outdated app cannot be used.
+class ForceUpdateView extends StatefulWidget {
   final AppRemoteConfig config;
   final int currentVersionCode;
   final SiyaBridge bridge;
@@ -16,154 +33,191 @@ class ForceUpdateView extends StatelessWidget {
     required this.bridge,
   });
 
-  void _onUpdatePressed(BuildContext context) async {
-    final url = config.updateUrl.trim();
+  @override
+  State<ForceUpdateView> createState() => _ForceUpdateViewState();
+}
+
+class _ForceUpdateViewState extends State<ForceUpdateView> {
+  UpdateStatus _status = UpdateStatus.idle;
+  double _progress = 0.0;
+  String _downloadedMb = '0.0';
+  String _totalMb = '0.0';
+  String? _errorMessage;
+  String? _downloadedFilePath;
+  CancelToken? _cancelToken;
+
+  @override
+  void dispose() {
+    _cancelToken?.cancel();
+    super.dispose();
+  }
+
+  void _startInAppDownload() async {
+    final url = widget.config.updateUrl.trim();
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Update link not configured yet. Please try again soon.'),
-          backgroundColor: Color(0xFFE53935),
-        ),
-      );
+      setState(() {
+        _status = UpdateStatus.failed;
+        _errorMessage = 'Update URL is not configured. Please contact administrator.';
+      });
       return;
     }
 
-    final success = await bridge.openUrl(url);
-    if (!success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open update link: $url'),
-          backgroundColor: const Color(0xFFE53935),
-        ),
+    setState(() {
+      _status = UpdateStatus.downloading;
+      _progress = 0.0;
+      _downloadedMb = '0.0';
+      _totalMb = '0.0';
+      _errorMessage = null;
+    });
+
+    try {
+      final cacheDir = await widget.bridge.getCacheDir();
+      final dir = cacheDir.isNotEmpty ? cacheDir : Directory.systemTemp.path;
+      final savePath = '$dir/siya_update_${widget.config.latestVersionCode}.apk';
+
+      _cancelToken = CancelToken();
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(minutes: 10),
+      ));
+
+      await dio.download(
+        url,
+        savePath,
+        cancelToken: _cancelToken,
+        onReceiveProgress: (received, total) {
+          if (!mounted) return;
+          if (total > 0) {
+            setState(() {
+              _progress = (received / total).clamp(0.0, 1.0);
+              _downloadedMb = (received / (1024 * 1024)).toStringAsFixed(1);
+              _totalMb = (total / (1024 * 1024)).toStringAsFixed(1);
+            });
+          } else {
+            setState(() {
+              _downloadedMb = (received / (1024 * 1024)).toStringAsFixed(1);
+              _totalMb = 'Unknown';
+            });
+          }
+        },
       );
+
+      if (!mounted) return;
+
+      setState(() {
+        _status = UpdateStatus.downloaded;
+        _progress = 1.0;
+        _downloadedFilePath = savePath;
+      });
+
+      // Immediately trigger Android Package Installer workflow via FileProvider
+      _triggerInstaller(savePath);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _status = UpdateStatus.failed;
+        _errorMessage = 'Download failed: ${e.toString()}';
+      });
+    }
+  }
+
+  void _triggerInstaller([String? path]) async {
+    final targetPath = path ?? _downloadedFilePath;
+    if (targetPath == null || targetPath.isEmpty) {
+      _startInAppDownload();
+      return;
+    }
+
+    final success = await widget.bridge.installApk(targetPath);
+    if (!success && mounted) {
+      // Fallback: try opening as external intent
+      await widget.bridge.openUrl(widget.config.updateUrl);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0C101A),
-        body: Stack(
-          children: [
-            // Background ambient glow
-            Positioned(
-              top: -60,
-              right: -60,
-              child: Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF6C5CE7).withOpacity(0.18),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -80,
-              left: -80,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF00CEC9).withOpacity(0.15),
-                ),
-              ),
-            ),
-
-            // Content
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withOpacity(0.35),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Glowing Update Icon
+                      // Dynamic Themed Header Icon
                       Container(
-                        width: 110,
-                        height: 110,
+                        width: 72,
+                        height: 72,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            colors: [
-                              Color(0x556C5CE7),
-                              Colors.transparent,
-                            ],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF6C5CE7).withOpacity(0.35),
-                              blurRadius: 36,
-                              spreadRadius: 4,
-                            ),
-                          ],
+                          color: colorScheme.primaryContainer.withOpacity(0.7),
                         ),
                         child: Center(
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFF00CEC9)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6C5CE7).withOpacity(0.5),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.system_update_rounded,
-                              size: 42,
-                              color: Colors.white,
-                            ),
+                          child: Icon(
+                            Icons.system_update_rounded,
+                            size: 38,
+                            color: colorScheme.onPrimaryContainer,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
 
                       // Title
-                      const Text(
+                      Text(
                         'Update Required',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.6,
+                          color: colorScheme.onSurface,
+                          letterSpacing: 0.3,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
 
-                      const Text(
-                        'A mandatory update is available to continue using Siya AI.',
+                      Text(
+                        'A newer version of Siya AI is required to continue. Please install the mandatory update below.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFFB0B4C8),
-                          fontSize: 14,
-                          height: 1.45,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Versions Card
+                      // Version Badge Comparison
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161B2B),
-                          borderRadius: BorderRadius.circular(18),
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFF6C5CE7).withOpacity(0.25),
+                            color: colorScheme.outlineVariant.withOpacity(0.5),
                           ),
                         ),
                         child: Row(
@@ -171,47 +225,43 @@ class ForceUpdateView extends StatelessWidget {
                           children: [
                             Column(
                               children: [
-                                const Text(
-                                  'Current Build',
-                                  style: TextStyle(
-                                    color: Color(0xFF8C90A8),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                Text(
+                                  'Installed',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'v$currentVersionCode',
-                                  style: const TextStyle(
-                                    color: Color(0xFFE5E7EB),
-                                    fontSize: 16,
+                                  'Build ${widget.currentVersionCode}',
+                                  style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ],
                             ),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_rounded,
-                              color: Color(0xFF00CEC9),
-                              size: 22,
+                              color: colorScheme.primary,
+                              size: 20,
                             ),
                             Column(
                               children: [
-                                const Text(
-                                  'Required Build',
-                                  style: TextStyle(
-                                    color: Color(0xFF8C90A8),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                Text(
+                                  'Latest',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'v${config.latestVersionCode}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF00CEC9),
-                                    fontSize: 16,
+                                  'Build ${widget.config.latestVersionCode}',
+                                  style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                               ],
@@ -219,81 +269,158 @@ class ForceUpdateView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
-                      // Update Action Button
+                      // Progress Bar or Download Status
+                      if (_status == UpdateStatus.downloading) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _progress > 0 ? _progress : null,
+                            minHeight: 10,
+                            backgroundColor: colorScheme.primary.withOpacity(0.15),
+                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Downloading: ${(_progress * 100).toStringAsFixed(1)}%',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              '$_downloadedMb MB / $_totalMb MB',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      if (_status == UpdateStatus.failed && _errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.error_outline_rounded, size: 20, color: colorScheme.error),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onErrorContainer,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Action Button
                       SizedBox(
                         width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          onPressed: () => _onUpdatePressed(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFF00CEC9)],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6C5CE7).withOpacity(0.4),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.download_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'Update Now',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+                        height: 50,
+                        child: _buildActionButton(colorScheme, theme),
                       ),
-                      const SizedBox(height: 18),
 
-                      const Text(
-                        'Updates contain essential security patches and AI engine improvements.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
+                      if (_status == UpdateStatus.downloaded) ...[
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: _startInAppDownload,
+                          child: Text(
+                            'Re-download APK',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildActionButton(ColorScheme colorScheme, ThemeData theme) {
+    switch (_status) {
+      case UpdateStatus.downloading:
+        return ElevatedButton.icon(
+          onPressed: null,
+          icon: const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          label: const Text('Downloading APK...'),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+
+      case UpdateStatus.downloaded:
+        return ElevatedButton.icon(
+          onPressed: () => _triggerInstaller(),
+          icon: const Icon(Icons.install_mobile_rounded, size: 22),
+          label: const Text(
+            'Retry Install',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+
+      case UpdateStatus.failed:
+        return ElevatedButton.icon(
+          onPressed: _startInAppDownload,
+          icon: const Icon(Icons.refresh_rounded, size: 22),
+          label: const Text(
+            'Retry Download',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+
+      case UpdateStatus.idle:
+        return ElevatedButton.icon(
+          onPressed: _startInAppDownload,
+          icon: const Icon(Icons.download_rounded, size: 22),
+          label: const Text(
+            'Update Now',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+    }
   }
 }

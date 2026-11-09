@@ -256,6 +256,39 @@ class SiyaBridge extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> getDeviceInfo() async {
+    try {
+      final res = await _method.invokeMapMethod<String, dynamic>('getDeviceInfo');
+      return res ?? {};
+    } on PlatformException {
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<String> getCacheDir() async {
+    try {
+      final dir = await _method.invokeMethod<String>('getCacheDir');
+      return dir ?? '';
+    } on PlatformException {
+      return '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<bool> installApk(String path) async {
+    try {
+      final ok = await _method.invokeMethod<bool>('installApk', {'path': path});
+      return ok ?? false;
+    } on PlatformException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _sub?.cancel();
