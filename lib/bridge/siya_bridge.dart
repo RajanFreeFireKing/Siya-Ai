@@ -234,6 +234,28 @@ class SiyaBridge extends ChangeNotifier {
   Future<void> clearMemory() => _method.invokeMethod<void>('clearMemory');
   Future<void> copyMemory() => _method.invokeMethod<void>('copyMemory');
 
+  Future<int> getAppVersionCode() async {
+    try {
+      final code = await _method.invokeMethod<int>('getAppVersionCode');
+      return code ?? 1;
+    } on PlatformException {
+      return 1;
+    } catch (_) {
+      return 1;
+    }
+  }
+
+  Future<bool> openUrl(String url) async {
+    try {
+      final ok = await _method.invokeMethod<bool>('openUrl', {'url': url});
+      return ok ?? false;
+    } on PlatformException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

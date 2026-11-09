@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'bridge/siya_bridge.dart';
 import 'screens/home_screen.dart';
 import 'screens/power_screen.dart';
+import 'security/gatekeeper_gate.dart';
+import 'security/remote_config_service.dart';
 import 'theme.dart';
 
 void main() {
@@ -38,6 +40,7 @@ class _SiyaAppState extends State<SiyaApp> {
 
   @override
   void dispose() {
+    RemoteConfigService.instance.dispose();
     _bridge.dispose();
     super.dispose();
   }
@@ -47,20 +50,24 @@ class _SiyaAppState extends State<SiyaApp> {
     return ValueListenableBuilder<Color>(
       valueListenable: SiyaTheme.accent,
       builder: (context, accent, _) => MaterialApp(
-      title: 'Siya Ai',
-      debugShowCheckedModeBanner: false,
-      // Baaki screens dark hi hain; sirf Home screen naye light design ka hai.
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Color.alphaBlend(accent.withOpacity(.045), const Color(0xFFFFF7FB)),
-        colorScheme: ColorScheme.light(primary: accent, secondary: accent, surface: Color.alphaBlend(accent.withOpacity(.07), Colors.white)),
-        useMaterial3: true,
-      ),
-      routes: {
-        '/features': (_) => PowerScreen(bridge: _bridge),
-        '/power': (_) => PowerScreen(bridge: _bridge),
-      },
-      home: HomeScreen(bridge: _bridge),
+        title: 'Siya Ai',
+        debugShowCheckedModeBanner: false,
+        // Baaki screens dark hi hain; sirf Home screen naye light design ka hai.
+        theme: ThemeData(
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: Color.alphaBlend(accent.withOpacity(.045), const Color(0xFFFFF7FB)),
+          colorScheme: ColorScheme.light(primary: accent, secondary: accent, surface: Color.alphaBlend(accent.withOpacity(.07), Colors.white)),
+          useMaterial3: true,
+        ),
+        builder: (context, child) => GatekeeperGate(
+          bridge: _bridge,
+          child: child ?? const SizedBox.shrink(),
+        ),
+        routes: {
+          '/features': (_) => PowerScreen(bridge: _bridge),
+          '/power': (_) => PowerScreen(bridge: _bridge),
+        },
+        home: HomeScreen(bridge: _bridge),
       ),
     );
   }

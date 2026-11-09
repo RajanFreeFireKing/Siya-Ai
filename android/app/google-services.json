@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1078146884516",
+    "firebase_url": "https://siya-ai-d1ce7-default-rtdb.firebaseio.com",
+    "project_id": "siya-ai-d1ce7",
+    "storage_bucket": "siya-ai-d1ce7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078146884516:android:43db74f5492752dcc05731",
+        "android_client_info": {
+          "package_name": "com.siya.ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1078146884516-rc1hp3ni9orqg57do158715p6074dnc2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyOFV4hHUswz7gfFzdadiQFP456F7M8zc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1078146884516-rc1hp3ni9orqg57do158715p6074dnc2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

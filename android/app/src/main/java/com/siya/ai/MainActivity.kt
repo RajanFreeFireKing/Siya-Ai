@@ -363,6 +363,37 @@ class MainActivity : FlutterFragmentActivity() {
                     cm.setPrimaryClip(ClipData.newPlainText("Siya chat", MemoryStore.exportText(this)))
                     result.success(null)
                 }
+                "getAppVersionCode" -> {
+                    try {
+                        val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            packageManager.getPackageInfo(packageName, 0)
+                        }
+                        val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            pInfo.longVersionCode
+                        } else {
+                            @Suppress("DEPRECATION")
+                            pInfo.versionCode.toLong()
+                        }
+                        result.success(vCode.toInt())
+                    } catch (e: Exception) {
+                        result.success(1)
+                    }
+                }
+                "openUrl" -> {
+                    val u = call.argument<String>("url") ?: ""
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(u)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
