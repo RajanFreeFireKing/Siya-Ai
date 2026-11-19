@@ -389,6 +389,7 @@ class SiyaService : Service() {
         holdWakeCpuLock(false)
         hideOverlay()
         try { com.siya.ai.browser.ObscuraMobileEngine.cleanup() } catch (_: Exception) {}
+        try { com.siya.ai.audio.AudioEmotionPipeline.getInstance(this).stop() } catch (_: Exception) {}
         lastState = "idle"
         instance = null
         super.onDestroy()

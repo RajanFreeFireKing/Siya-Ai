@@ -50,6 +50,10 @@ android {
     sourceSets {
         main.java.srcDirs += "src/main/kotlin"
     }
+
+    aaptOptions {
+        noCompress "onnx"
+    }
 }
 
 flutter {
@@ -68,6 +72,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
     implementation "com.squareup.okhttp3:okhttp:4.12.0"
     implementation "androidx.exifinterface:exifinterface:1.3.7"
+    implementation "com.microsoft.onnxruntime:onnxruntime-android:1.18.0"
     implementation "com.alphacephei:vosk-android:0.3.47"      // offline "Hey Siya" (free, key nahi chahiye)
     implementation "ai.picovoice:porcupine-android:3.0.2"   // offline "Hey Siya" (hey_siya.ppn + AccessKey chahiye)
 }
+

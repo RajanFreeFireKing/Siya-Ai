@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.siya.ai.ai.SiyaLiveClient
+import com.siya.ai.audio.AudioEmotionPipeline
 import com.siya.ai.memory.MemoryStore
 import com.siya.ai.utils.AudioRouter
 import com.siya.ai.utils.LivePlayer
@@ -119,6 +120,24 @@ class SiyaSession(
         btDevice = try { AudioRouter.enter(ctx) } catch (_: Exception) { null }   // Bluetooth headset ho to mic + speaker usi se
         focus = VoiceFocus(prefs.getString("voice_focus", "normal").orEmpty().ifBlank { "normal" })
         audioOut = LivePlayer(AudioRouter.btActive).also { it.start() }
+        try {
+            val pipeline = AudioEmotionPipeline.getInstance(ctx)
+            pipeline.setListener { res ->
+                if (!active || paused || micMuted) return@setListener
+                val mood = res.mood
+                val event = res.acousticEvent
+                val contextTag = if (!event.isNullOrBlank()) {
+                    "[Audio Perception: Mood=$mood, Event=$event]"
+                } else {
+                    "[Audio Perception: Mood=$mood]"
+                }
+                Log.i("SiyaAudioEmotion", "Injecting into Gemini Live: $contextTag")
+                sendText(contextTag)
+            }
+            pipeline.start()
+        } catch (e: Exception) {
+            Log.e("SiyaAudioEmotion", "Failed to start pipeline: ${e.message}")
+        }
         setState(State.CONNECTING)
         startHeartbeat()
         connect()
@@ -133,6 +152,7 @@ class SiyaSession(
         cancelSilenceTimers()
         endRunnable?.let { main.removeCallbacks(it) }
         flushUser(); flushSiya()
+        try { AudioEmotionPipeline.getInstance(ctx).stop() } catch (_: Exception) {}
         try { mic?.stop() } catch (_: Exception) {}; mic = null
         try { client?.sendAudioStreamEnd() } catch (_: Exception) {}
         try { client?.close() } catch (_: Exception) {}; client = null
@@ -209,6 +229,9 @@ class SiyaSession(
         if (!active || paused || micMuted) return
         val now = System.currentTimeMillis()
         val speaking = audioOut?.isPlaying == true
+        if (!speaking) {
+            AudioEmotionPipeline.getInstance(ctx).feedPcm(buf, n)
+        }
         if (!speaking && now - lastAmp > 50) {
             lastAmp = now
             if (level > 0.05f) cancelSilenceTimers()
