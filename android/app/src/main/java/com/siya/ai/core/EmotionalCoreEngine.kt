@@ -208,6 +208,8 @@ class EmotionalCoreEngine private constructor(private val context: Context) {
         )
     }
 
+    fun getPromptTag(): String = getSnapshot().promptTag
+
     private fun notifyAndSave() {
         persistState()
         val snapshot = getSnapshot()
