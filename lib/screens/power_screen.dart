@@ -703,7 +703,7 @@ class _PowerScreenState extends State<PowerScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await widget.bridge.requestBatteryIgnore();
+                await widget.bridge.requestBatteryExemption();
                 if (ctx.mounted) Navigator.of(ctx).pop();
               },
               style: ElevatedButton.styleFrom(

@@ -274,6 +274,7 @@ class SiyaBridge extends ChangeNotifier {
   Future<void> openAccessibility() => _method.invokeMethod<void>('openAccessibility');
   Future<void> openOverlaySettings() => _method.invokeMethod<void>('openOverlaySettings');
   Future<void> requestBatteryExemption() => _method.invokeMethod<void>('requestBatteryExemption');
+  Future<void> requestBatteryIgnore() => requestBatteryExemption();
   Future<void> toggleAdmin() => _method.invokeMethod<void>('toggleAdmin');
   Future<void> openSecurity() => _method.invokeMethod<void>('openSecurity');
   Future<void> setDefaultAssistant() => _method.invokeMethod<void>('setDefaultAssistant');
