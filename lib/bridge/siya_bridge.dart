@@ -17,6 +17,7 @@ class SiyaBridge extends ChangeNotifier {
   String status = '';
   bool micMuted = false;
   final ValueNotifier<double> amp = ValueNotifier<double>(0);
+  final ValueNotifier<double> enrollmentAmp = ValueNotifier<double>(0);
   final ValueNotifier<String> transcript = ValueNotifier<String>('');
 
   /// OSINT Search Results (image lookup, name lookup)
@@ -85,6 +86,9 @@ class SiyaBridge extends ChangeNotifier {
       case 'amp':
         amp.value = ((e['v'] as num?) ?? 0).toDouble().clamp(0.0, 1.0);
         break;
+      case 'enrollment_amp':
+        enrollmentAmp.value = ((e['v'] as num?) ?? 0).toDouble().clamp(0.0, 1.0);
+        break;
       case 'error':
         error.value = e['code'] as String?;
         break;
@@ -116,6 +120,32 @@ class SiyaBridge extends ChangeNotifier {
     universalPopupData.value = null;
     osintResult.value = null;
     notifyListeners();
+  }
+
+  Future<void> showUniversalPopup(Map<String, dynamic> data) async {
+    try {
+      universalPopupData.value = data;
+      notifyListeners();
+      await _method.invokeMethod<bool>('showUniversalPopup', data);
+    } on PlatformException {
+      // ignore
+    }
+  }
+
+  Future<void> speakHindiText(String text) async {
+    try {
+      await _method.invokeMethod<void>('speakHindiText', {'text': text});
+    } on PlatformException {
+      // ignore
+    }
+  }
+
+  Future<void> stopSpeaking() async {
+    try {
+      await _method.invokeMethod<void>('stopSpeaking');
+    } on PlatformException {
+      // ignore
+    }
   }
 
   Future<void> shareImage(String path) async {

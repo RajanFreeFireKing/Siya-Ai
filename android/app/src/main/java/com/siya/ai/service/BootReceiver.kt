@@ -22,16 +22,20 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED && intent.action != Intent.ACTION_LOCKED_BOOT_COMPLETED) return
         val prefs = context.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("wake_word_enabled", false)) return
-        if (Build.VERSION.SDK_INT < 34) {
-            try { SiyaService.send(context, SiyaService.ACTION_SYNC); return } catch (_: Exception) {}
-        }
-        // Android 14+: tap-to-start notification
-        val nm = context.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(
-            NotificationChannel("siya_boot", "Siya start", NotificationManager.IMPORTANCE_MIN).apply { setShowBadge(false); setSound(null, null); enableVibration(false) })
-        val open = PendingIntent.getActivity(context, 7, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_IMMUTABLE)
-        nm.notify(7001, NotificationCompat.Builder(context, "siya_boot")
-            .setSmallIcon(R.drawable.ic_siya_notif).setContentTitle("Siya").setContentText("\"Hey Siya\" chalu karne ke liye tap karo")
-            .setPriority(NotificationCompat.PRIORITY_MIN).setContentIntent(open).setAutoCancel(true).build())
+        try {
+            val started = SiyaService.send(context, SiyaService.ACTION_SYNC)
+            if (started) return
+        } catch (_: Exception) {}
+
+        // Fallback for strict OS environments: tap-to-start notification
+        try {
+            val nm = context.getSystemService(NotificationManager::class.java)
+            if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(
+                NotificationChannel("siya_boot", "Siya start", NotificationManager.IMPORTANCE_MIN).apply { setShowBadge(false); setSound(null, null); enableVibration(false) })
+            val open = PendingIntent.getActivity(context, 7, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_IMMUTABLE)
+            nm.notify(7001, NotificationCompat.Builder(context, "siya_boot")
+                .setSmallIcon(R.drawable.ic_siya_notif).setContentTitle("Siya").setContentText("\"Hey Siya\" chalu karne ke liye tap karo")
+                .setPriority(NotificationCompat.PRIORITY_MIN).setContentIntent(open).setAutoCancel(true).build())
+        } catch (_: Exception) {}
     }
 }

@@ -190,16 +190,80 @@ object ToolRouter {
             "osint_image_lookup" -> com.siya.ai.browser.OsintEngine.imageLookup(ctx, a.optString("image_path"))
             "osint_name_lookup" -> com.siya.ai.browser.OsintEngine.nameLookup(ctx, a.optString("name_or_username"))
             "show_universal_popup" -> {
-                val map = mapOf(
-                    "type" to "universal_popup",
-                    "popup_type" to a.optString("type", "web"),
-                    "title" to a.optString("title", "Siya Smart Popup"),
-                    "summary" to a.optString("content"),
-                    "media_url" to a.optString("media_url"),
-                    "action_data" to a.optString("action_data")
-                )
-                com.siya.ai.service.SiyaService.eventSink?.invoke(map)
-                "OK: popup screen par dikha diya"
+                try {
+                    val rawType = a.optString("type").ifBlank { a.optString("popup_type").ifBlank { a.optString("kind", "web") } }
+                    val type = rawType.lowercase().trim()
+                    val title = a.optString("title").ifBlank { a.optString("query").ifBlank { a.optString("name", "Siya Smart Popup") } }
+                    val content = a.optString("content").ifBlank { a.optString("summary").ifBlank { a.optString("text").ifBlank { a.optString("description", "") } } }
+                    var mediaUrl = a.optString("media_url").ifBlank {
+                        a.optString("imagePath").ifBlank {
+                            a.optString("image_path").ifBlank {
+                                a.optString("imageUrl").ifBlank {
+                                    a.optString("url").ifBlank {
+                                        a.optString("path", "")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // If user wants to see an image popup but didn't provide path, find the latest gallery photo
+                    if ((type == "image" || type == "gallery") && mediaUrl.isBlank()) {
+                        try {
+                            val images = com.siya.ai.data.MediaHelper.list(ctx, "image")
+                            if (images.isNotEmpty()) {
+                                mediaUrl = images[0].uri
+                            }
+                        } catch (_: Exception) {}
+                    }
+
+                    val actionData = a.optString("action_data").ifBlank {
+                        a.optString("packageName").ifBlank {
+                            a.optString("package_name").ifBlank {
+                                a.optString("package").ifBlank {
+                                    a.optString("app_name", "")
+                                }
+                            }
+                        }
+                    }
+                    val url = a.optString("url").ifBlank { a.optString("link", "") }
+
+                    val map = mapOf(
+                        "type" to "universal_popup",
+                        "popup_type" to type,
+                        "title" to title,
+                        "summary" to content,
+                        "content" to content,
+                        "media_url" to mediaUrl,
+                        "imageUrl" to mediaUrl,
+                        "imagePath" to mediaUrl,
+                        "action_data" to actionData,
+                        "package" to actionData,
+                        "url" to url
+                    )
+
+                    // If app is not in foreground, bring MainActivity to front so Flutter UI can render popup
+                    if (!com.siya.ai.service.SiyaService.appVisible) {
+                        try {
+                            val bringFront = android.content.Intent(ctx, com.siya.ai.ui.main.MainActivity::class.java).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            }
+                            ctx.startActivity(bringFront)
+                        } catch (e: Exception) {
+                            android.util.Log.e("ToolRouter", "Could not bring MainActivity to front: ${e.message}")
+                        }
+                    }
+
+                    // Post to eventSink on main thread
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        com.siya.ai.service.SiyaService.eventSink?.invoke(map)
+                    }, 250)
+
+                    "OK: popup screen par dikha diya ($type - $title)"
+                } catch (e: Exception) {
+                    android.util.Log.e("ToolRouter", "Error showing universal popup: ${e.message}", e)
+                    "ERROR: popup nahi khul paya: ${e.message}"
+                }
             }
             "open_app_popup" -> {
                 val app = a.optString("app_name")

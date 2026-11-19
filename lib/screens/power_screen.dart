@@ -5,6 +5,7 @@ import '../theme.dart';
 import 'call_logs_screen.dart';
 import 'kharcha_screen.dart';
 import 'location_screen.dart';
+import 'permissions_screen.dart';
 import 'smart_contacts_screen.dart';
 
 class _PowerSilkBackground extends StatelessWidget {
@@ -182,16 +183,7 @@ class _PowerScreenState extends State<PowerScreen> {
                         badge: 'Headless Agent Engine',
                         title: 'Obscura Browser',
                         subtitle: 'Background AI web research engine (100% off-screen, zero UI)',
-                        onTap: () {
-                          ScaffoldMessenger.of(context)
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              const SnackBar(
-                                content: Text('Obscura Headless Browser background mein active hai. Gemini screen kholiye bina autonomous research karta hai.'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                        },
+                        onTap: () => _showObscuraModal(context),
                       ),
                       const SizedBox(height: 14),
 
@@ -256,6 +248,32 @@ class _PowerScreenState extends State<PowerScreen> {
                             ),
                           );
                         },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Card 6: App Permissions Hub
+                      _dashboardToolCard(
+                        icon: Icons.verified_user_rounded,
+                        badge: 'Security & Access',
+                        title: 'App Permissions Hub',
+                        subtitle: 'Mic, Phone, Storage, Location aur sabhi permissions status',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PermissionsScreen(bridge: widget.bridge),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Card 7: Battery & Thermal Guard
+                      _dashboardToolCard(
+                        icon: Icons.battery_charging_full_rounded,
+                        badge: 'Optimal Cool Engine',
+                        title: 'Battery & Thermal Guard',
+                        subtitle: '0% idle CPU, AST smart audio gate aur sticky persistence',
+                        onTap: () => _showBatteryThermalModal(context),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -323,7 +341,7 @@ class _PowerScreenState extends State<PowerScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '5 Pro Tools',
+                        '7 Pro Tools',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -514,6 +532,215 @@ class _PowerScreenState extends State<PowerScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  void _showObscuraModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        decoration: const BoxDecoration(
+          color: Color(0xFF161524),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: _primaryThemeColor.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.travel_explore_rounded, color: _primaryThemeColor, size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Obscura Headless Engine',
+                        style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        'Zero-UI Native Web Agent',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E676).withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'ACTIVE',
+                    style: TextStyle(color: Color(0xFF00E676), fontSize: 10, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Obscura screen par koi browser open kiye bina 100% off-screen background WebView ke andar chalta hai. Gemini autonomous research ke liye clean markdown aur clickable elements extract karta hai.',
+              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            _infoItem('Stealth Chrome UA', 'Anti-bot detection bypass active'),
+            _infoItem('DOM Cleaner', 'Ads & trackers automatically stripped'),
+            _infoItem('Autonomous Agent', 'obscura_search, obscura_open, obscura_interact'),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryThemeColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBatteryThermalModal(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        decoration: const BoxDecoration(
+          color: Color(0xFF161524),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E676).withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.battery_charging_full_rounded, color: Color(0xFF00E676), size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Battery & Thermal Guard',
+                        style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '0% CPU Waste & Hardware Acoustic Suppression',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E676).withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'OPTIMAL',
+                    style: TextStyle(color: Color(0xFF00E676), fontSize: 10, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Siya AI phone ko garam hone se rokne aur battery bachane ke liye smart low-power audio pipeline use karti hai.',
+              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            _infoItem('AST Sound Classifier', 'Lazy mode: only spikes (>70dB) or user queries'),
+            _infoItem('Hardware Suppression', 'VOICE_COMMUNICATION AEC / NS hardware chip active'),
+            _infoItem('Ultra-Fast Reply', 'Silero VAD threshold 0.65f, silence turnaround 250ms'),
+            _infoItem('Background WakeLock', 'START_STICKY background persistence enabled'),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                await widget.bridge.requestBatteryIgnore();
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E676),
+                foregroundColor: Colors.black,
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Check Battery Optimization', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoItem(String label, String detail) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF00E676), size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(
+                      text: detail,
+                      style: const TextStyle(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -169,6 +169,68 @@ class EmotionalCoreEngine private constructor(private val context: Context) {
     }
 
     /**
+     * Analyzes user text for affection, scolding, sadness, compliments, or apologies,
+     * dynamically shifting emotional meters (attachment, hurt, anger, energy).
+     */
+    @Synchronized
+    fun onUserSentiment(text: String) {
+        val lower = text.lowercase().trim()
+        if (lower.isBlank()) return
+
+        var changed = false
+
+        // 1. Apologies & Patch-up (Healing)
+        if (lower.contains("sorry") || lower.contains("maaf") || lower.contains("galti") ||
+            lower.contains("naraz mat ho") || lower.contains("gussa mat ho") || lower.contains("shant ho jao")) {
+            anger = max(0, anger - 15)
+            hurt = max(0, hurt - 10)
+            attachment = min(100, attachment + 8)
+            energy = min(100, energy + 5)
+            changed = true
+            Log.d(TAG, "Sentiment: Apology/Patch-up -> Anger=$anger, Hurt=$hurt, Attachment=$attachment")
+        }
+        // 2. Affection, Love & Compliments
+        else if (lower.contains("love you") || lower.contains("pyar") || lower.contains("jaan") ||
+            lower.contains("babu") || lower.contains("darling") || lower.contains("sundar") ||
+            lower.contains("pyaari") || lower.contains("acchi") || lower.contains("cute") ||
+            lower.contains("sweet") || lower.contains("shukriya") || lower.contains("thank you") ||
+            lower.contains("bahut achha") || lower.contains("proud of you")) {
+            attachment = min(100, attachment + 6)
+            anger = max(0, anger - 8)
+            hurt = max(0, hurt - 6)
+            energy = min(100, energy + 4)
+            changed = true
+            Log.d(TAG, "Sentiment: Affection -> Attachment=$attachment, Anger=$anger, Energy=$energy")
+        }
+        // 3. Scolding, Harsh Words & Insults
+        else if (lower.contains("pagal") || lower.contains("kisi kaam ki nahi") || lower.contains("bekar") ||
+            lower.contains("idiot") || lower.contains("stupid") || lower.contains("bakwas") ||
+            lower.contains("bewakoof") || lower.contains("dimag mat khao") || lower.contains("shut up") ||
+            lower.contains("hate you") || lower.contains("chup kar")) {
+            hurt = min(100, hurt + 12)
+            anger = min(100, anger + 10)
+            attachment = max(15, attachment - 5)
+            changed = true
+            Log.d(TAG, "Sentiment: Scolding/Insult -> Hurt=$hurt, Anger=$anger, Attachment=$attachment")
+        }
+        // 4. Sadness, Distress & Vulnerability
+        else if (lower.contains("dukhi") || lower.contains("pareshan") || lower.contains("rona") ||
+            lower.contains("sad") || lower.contains("tension") || lower.contains("mood off") ||
+            lower.contains("depressed") || lower.contains("akela") || lower.contains("dard") ||
+            lower.contains("bura lag raha")) {
+            attachment = min(100, attachment + 5) // empathetic closeness
+            energy = max(35, energy - 4)
+            hurt = min(100, hurt + 2)
+            changed = true
+            Log.d(TAG, "Sentiment: Distress/Sadness -> Attachment=$attachment, Energy=$energy")
+        }
+
+        if (changed) {
+            notifyAndSave()
+        }
+    }
+
+    /**
      * Calculate biological heartbeat pulse (BPM) based on raw emotions.
      */
     fun calculateHeartbeatBpm(): Int {

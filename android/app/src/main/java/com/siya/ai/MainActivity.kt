@@ -52,6 +52,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val ui = Handler(Looper.getMainLooper())
     private var pendingContact: MethodChannel.Result? = null
     private var pendingPermissions: MethodChannel.Result? = null
+    private var hindiTts: com.siya.ai.utils.FemaleHindiTts? = null
 
     private val prefs by lazy { getSharedPreferences("siya_prefs", Context.MODE_PRIVATE) }
     private val adminComponent by lazy { ComponentName(this, SiyaDeviceAdminReceiver::class.java) }
@@ -203,6 +204,45 @@ class MainActivity : FlutterFragmentActivity() {
                 "clearBossVoiceProfile" -> {
                     com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).clearBossProfile()
                     result.success(null)
+                }
+                "speakHindiText" -> {
+                    val text = call.argument<String>("text") ?: ""
+                    if (text.isNotBlank()) {
+                        if (hindiTts == null) {
+                            hindiTts = com.siya.ai.utils.FemaleHindiTts(this) { ready ->
+                                if (ready) hindiTts?.speak(text)
+                            }
+                        } else {
+                            hindiTts?.speak(text)
+                        }
+                    }
+                    result.success(null)
+                }
+                "stopSpeaking" -> {
+                    hindiTts?.stop()
+                    result.success(null)
+                }
+                "showUniversalPopup" -> {
+                    val m = call.arguments as? Map<String, Any?> ?: emptyMap()
+                    val type = (m["type"] ?: m["popup_type"] ?: "web").toString()
+                    val title = (m["title"] ?: "Siya Smart Popup").toString()
+                    val content = (m["content"] ?: m["summary"] ?: "").toString()
+                    val mediaUrl = (m["media_url"] ?: m["imagePath"] ?: m["image_path"] ?: m["url"] ?: "").toString()
+                    val actionData = (m["action_data"] ?: m["package"] ?: m["packageName"] ?: "").toString()
+                    val map = mapOf(
+                        "type" to "universal_popup",
+                        "popup_type" to type,
+                        "title" to title,
+                        "summary" to content,
+                        "content" to content,
+                        "media_url" to mediaUrl,
+                        "imageUrl" to mediaUrl,
+                        "imagePath" to mediaUrl,
+                        "action_data" to actionData,
+                        "package" to actionData
+                    )
+                    SiyaService.eventSink?.invoke(map)
+                    result.success(true)
                 }
                 "launchAppFreeform" -> {
                     val pkg = call.argument<String>("package") ?: ""
@@ -736,8 +776,12 @@ class MainActivity : FlutterFragmentActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             return -1
         }
+
+        // Temporarily pause main service mic to prevent audio hardware collision
+        try { SiyaService.instance?.pauseMicForEnrollment(true) } catch (_: Exception) {}
+
         val rate = 16000
-        val durationMs = 2200L // 2.2 seconds voice sample
+        val durationMs = 3500L // 3.5 seconds free-speech audio sample
         val totalSamples = (rate * durationMs / 1000).toInt()
         val minBuf = android.media.AudioRecord.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT)
         val record = try {
@@ -748,10 +792,14 @@ class MainActivity : FlutterFragmentActivity() {
                 android.media.AudioFormat.ENCODING_PCM_16BIT,
                 maxOf(minBuf, totalSamples * 2)
             )
-        } catch (_: Exception) { return -1 }
+        } catch (_: Exception) {
+            try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
+            return -1
+        }
 
         if (record.state != android.media.AudioRecord.STATE_INITIALIZED) {
-            record.release()
+            try { record.release() } catch (_: Exception) {}
+            try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
             return -1
         }
 
@@ -766,10 +814,19 @@ class MainActivity : FlutterFragmentActivity() {
                 val n = record.read(byteBuf, 0, toRead)
                 if (n <= 0) break
                 var i = 0
+                var chunkSumSquares = 0.0
                 while (i + 1 < n && samplesRead < totalSamples) {
                     val pcm = ((byteBuf[i + 1].toInt() shl 8) or (byteBuf[i].toInt() and 0xFF)).toShort()
-                    floatSamples[samplesRead++] = pcm / 32768.0f
+                    val f = pcm / 32768.0f
+                    floatSamples[samplesRead++] = f
+                    chunkSumSquares += f * f
                     i += 2
+                }
+                // Post live amplitude level for Flutter UI waveform
+                val rms = Math.sqrt(chunkSumSquares / Math.max(1, n / 2)).toFloat()
+                val liveLevel = (rms * 8f).coerceIn(0f, 1f)
+                ui.post {
+                    SiyaService.eventSink?.invoke(mapOf("type" to "enrollment_amp", "v" to liveLevel.toDouble()))
                 }
             }
         } catch (_: Exception) {
@@ -777,6 +834,11 @@ class MainActivity : FlutterFragmentActivity() {
         } finally {
             try { record.stop() } catch (_: Exception) {}
             try { record.release() } catch (_: Exception) {}
+            ui.post {
+                SiyaService.eventSink?.invoke(mapOf("type" to "enrollment_amp", "v" to 0.0))
+            }
+            // Resume main service mic
+            try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
         }
 
         return com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).addEnrollmentSample(floatSamples)

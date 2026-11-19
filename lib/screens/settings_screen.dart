@@ -6,6 +6,7 @@ import '../bridge/siya_bridge.dart';
 import '../theme.dart';
 import '../widgets/siya_bottom_navigation.dart';
 
+import 'ai_boss_screen.dart';
 import 'permissions_screen.dart';
 import 'power_screen.dart';
 import 'location_screen.dart';
@@ -363,7 +364,24 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
                             // AI Boss (Biometric Voiceprint Lock)
                             _section('AI Boss (Biometric Voiceprint Lock)'),
-                            _bossVoiceCard(),
+                            _card([
+                              _action(
+                                Icons.record_voice_over_rounded,
+                                'AI Boss Voice Lock',
+                                _bossEnrolled
+                                    ? 'Verified Boss (Malik) - $_bossSampleCount samples active'
+                                    : 'Voiceprint not enrolled - Tap to setup biometric voice lock',
+                                _bossEnrolled,
+                                () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => AiBossScreen(bridge: widget.bridge),
+                                    ),
+                                  );
+                                  _refreshStatus();
+                                },
+                              ),
+                            ]),
                             const SizedBox(height: 10),
 
                             // 2. Feature Controls (Configurations & Toggles Only)
@@ -650,253 +668,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         ),
       ]);
 
-  Widget _bossVoiceCard() => _card([
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: (_bossEnrolled ? const Color(0xFF00E676) : _primaryThemeColor).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: (_bossEnrolled ? const Color(0xFF00E676) : _primaryThemeColor).withOpacity(0.6),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Icon(
-                    _bossEnrolled ? Icons.verified_user_rounded : Icons.record_voice_over_rounded,
-                    color: _bossEnrolled ? const Color(0xFF00E676) : _primaryThemeColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'AI Boss (Voice Profile)',
-                            style: TextStyle(
-                              color: Color(0xFF151019),
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: (_bossEnrolled ? const Color(0xFF00E676) : Colors.amber).withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _bossEnrolled ? 'Verified' : 'Open',
-                              style: TextStyle(
-                                color: _bossEnrolled ? const Color(0xFF00C853) : Colors.amber.shade900,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _bossEnrolled
-                            ? '$_bossSampleCount samples enrolled (WeSpeaker 0.2s voiceprint active)'
-                            : 'Voice profile not enrolled. Siya treats anyone as guest.',
-                        style: const TextStyle(color: Color(0xFF6F6470), fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _showBossEnrollmentSheet,
-                    icon: Icon(_bossEnrolled ? Icons.replay_rounded : Icons.mic_rounded, size: 16),
-                    label: Text(_bossEnrolled ? 'Re-Record Boss Voice' : 'Enroll Boss Voice (3-4 Samples)'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _primaryThemeColor,
-                      side: BorderSide(color: _primaryThemeColor.withOpacity(0.6)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                ),
-                if (_bossEnrolled) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () async {
-                      await widget.bridge.clearBossVoiceProfile();
-                      await _refreshStatus();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Boss voice profile deleted!'), behavior: SnackBarBehavior.floating),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFFF5252), size: 20),
-                    tooltip: 'Reset Boss Profile',
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ]);
-
-  void _showBossEnrollmentSheet() {
-    int currentSamples = 0;
-    bool isRecording = false;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          return Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            decoration: const BoxDecoration(
-              color: Color(0xFF161522),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'AI Boss Voice Enrollment',
-                  style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Apni aawaz mein 3 se 4 baar "Namaste Siya" ya "Main tumhara Boss hoon" bolkar record karein.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (idx) {
-                    final isDone = idx < currentSamples;
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      width: 50,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: isDone ? const Color(0xFF00E676) : Colors.white12,
-                        borderRadius: BorderRadius.circular(5),
-                        boxShadow: isDone
-                            ? [BoxShadow(color: const Color(0xFF00E676).withOpacity(0.5), blurRadius: 6)]
-                            : null,
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Sample $currentSamples of 4 Collected',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: isRecording
-                      ? null
-                      : () async {
-                          setModalState(() => isRecording = true);
-                          final count = await widget.bridge.enrollBossVoiceSample();
-                          if (ctx.mounted) {
-                            setModalState(() {
-                              isRecording = false;
-                              if (count > 0) currentSamples = count;
-                            });
-                          }
-                        },
-                  child: Container(
-                    width: 74,
-                    height: 74,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: isRecording
-                            ? [const Color(0xFFFF5252), const Color(0xFFFF1744)]
-                            : [_primaryThemeColor, Color.lerp(_primaryThemeColor, Colors.white, 0.25)!],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isRecording ? const Color(0xFFFF5252) : _primaryThemeColor).withOpacity(0.45),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        isRecording ? Icons.graphic_eq_rounded : Icons.mic_rounded,
-                        color: Colors.white,
-                        size: 34,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isRecording ? 'Listening (2s)... Boliye!' : 'Tap mic to record sample',
-                  style: TextStyle(
-                    color: isRecording ? const Color(0xFFFF5252) : Colors.white60,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (currentSamples >= 3)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final ok = await widget.bridge.finalizeBossEnrollment();
-                      if (ctx.mounted) Navigator.of(ctx).pop();
-                      await _refreshStatus();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok ? 'AI Boss profile activated successfully!' : 'Enrollment failed. Try again.'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: ok ? const Color(0xFF00C853) : const Color(0xFFFF5252),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.verified_user_rounded, size: 18),
-                    label: const Text('Save & Activate Boss Profile'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00E676),
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size.fromHeight(46),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _header(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),

@@ -38,13 +38,13 @@ class _UniversalPopupState extends State<UniversalPopup> {
 
   @override
   Widget build(BuildContext context) {
-    final mode = (widget.data['popup_type'] ?? widget.data['mode'] ?? 'osint').toString().toLowerCase();
-    final title = (widget.data['title'] ?? widget.data['query'] ?? 'Siya Smart Intelligence').toString();
-    final summary = (widget.data['summary'] ?? widget.data['content'] ?? 'Result available.').toString();
-    final mediaUrl = (widget.data['imageUrl'] ?? widget.data['media_url'] ?? '').toString();
+    final mode = (widget.data['popup_type'] ?? widget.data['mode'] ?? widget.data['type'] ?? 'osint').toString().toLowerCase();
+    final title = (widget.data['title'] ?? widget.data['query'] ?? widget.data['name'] ?? 'Siya Smart Intelligence').toString();
+    final summary = (widget.data['summary'] ?? widget.data['content'] ?? widget.data['text'] ?? widget.data['description'] ?? 'Result available.').toString();
+    final mediaUrl = (widget.data['imageUrl'] ?? widget.data['media_url'] ?? widget.data['imagePath'] ?? widget.data['image_path'] ?? widget.data['path'] ?? widget.data['url'] ?? '').toString();
     final rawLinks = widget.data['links'];
     final List<String> links = rawLinks is List ? rawLinks.map((e) => e.toString()).toList() : [];
-    final appPackage = (widget.data['package'] ?? widget.data['action_data'] ?? '').toString();
+    final appPackage = (widget.data['package'] ?? widget.data['action_data'] ?? widget.data['packageName'] ?? widget.data['package_name'] ?? '').toString();
 
     final neonColor = switch (mode) {
       'image' || 'gallery' => const Color(0xFF00F2FE),
@@ -272,8 +272,25 @@ class _UniversalPopupState extends State<UniversalPopup> {
   }
 
   Widget _buildImageViewer(String pathOrUrl, String title, Color neon) {
+    if (pathOrUrl.trim().isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.photo_library_outlined, size: 54, color: neon.withOpacity(0.5)),
+            const SizedBox(height: 12),
+            const Text(
+              'Koi photo select nahi hui ya image path nahi mila.',
+              style: TextStyle(color: Colors.white70, fontSize: 13.5),
+            ),
+          ],
+        ),
+      );
+    }
+
     final isLocal = pathOrUrl.startsWith('/') || pathOrUrl.startsWith('file://');
     final cleanPath = pathOrUrl.replaceFirst('file://', '');
+    final fileExists = isLocal && File(cleanPath).existsSync();
 
     return Column(
       children: [
@@ -287,7 +304,26 @@ class _UniversalPopupState extends State<UniversalPopup> {
                 maxScale: 4.5,
                 child: Center(
                   child: isLocal
-                      ? Image.file(File(cleanPath), fit: BoxFit.contain)
+                      ? (fileExists
+                          ? Image.file(
+                              File(cleanPath),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image_rounded, color: Colors.white38, size: 48),
+                              ),
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.broken_image_rounded, color: Colors.white38, size: 48),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Photo file nahi mili:\n$cleanPath',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                ),
+                              ],
+                            ))
                       : Image.network(
                           pathOrUrl,
                           fit: BoxFit.contain,
@@ -312,7 +348,7 @@ class _UniversalPopupState extends State<UniversalPopup> {
                 style: const TextStyle(color: Colors.white70, fontSize: 12.5),
               ),
             ),
-            if (isLocal)
+            if (fileExists)
               ElevatedButton.icon(
                 onPressed: () => widget.onShareImage?.call(cleanPath),
                 icon: const Icon(Icons.share_rounded, size: 16),

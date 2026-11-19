@@ -6,6 +6,7 @@ import '../bridge/siya_bridge.dart';
 import '../theme.dart';
 
 /// Full-Screen Edge-to-Edge Smart Location & Interactive Map
+/// Dark glassmorphic design, zero-delay instant render, and background GPS sync.
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key, required this.bridge});
 
@@ -23,7 +24,7 @@ class _LocationScreenState extends State<LocationScreen> {
   String _name = '';
   String _mode = 'device';
   bool _busy = false;
-  bool _ready = false;
+  bool _ready = true; // Instant render to prevent white screen
   bool _satellite = false;
 
   Color get _accent => SiyaTheme.accent.value;
@@ -50,16 +51,27 @@ class _LocationScreenState extends State<LocationScreen> {
       if (_mode == 'custom' && (lat != 0 || lng != 0)) {
         _picked = LatLng(lat, lng);
         _center = _picked!;
-      } else {
-        final d = await widget.bridge.getLocation();
-        if (d != null) {
-          _center = LatLng((d['lat'] as num).toDouble(), (d['lng'] as num).toDouble());
-          _name = (d['name'] as String?) ?? '';
+        if (mounted) {
+          setState(() {});
+          try {
+            _map.move(_center, 15.5);
+          } catch (_) {}
         }
+      } else {
+        // Fast background GPS fetch without hanging the UI
+        widget.bridge.getLocation().then((d) {
+          if (d != null && mounted) {
+            setState(() {
+              _center = LatLng((d['lat'] as num).toDouble(), (d['lng'] as num).toDouble());
+              _name = (d['name'] as String?) ?? '';
+            });
+            try {
+              _map.move(_center, 15.5);
+            } catch (_) {}
+          }
+        }).catchError((_) {});
       }
     } catch (_) {}
-    if (!mounted) return;
-    setState(() => _ready = true);
   }
 
   Future<void> _useDevice() async {
@@ -140,74 +152,69 @@ class _LocationScreenState extends State<LocationScreen> {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF131722),
+      backgroundColor: const Color(0xFF121212),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // 1. Full-Screen Interactive Edge-to-Edge Map
-          if (_ready)
-            Positioned.fill(
-              child: FlutterMap(
-                mapController: _map,
-                options: MapOptions(
-                  initialCenter: _picked ?? _center,
-                  initialZoom: _picked != null || _mode == 'device' ? 15.5 : 5.0,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all,
-                  ),
-                  onTap: (_, p) => _setCustom(p),
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _map,
+              options: MapOptions(
+                initialCenter: _picked ?? _center,
+                initialZoom: _picked != null || _mode == 'device' ? 15.5 : 5.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate: _satellite
-                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.siya.ai',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _picked ?? _center,
-                        width: 56,
-                        height: 56,
-                        alignment: Alignment.topCenter,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _accent.withOpacity(0.25),
-                              ),
-                            ),
-                            Icon(
-                              Icons.location_on_rounded,
-                              size: 46,
-                              color: _accent,
-                              shadows: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                onTap: (_, p) => _setCustom(p),
               ),
-            )
-          else
-            Center(
-              child: CircularProgressIndicator(color: _accent),
+              children: [
+                TileLayer(
+                  urlTemplate: _satellite
+                      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.siya.ai',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _picked ?? _center,
+                      width: 56,
+                      height: 56,
+                      alignment: Alignment.topCenter,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _accent.withOpacity(0.25),
+                            ),
+                          ),
+                          Icon(
+                            Icons.location_on_rounded,
+                            size: 46,
+                            color: _accent,
+                            shadows: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
 
-          // 2. Floating Top Transparent Glass Header & Search Bar
+          // 2. Floating Top Transparent Dark Glass Header & Search Bar
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
@@ -221,20 +228,20 @@ class _LocationScreenState extends State<LocationScreen> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.88),
+                        color: const Color(0xFF1A1828).withOpacity(0.92),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
+                            color: Colors.black.withOpacity(0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.chevron_left_rounded,
-                        color: _accent,
+                        color: Colors.white,
                         size: 28,
                       ),
                     ),
@@ -246,14 +253,14 @@ class _LocationScreenState extends State<LocationScreen> {
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.92),
+                        color: const Color(0xFF1A1828).withOpacity(0.92),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
+                            color: Colors.black.withOpacity(0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -266,7 +273,7 @@ class _LocationScreenState extends State<LocationScreen> {
                             child: TextField(
                               controller: _search,
                               style: const TextStyle(
-                                color: Color(0xFF1E232F),
+                                color: Colors.white,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -275,7 +282,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               decoration: const InputDecoration(
                                 hintText: 'Address ya jagah search karein...',
                                 hintStyle: TextStyle(
-                                  color: Color(0xFF8A7B85),
+                                  color: Colors.white54,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -286,7 +293,7 @@ class _LocationScreenState extends State<LocationScreen> {
                           ),
                           if (_search.text.isNotEmpty)
                             IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 18, color: Colors.grey),
+                              icon: const Icon(Icons.close_rounded, size: 18, color: Colors.white60),
                               onPressed: () {
                                 _search.clear();
                                 setState(() {});
@@ -306,14 +313,14 @@ class _LocationScreenState extends State<LocationScreen> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.88),
+                        color: const Color(0xFF1A1828).withOpacity(0.92),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
+                            color: Colors.black.withOpacity(0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -329,7 +336,7 @@ class _LocationScreenState extends State<LocationScreen> {
             ),
           ),
 
-          // 3. Floating Bottom Glass Card (Address, Coordinates & Recenter Button)
+          // 3. Floating Bottom Dark Glass Card (Address, Coordinates & Recenter Button)
           Positioned(
             left: 14,
             right: 14,
@@ -337,13 +344,13 @@ class _LocationScreenState extends State<LocationScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.92),
+                color: const Color(0xFF161424).withOpacity(0.94),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.95), width: 1.8),
+                border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 24,
+                    color: Colors.black.withOpacity(0.45),
+                    blurRadius: 28,
                     offset: const Offset(0, 8),
                   ),
                 ],
@@ -358,7 +365,7 @@ class _LocationScreenState extends State<LocationScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _accent.withOpacity(0.14),
+                          color: _accent.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -388,7 +395,7 @@ class _LocationScreenState extends State<LocationScreen> {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF7A6B75),
+                          color: Colors.white54,
                         ),
                       ),
                     ],
@@ -410,7 +417,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF2A1C25),
+                                color: Colors.white,
                                 height: 1.25,
                               ),
                             ),
@@ -420,7 +427,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               style: const TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF8A7B85),
+                                color: Colors.white60,
                               ),
                             ),
                           ],
@@ -478,13 +485,14 @@ class _LocationScreenState extends State<LocationScreen> {
           if (_busy)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withOpacity(0.55),
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      color: const Color(0xFF1E1B2E),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Colors.white12),
                     ),
                     child: CircularProgressIndicator(color: _accent),
                   ),

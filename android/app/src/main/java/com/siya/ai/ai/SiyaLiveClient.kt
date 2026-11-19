@@ -85,7 +85,7 @@ class SiyaLiveClient(
                     put("startOfSpeechSensitivity", "START_SENSITIVITY_HIGH")
                     put("endOfSpeechSensitivity", "END_SENSITIVITY_HIGH")
                     put("prefixPaddingMs", 60)
-                    put("silenceDurationMs", 220)
+                    put("silenceDurationMs", 250)
                 }))
                 put("inputAudioTranscription", JSONObject())
                 put("outputAudioTranscription", JSONObject())

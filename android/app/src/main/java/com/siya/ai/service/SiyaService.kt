@@ -142,8 +142,11 @@ class SiyaService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
-        if (!hasMic(this) || action == null) { stopSelfSafely(); return START_NOT_STICKY }
+        val action = intent?.action ?: if (wakeEnabled) ACTION_SYNC else null
+        if (!hasMic(this) || action == null) {
+            if (!wakeEnabled) stopSelfSafely()
+            return if (wakeEnabled) START_STICKY else START_NOT_STICKY
+        }
         ensureForeground()
         when (action) {
             ACTION_START -> startSession(intent?.getStringExtra(EXTRA_SOURCE) ?: "app")
@@ -157,7 +160,12 @@ class SiyaService : Service() {
                 } else startSession("app")
             }
             ACTION_STOP, ACTION_MIC_OFF -> session?.stop() ?: afterSession()
-            ACTION_SYNC -> { syncWake(); if (session?.active != true && wake?.isRunning != true) stopSelfSafely() }
+            ACTION_SYNC -> {
+                syncWake()
+                if (!wakeEnabled && session?.active != true && wake?.isRunning != true) {
+                    stopSelfSafely()
+                }
+            }
             ACTION_SHUTDOWN -> { session?.stop(); wake?.stop(); stopSelfSafely() }
         }
         return if (wakeEnabled) START_STICKY else START_NOT_STICKY
@@ -339,7 +347,11 @@ class SiyaService : Service() {
     private fun buildNotification(): Notification {
         if (Build.VERSION.SDK_INT >= 26) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL, "Siya background", NotificationManager.IMPORTANCE_LOW).apply { setShowBadge(false); setSound(null, null); enableVibration(false) })
+                NotificationChannel(CHANNEL, "Siya background", NotificationManager.IMPORTANCE_MIN).apply {
+                    setShowBadge(false)
+                    setSound(null, null)
+                    enableVibration(false)
+                })
         }
         val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java)
@@ -364,7 +376,7 @@ class SiyaService : Service() {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         // Mic off / Mic on  +  Cancel: dono buttons notification ke andar hi
         if (active && session?.micMuted != true) b.addAction(R.drawable.ic_mic_off, "Mic off", micOff)
@@ -417,4 +429,15 @@ class SiyaService : Service() {
 
     /** Settings (API key / awaaz / personality) badalne par naya connection. */
     fun reloadSession() { session?.reload() }
+
+    /** Temporarily releases mic so AI Boss voice enrollment can capture audio cleanly without collision. */
+    fun pauseMicForEnrollment(pause: Boolean) {
+        if (pause) {
+            wake?.stop()
+            session?.pauseForCall()
+        } else {
+            session?.resumeAfterCall()
+            syncWake()
+        }
+    }
 }
