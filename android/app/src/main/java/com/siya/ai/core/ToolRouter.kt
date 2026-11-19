@@ -72,6 +72,9 @@ object ToolRouter {
         f.put(fn("obscura_open", "Background headless browser mein kisi website/URL ko load karke uska clean text aur numbered clickable items [1], [2]... extract karo.", p("url", "Website ka URL ya link")))
         f.put(fn("obscura_interact", "Background page par kisi button/link par click karo, input box mein type karo, ya scroll karo.", p("action", "click, type, scroll, ya submit"), p("target", "Element number jaise '1', '2' ya text/direction"), p("text", "Type karne wala text (agar action type hai)", false)))
         f.put(fn("obscura_cleanup", "Background headless browser ko reset karke RAM aur memory release karo jab research poori ho jaye."))
+        // 100% Free OSINT Photo & Name Lookup
+        f.put(fn("osint_image_lookup", "Kisi image/photo ka free reverse image search karo (Catbox + Yandex) aur matching public links/titles dhoondo.", p("image_path", "Local phone storage mein image ka absolute path")))
+        f.put(fn("osint_name_lookup", "Kisi insaan ya username ke public social profiles aur footprints (Instagram, GitHub, Reddit, YouTube) search karo.", p("name_or_username", "Insaan ka naam ya social handle/username")))
         if (FileTools.hasAccess()) {
             f.put(fn("list_files", "Phone ke kisi folder ki files dikhao. Khaali path = main storage.", p("path", "Folder, jaise Download, DCIM/Camera, Documents", false)))
             f.put(fn("find_files", "Naam se file / folder dhundo.", p("query", "Naam ka hissa"), p("path", "Kahan dhundna hai (khaali = poora storage)", false)))
@@ -180,6 +183,8 @@ object ToolRouter {
             "obscura_open" -> ObscuraMobileEngine.open(ctx, a.optString("url"))
             "obscura_interact" -> ObscuraMobileEngine.interact(ctx, a.optString("action"), a.optString("target"), a.optString("text"))
             "obscura_cleanup" -> ObscuraMobileEngine.cleanup()
+            "osint_image_lookup" -> com.siya.ai.browser.OsintEngine.imageLookup(ctx, a.optString("image_path"))
+            "osint_name_lookup" -> com.siya.ai.browser.OsintEngine.nameLookup(ctx, a.optString("name_or_username"))
             "set_location" -> if (a.optString("place").trim().equals("phone", true)) LocationHelper.useDevice(ctx) else LocationHelper.setCustom(ctx, a.optString("place"))
             "show_map" -> showMap(ctx, a.optString("place").trim(), !a.optString("satellite").equals("false", true))
             "close_map" -> { MapWindow.close(); "OK: map band" }

@@ -21,5 +21,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - 'android/app/Image/Ai name.png'
-    - 'android/app/Image/ home page program.png'
+

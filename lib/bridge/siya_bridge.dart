@@ -19,6 +19,9 @@ class SiyaBridge extends ChangeNotifier {
   final ValueNotifier<double> amp = ValueNotifier<double>(0);
   final ValueNotifier<String> transcript = ValueNotifier<String>('');
 
+  /// OSINT Search Results (image lookup, name lookup)
+  final ValueNotifier<Map<String, dynamic>?> osintResult = ValueNotifier<Map<String, dynamic>?>(null);
+
   /// Native se aayi error ka code (no_key, no_mic, connection...). UI dikhane ke baad null kar deta hai.
   final ValueNotifier<String?> error = ValueNotifier<String?>(null);
 
@@ -72,6 +75,22 @@ class SiyaBridge extends ChangeNotifier {
       case 'error':
         error.value = e['code'] as String?;
         break;
+      case 'osint_result':
+        try {
+          osintResult.value = Map<String, dynamic>.from(e);
+          notifyListeners();
+        } catch (_) {}
+        break;
+    }
+  }
+
+  Future<void> obscuraCleanup() async {
+    try {
+      await _method.invokeMethod<void>('obscuraCleanup');
+      osintResult.value = null;
+      notifyListeners();
+    } on PlatformException {
+      // ignore
     }
   }
 

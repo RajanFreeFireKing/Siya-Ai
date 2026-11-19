@@ -179,6 +179,10 @@ class MainActivity : FlutterFragmentActivity() {
                     moveTaskToBack(true)
                     result.success(null)
                 }
+                "obscuraCleanup" -> {
+                    com.siya.ai.browser.ObscuraMobileEngine.cleanup()
+                    result.success(null)
+                }
                 "getSettings" -> result.success(readSettings())
                 "saveSettings" -> {
                     @Suppress("UNCHECKED_CAST")

@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/wallpaper_layer.dart';
 import '../widgets/wave_painter.dart';
 import '../widgets/siya_bottom_navigation.dart';
+import '../widgets/osint_result_popup.dart';
 import '../widgets/permission_explanation_sheet.dart';
 import 'power_screen.dart';
 import 'settings_screen.dart';
@@ -244,6 +245,20 @@ class _HomeScreenState extends State<HomeScreen>
                             onSettings: () => setState(() => _activeTab = 3),
                           ),
                         ),
+                      ),
+
+                      // Dark Glassmorphic Neon OSINT Result Popup
+                      ValueListenableBuilder<Map<String, dynamic>?>(
+                        valueListenable: widget.bridge.osintResult,
+                        builder: (context, osintData, _) {
+                          if (osintData == null) return const SizedBox.shrink();
+                          return OsintResultPopup(
+                            data: osintData,
+                            accent: accent,
+                            onClose: () => widget.bridge.osintResult.value = null,
+                            onClearData: () => widget.bridge.obscuraCleanup(),
+                          );
+                        },
                       ),
                     ],
                   );
