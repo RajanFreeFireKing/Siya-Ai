@@ -130,7 +130,9 @@ class SpeakerRecognitionEngine private constructor(private val context: Context)
      */
     @Synchronized
     fun extractEmbedding(samples: FloatArray): FloatArray? {
-        if (!initialized || session == null || ortEnv == null) return null
+        if (!initialized || session == null || ortEnv == null) {
+            initSession()
+        }
         val env = ortEnv ?: return null
         val sess = session ?: return null
 
@@ -148,7 +150,8 @@ class SpeakerRecognitionEngine private constructor(private val context: Context)
             val shape = longArrayOf(1, numFrames.toLong(), NUM_MEL_BINS.toLong())
             inputTensor = OnnxTensor.createTensor(env, buffer, shape)
 
-            results = sess.run(mapOf("input_features" to inputTensor))
+            val inputName = if (sess.inputNames.isNotEmpty()) sess.inputNames.iterator().next() else "input_features"
+            results = sess.run(mapOf(inputName to inputTensor))
             val outputTensor = results.get(0) as? OnnxTensor ?: return null
             val rawOutput = outputTensor.floatBuffer
 

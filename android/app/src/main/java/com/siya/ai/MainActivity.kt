@@ -346,15 +346,9 @@ class MainActivity : FlutterFragmentActivity() {
                     Thread { com.siya.ai.browser.ObscuraMobileEngine.open(this, url); ui.post { result.success(true) } }.start()
                 }
                 "getSmsLedger" -> Thread {
-                    val entries = com.siya.ai.data.SmsLedger.getEntries(this)
-                    val daySummary = com.siya.ai.data.SmsLedger.summary(this, "day")
-                    val monthSummary = com.siya.ai.data.SmsLedger.summary(this, "month")
+                    val data = com.siya.ai.data.SmsLedger.getLedgerData(this)
                     ui.post {
-                        result.success(mapOf(
-                            "entries" to entries,
-                            "daySummary" to daySummary,
-                            "monthSummary" to monthSummary
-                        ))
+                        result.success(data)
                     }
                 }.start()
                 "getCallLogs" -> Thread {
@@ -779,26 +773,39 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Temporarily pause main service mic to prevent audio hardware collision
         try { SiyaService.instance?.pauseMicForEnrollment(true) } catch (_: Exception) {}
+        try { Thread.sleep(250) } catch (_: Exception) {}
 
         val rate = 16000
         val durationMs = 3500L // 3.5 seconds free-speech audio sample
         val totalSamples = (rate * durationMs / 1000).toInt()
         val minBuf = android.media.AudioRecord.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT)
-        val record = try {
-            android.media.AudioRecord(
-                android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                rate,
-                android.media.AudioFormat.CHANNEL_IN_MONO,
-                android.media.AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(minBuf, totalSamples * 2)
-            )
-        } catch (_: Exception) {
-            try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
-            return -1
+
+        val sources = intArrayOf(
+            android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION,
+            android.media.MediaRecorder.AudioSource.MIC,
+            android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            android.media.MediaRecorder.AudioSource.DEFAULT
+        )
+        var record: android.media.AudioRecord? = null
+        for (src in sources) {
+            try {
+                val rec = android.media.AudioRecord(
+                    src,
+                    rate,
+                    android.media.AudioFormat.CHANNEL_IN_MONO,
+                    android.media.AudioFormat.ENCODING_PCM_16BIT,
+                    maxOf(minBuf, totalSamples * 2)
+                )
+                if (rec.state == android.media.AudioRecord.STATE_INITIALIZED) {
+                    record = rec
+                    break
+                } else {
+                    try { rec.release() } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
         }
 
-        if (record.state != android.media.AudioRecord.STATE_INITIALIZED) {
-            try { record.release() } catch (_: Exception) {}
+        if (record == null) {
             try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
             return -1
         }
@@ -806,13 +813,17 @@ class MainActivity : FlutterFragmentActivity() {
         val floatSamples = FloatArray(totalSamples)
         val byteBuf = ByteArray(1024)
         var samplesRead = 0
+        val startTime = System.currentTimeMillis()
 
         try {
             record.startRecording()
-            while (samplesRead < totalSamples) {
+            while (samplesRead < totalSamples && (System.currentTimeMillis() - startTime) < (durationMs + 1500L)) {
                 val toRead = minOf(byteBuf.size, (totalSamples - samplesRead) * 2)
                 val n = record.read(byteBuf, 0, toRead)
-                if (n <= 0) break
+                if (n <= 0) {
+                    try { Thread.sleep(20) } catch (_: Exception) {}
+                    continue
+                }
                 var i = 0
                 var chunkSumSquares = 0.0
                 while (i + 1 < n && samplesRead < totalSamples) {
@@ -829,8 +840,8 @@ class MainActivity : FlutterFragmentActivity() {
                     SiyaService.eventSink?.invoke(mapOf("type" to "enrollment_amp", "v" to liveLevel.toDouble()))
                 }
             }
-        } catch (_: Exception) {
-            return -1
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Audio recording error: ${e.message}")
         } finally {
             try { record.stop() } catch (_: Exception) {}
             try { record.release() } catch (_: Exception) {}
@@ -841,7 +852,11 @@ class MainActivity : FlutterFragmentActivity() {
             try { SiyaService.instance?.pauseMicForEnrollment(false) } catch (_: Exception) {}
         }
 
-        return com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).addEnrollmentSample(floatSamples)
+        if (samplesRead < 16000) {
+            return -1
+        }
+        val actualSamples = if (samplesRead == totalSamples) floatSamples else floatSamples.copyOf(samplesRead)
+        return com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).addEnrollmentSample(actualSamples)
     }
 
     private fun launchFreeformApp(pkg: String): Boolean {

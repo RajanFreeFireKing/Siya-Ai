@@ -172,7 +172,8 @@ class _LocationScreenState extends State<LocationScreen> {
                 TileLayer(
                   urlTemplate: _satellite
                       ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      : 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                  fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.siya.ai',
                 ),
                 MarkerLayer(
@@ -215,14 +216,19 @@ class _LocationScreenState extends State<LocationScreen> {
           ),
 
           // 2. Floating Top Transparent Dark Glass Header & Search Bar
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-              child: Row(
-                children: [
-                  // Back Button
-                  InkWell(
-                    onTap: () => Navigator.of(context).pop(),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                child: Row(
+                  children: [
+                    // Back Button
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       width: 46,
@@ -335,6 +341,7 @@ class _LocationScreenState extends State<LocationScreen> {
               ),
             ),
           ),
+        ),
 
           // 3. Floating Bottom Dark Glass Card (Address, Coordinates & Recenter Button)
           Positioned(

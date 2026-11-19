@@ -31,6 +31,7 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
     @Volatile private var running = false
     override val isRunning: Boolean get() = running
     private var worker: Thread? = null
+    @Volatile private var activeRecorder: AudioRecord? = null
 
     override fun start() {
         if (running) return
@@ -43,6 +44,9 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
 
     override fun stop() {
         running = false
+        try { activeRecorder?.stop() } catch (_: Exception) {}
+        try { activeRecorder?.release() } catch (_: Exception) {}
+        activeRecorder = null
         worker?.interrupt()
         worker = null
     }
@@ -50,7 +54,6 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
     @SuppressLint("MissingPermission")
     private fun listenLoop() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
-        var recorder: AudioRecord? = null
         var recognizer: Recognizer? = null
         try {
             val path = FileUtils.unpackAssetDirectory(
@@ -73,20 +76,22 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
                 RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
             )
             require(minBytes > 0) { "AudioRecord buffer size unavailable: $minBytes" }
-            recorder = AudioRecord(
+            val rec = AudioRecord(
                 MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
                 maxOf(minBytes, FRAME_SAMPLES * 2 * 2)
             )
-            check(recorder.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord initialization failed" }
-            recorder.startRecording()
+            check(rec.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord initialization failed" }
+            activeRecorder = rec
+            rec.startRecording()
             Log.i(TAG, "Vosk model loaded from $path; listening at 16 kHz mono PCM")
 
             val buffer = ShortArray(FRAME_SAMPLES)
             while (running && !Thread.currentThread().isInterrupted) {
-                val count = recorder.read(buffer, 0, buffer.size, AudioRecord.READ_BLOCKING)
+                val current = activeRecorder ?: break
+                val count = current.read(buffer, 0, buffer.size, AudioRecord.READ_BLOCKING)
                 if (count < 0) {
                     Log.w(TAG, "AudioRecord read failed: $count")
                     break
@@ -107,8 +112,9 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
             Log.e(TAG, "Vosk wake listener stopped safely: ${e.message}", e)
         } finally {
             running = false
-            try { recorder?.stop() } catch (_: Exception) {}
-            try { recorder?.release() } catch (_: Exception) {}
+            try { activeRecorder?.stop() } catch (_: Exception) {}
+            try { activeRecorder?.release() } catch (_: Exception) {}
+            activeRecorder = null
             try { recognizer?.close() } catch (_: Exception) {}
         }
     }

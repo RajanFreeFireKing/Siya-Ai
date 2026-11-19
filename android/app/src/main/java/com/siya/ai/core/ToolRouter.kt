@@ -217,6 +217,19 @@ object ToolRouter {
                         } catch (_: Exception) {}
                     }
 
+                    // If mediaUrl is content:// URI, copy to local cache file for direct access
+                    if (mediaUrl.startsWith("content://")) {
+                        try {
+                            val cacheFile = java.io.File(ctx.cacheDir, "popup_img_${System.currentTimeMillis()}.jpg")
+                            ctx.contentResolver.openInputStream(android.net.Uri.parse(mediaUrl))?.use { input ->
+                                cacheFile.outputStream().use { output -> input.copyTo(output) }
+                            }
+                            if (cacheFile.exists() && cacheFile.length() > 0) {
+                                mediaUrl = cacheFile.absolutePath
+                            }
+                        } catch (_: Exception) {}
+                    }
+
                     val actionData = a.optString("action_data").ifBlank {
                         a.optString("packageName").ifBlank {
                             a.optString("package_name").ifBlank {
@@ -242,22 +255,15 @@ object ToolRouter {
                         "url" to url
                     )
 
-                    // If app is not in foreground, bring MainActivity to front so Flutter UI can render popup
-                    if (!com.siya.ai.service.SiyaService.appVisible) {
-                        try {
-                            val bringFront = android.content.Intent(ctx, com.siya.ai.ui.main.MainActivity::class.java).apply {
-                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                            }
-                            ctx.startActivity(bringFront)
-                        } catch (e: Exception) {
-                            android.util.Log.e("ToolRouter", "Could not bring MainActivity to front: ${e.message}")
-                        }
+                    // If user is outside the app, float directly over their current screen without forcing MainActivity open!
+                    if (!com.siya.ai.service.SiyaService.appVisible && android.provider.Settings.canDrawOverlays(ctx)) {
+                        com.siya.ai.ui.widget.UniversalFloatingWindow.show(ctx, type, title, content, mediaUrl, url)
                     }
 
-                    // Post to eventSink on main thread
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    // Post to eventSink on main thread for in-app Flutter overlay
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
                         com.siya.ai.service.SiyaService.eventSink?.invoke(map)
-                    }, 250)
+                    }
 
                     "OK: popup screen par dikha diya ($type - $title)"
                 } catch (e: Exception) {

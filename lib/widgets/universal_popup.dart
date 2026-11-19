@@ -456,11 +456,7 @@ class _UniversalPopupState extends State<UniversalPopup> {
               height: 140,
               width: double.infinity,
               color: Colors.black38,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              child: _buildAdaptiveImage(imageUrl),
             ),
           ),
           const SizedBox(height: 12),
@@ -559,6 +555,18 @@ class _UniversalPopupState extends State<UniversalPopup> {
         ],
       ),
     );
+  }
+
+  Widget _buildAdaptiveImage(String pathOrUrl, {BoxFit fit = BoxFit.cover}) {
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+      return Image.network(pathOrUrl, fit: fit, errorBuilder: (_, __, ___) => const SizedBox.shrink());
+    }
+    final clean = pathOrUrl.replaceFirst('file://', '');
+    final f = File(clean);
+    if (f.existsSync()) {
+      return Image.file(f, fit: fit, errorBuilder: (_, __, ___) => const SizedBox.shrink());
+    }
+    return Image.network(pathOrUrl, fit: fit, errorBuilder: (_, __, ___) => const SizedBox.shrink());
   }
 }
 

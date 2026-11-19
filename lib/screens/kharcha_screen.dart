@@ -98,13 +98,36 @@ class _KharchaScreenState extends State<KharchaScreen> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    final day = (_ledgerData?['daySummary'] as Map?) ?? {};
-    final month = (_ledgerData?['monthSummary'] as Map?) ?? {};
+    final day = (_ledgerData?['daySummary'] is Map) ? (_ledgerData!['daySummary'] as Map) : null;
+    final month = (_ledgerData?['monthSummary'] is Map) ? (_ledgerData!['monthSummary'] as Map) : null;
     final entries = (_ledgerData?['entries'] as List?) ?? [];
 
-    final dayDebit = ((day['totalDebit'] as num?) ?? 0).toDouble();
-    final dayCredit = ((day['totalCredit'] as num?) ?? 0).toDouble();
-    final monthDebit = ((month['totalDebit'] as num?) ?? 0).toDouble();
+    double dayDebit = 0.0;
+    double dayCredit = 0.0;
+    double monthDebit = 0.0;
+
+    if (day != null) {
+      dayDebit = ((day['totalDebit'] as num?) ?? 0).toDouble();
+      dayCredit = ((day['totalCredit'] as num?) ?? 0).toDouble();
+    }
+    if (month != null) {
+      monthDebit = ((month['totalDebit'] as num?) ?? 0).toDouble();
+    }
+
+    if (dayDebit == 0 && dayCredit == 0 && entries.isNotEmpty) {
+      for (final e in entries) {
+        if (e is Map) {
+          final amt = ((e['amount'] as num?) ?? 0).toDouble();
+          final isDebit = e['isDebit'] != false && (e['kind'] == null || e['kind'] == 'debit');
+          if (isDebit) {
+            dayDebit += amt;
+            monthDebit += amt;
+          } else {
+            dayCredit += amt;
+          }
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: Color.alphaBlend(_accent.withOpacity(.045), const Color(0xFFFFF5FA)),
@@ -346,8 +369,9 @@ class _KharchaScreenState extends State<KharchaScreen> {
       margin: const EdgeInsets.only(top: 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withOpacity(0.85),
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _accent.withOpacity(0.18)),
       ),
       child: Column(
         children: [
@@ -363,13 +387,43 @@ class _KharchaScreenState extends State<KharchaScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Color(0xFF6B5C67)),
           ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _fetchLedger,
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                label: const Text('Sync Inbox SMS'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await widget.bridge.requestPermissions();
+                  _fetchLedger();
+                },
+                icon: const Icon(Icons.security_rounded, size: 16),
+                label: const Text('Permissions'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _accent,
+                  side: BorderSide(color: _accent),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTransactionTile(Map entry) {
-    final sender = (entry['sender']?.toString()) ?? 'Bank SMS';
+    final sender = (entry['sender'] ?? entry['from'] ?? 'Bank / UPI').toString();
     double amount = 0.0;
     final rawAmount = entry['amount'];
     if (rawAmount is num) {
@@ -377,9 +431,9 @@ class _KharchaScreenState extends State<KharchaScreen> {
     } else if (rawAmount != null) {
       amount = double.tryParse(rawAmount.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
     }
-    final isDebit = entry['isDebit'] != false;
-    final body = (entry['body']?.toString()) ?? '';
-    final date = (entry['date']?.toString()) ?? '';
+    final isDebit = entry['isDebit'] != false && (entry['kind'] == null || entry['kind'] == 'debit');
+    final body = (entry['body'] ?? entry['note'] ?? '').toString();
+    final date = (entry['date'] ?? entry['day'] ?? '').toString();
 
     final color = isDebit ? const Color(0xFFE53935) : const Color(0xFF2E7D32);
     final sign = isDebit ? '-' : '+';

@@ -895,141 +895,147 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   }
 
   Widget _themeColorOption() {
-    return _card([
-      Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _primaryThemeColor,
-              border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: [
-                BoxShadow(
-                  color: _primaryThemeColor.withOpacity(0.4),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Theme Accent Color',
-                  style: TextStyle(
-                    color: Color(0xFF151019),
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Pura app ka color badlo (Home, Dock, Settings)',
-                  style: TextStyle(color: Color(0xFF6F6470), fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: _saveThemeColor,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [_primaryThemeColor, Color.lerp(_primaryThemeColor, const Color(0xFFFF0077), 0.5)!],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: _primaryThemeColor.withOpacity(0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                  SizedBox(width: 4),
-                  Text(
-                    'Save Color',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 14),
-      _themeColorPicker(),
-    ]);
+    return _action(
+      Icons.palette_rounded,
+      'Theme Accent Color',
+      'Pura app ka theme color badlein (vibrant palette)',
+      null,
+      () => _showThemeColorDialog(),
+    );
   }
 
-  Widget _themeColorPicker() {
-    const colors = <Color>[
-      Color(0xFFFF2A6D), // Neon Rose
-      Color(0xFFE50040), // Crimson Red
-      Color(0xFFFF6B35), // Sunset Orange
-      Color(0xFF8B5CF6), // Royal Purple
-      Color(0xFF02A3FC), // Electric Cyan
-      Color(0xFF00C896), // Emerald Mint
-      Color(0xFFE91E63), // Fuchsia Pink
-      Color(0xFFFFB800), // Amber Gold
+  void _showThemeColorDialog() {
+    Color tempColor = _primaryThemeColor;
+    const colors = <(String, Color)>[
+      ('Neon Rose', Color(0xFFFF2A6D)),
+      ('Crimson Red', Color(0xFFE50040)),
+      ('Sunset Orange', Color(0xFFFF6B35)),
+      ('Amber Gold', Color(0xFFFFB800)),
+      ('Emerald Mint', Color(0xFF00C896)),
+      ('Neon Lime', Color(0xFF10B981)),
+      ('Electric Cyan', Color(0xFF02A3FC)),
+      ('Deep Ocean', Color(0xFF0284C7)),
+      ('Royal Purple', Color(0xFF8B5CF6)),
+      ('Electric Violet', Color(0xFF7928CA)),
+      ('Fuchsia Pink', Color(0xFFE91E63)),
+      ('Coral Blush', Color(0xFFFF5376)),
     ];
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: colors.map((color) {
-        final selected = color.value == _primaryThemeColor.value;
-        return Semantics(
-          button: true,
-          label: 'Choose theme color',
-          child: GestureDetector(
-            onTap: () {
-              setState(() => _primaryThemeColor = color);
-              SiyaTheme.setAccent(color, widget.bridge.saveSettings);
-            },
-            child: AnimatedScale(
-              scale: selected ? 1.12 : 1,
-              duration: const Duration(milliseconds: 190),
-              curve: Curves.easeOutBack,
-              child: Container(
-                width: 42,
-                height: 42,
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1B192A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: tempColor.withOpacity(0.5), width: 1.5),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: color,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: selected ? 3.2 : 1.5,
-                  ),
+                  color: tempColor,
                   boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(selected ? .45 : .15),
-                      blurRadius: selected ? 13 : 7,
-                    ),
+                    BoxShadow(color: tempColor.withOpacity(0.4), blurRadius: 10),
                   ],
                 ),
-                child: selected
-                    ? const Center(
-                        child: Icon(Icons.check_rounded, color: Colors.white, size: 22),
-                      )
-                    : null,
               ),
+              const SizedBox(width: 12),
+              const Text(
+                'Theme Accent Color',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Wrap(
+              spacing: 14,
+              runSpacing: 14,
+              alignment: WrapAlignment.center,
+              children: colors.map((item) {
+                final name = item.$1;
+                final col = item.$2;
+                final selected = col.value == tempColor.value;
+                return GestureDetector(
+                  onTap: () {
+                    setDialogState(() => tempColor = col);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: col,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: selected ? 3.5 : 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: col.withOpacity(selected ? 0.6 : 0.2),
+                              blurRadius: selected ? 14 : 6,
+                              spreadRadius: selected ? 2 : 0,
+                            ),
+                          ],
+                        ),
+                        child: selected
+                            ? const Center(
+                                child: Icon(Icons.check_rounded, color: Colors.white, size: 24),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        name,
+                        style: TextStyle(
+                          color: selected ? Colors.white : Colors.white60,
+                          fontSize: 10,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
-        );
-      }).toList(),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() => _primaryThemeColor = tempColor);
+                SiyaTheme.setAccent(tempColor, widget.bridge.saveSettings);
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Theme color updated!'),
+                    backgroundColor: tempColor,
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: tempColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Apply & Save', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

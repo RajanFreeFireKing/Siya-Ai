@@ -34,11 +34,11 @@ class _AiBossScreenState extends State<AiBossScreen> {
 
   Future<void> _loadStatus() async {
     try {
-      final s = await widget.bridge.getSettings();
+      final status = await widget.bridge.getBossProfileStatus();
       if (!mounted) return;
       setState(() {
-        _bossEnrolled = (s['boss_enrolled'] as bool?) ?? false;
-        _bossSampleCount = ((s['boss_sample_count'] as num?) ?? 0).toInt();
+        _bossEnrolled = (status['enrolled'] as bool?) ?? false;
+        _bossSampleCount = ((status['sampleCount'] as num?) ?? 0).toInt();
         _currentSamples = _bossSampleCount;
         _loaded = true;
       });
