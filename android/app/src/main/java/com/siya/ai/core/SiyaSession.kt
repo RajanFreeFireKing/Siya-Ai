@@ -8,7 +8,6 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.siya.ai.ai.SiyaLiveClient
-import com.siya.ai.data.PeopleStore
 import com.siya.ai.memory.MemoryStore
 import com.siya.ai.utils.AudioRouter
 import com.siya.ai.utils.LivePlayer
@@ -41,6 +40,37 @@ class SiyaSession(
         private val SILENCE = ByteArray(1280)
         /** Chalti hui session (vision tools ko photo bhejne ke liye). */
         @Volatile var current: SiyaSession? = null
+
+        private val OTP_REGEX = Regex("""(?i)\b(?:otp|one[- ]?time[- ]?password|verification[- ]?code|secret[- ]?code|pin)[\s:=-]+([0-9]{4,8})\b""")
+        private val CARD_REGEX = Regex("""\b(?:\d[ -]*?){13,19}\b""")
+        private val BANK_ACC_REGEX = Regex("""(?i)\b(?:a/c|acct|account|acc[- ]?no|khata)[\s:#=-]*([0-9]{6,18})\b""")
+        private val CVV_REGEX = Regex("""(?i)\b(?:cvv|cvc)[\s:=-]+([0-9]{3,4})\b""")
+
+        /** Zero-Knowledge Privacy Sanitizer: Masks OTPs, Bank Account, Cards & CVV before sending to server */
+        fun sanitizeSensitiveData(input: String): String {
+            if (input.isBlank()) return input
+            var s = input
+            s = OTP_REGEX.replace(s) { m ->
+                val full = m.value
+                val num = m.groupValues[1]
+                full.replace(num, "XXXX")
+            }
+            s = CARD_REGEX.replace(s) { m ->
+                val raw = m.value.replace(" ", "").replace("-", "")
+                if (raw.length in 13..19) "XXXX-XXXX-XXXX-XXXX" else m.value
+            }
+            s = BANK_ACC_REGEX.replace(s) { m ->
+                val full = m.value
+                val num = m.groupValues[1]
+                full.replace(num, "XXXX")
+            }
+            s = CVV_REGEX.replace(s) { m ->
+                val full = m.value
+                val num = m.groupValues[1]
+                full.replace(num, "XXX")
+            }
+            return s
+        }
     }
 
     val appContext: Context get() = ctx.applicationContext
@@ -346,9 +376,10 @@ class SiyaSession(
         main.post { if (active) setState(State.THINKING) }
         io.execute {
             Log.d(TAG, "tool $name $args")
-            val result = if (name == "end_conversation") {
+            val rawResult = if (name == "end_conversation") {
                 main.post { scheduleEnd() }; "OK"
             } else ToolRouter.execute(ctx, name, args)
+            val result = sanitizeSensitiveData(rawResult)
             Log.d(TAG, "tool result: $result")
             client?.sendToolResult(id, name, result)
         }
@@ -422,26 +453,23 @@ class SiyaSession(
     private fun buildPrompt(): String {
         val userName = prefs.getString("user_name", "Sir").orEmpty().ifBlank { "Sir" }
         val personality = prefs.getString("selected_personality", prefs.getString("personality_mode", "love")).orEmpty()
-        val pName = prefs.getString("prime_name", "").orEmpty()
-        val pNum = prefs.getString("prime_number", "").orEmpty()
         val custom = prefs.getString("agent_custom_prompt", "").orEmpty()
         val now = SimpleDateFormat("EEEE, dd MMMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
 
         val persona = SiyaPersonality.getSystemInstruction(personality, userName)
-        val prime = if (pNum.isNotEmpty()) "Prime contact: $pName ($pNum)." else ""
-        val memory = if (MemoryStore.isEnabled(ctx)) MemoryStore.buildContext(ctx) else ""
-        val apps = try { PhoneController.appNames(ctx) } catch (_: Exception) { "" }
-        val people = try { PeopleStore.promptLine(ctx) } catch (_: Exception) { "" }
-        val habits = try { HabitTracker.promptLine(ctx) } catch (_: Exception) { "" }
         val screening = if (prefs.getBoolean("screener_active", false))
             "\n=== CALL SCREENING MODE (sabse upar) ===\nAbhi ek anjaan caller ki call chal rahi hai. Tum $userName ki assistant ho. Caller se pehle bolo: \"Namaste, main $userName ki assistant Siya hoon. Aap kis kaam se call kar rahe hain?\". Uska jawab suno, ek-do sawal pucho (naam, kaam). Koi paisa, OTP, bank ya personal jaankari kabhi mat do. Kaam ho jaye ya 3 sawal ke baad bolo ki $userName ko bata dungi aur end_conversation tool chalao.\n" else ""
-        val location = if (prefs.getString("loc_mode", "device") == "custom") "User ki chuni hui location: ${prefs.getString("loc_name", "")}." else ""
 
         return """
 $persona
 User ka naam: $userName.
 Abhi ka samay: $now (date/time puchhe to get_datetime tool use karo, kyunki baatcheet lambi chal sakti hai).
-$prime
+
+=== ZERO-KNOWLEDGE PRIVACY DIRECTIVE ===
+- User ke personal contacts, phone numbers, installed apps list aur private credentials device ke local Android controller par surakshit hain.
+- Call / Message: Kisi bhi contact ko call karne ke liye call_contact(name) ya message ke liye whatsapp_message(name, message) chalao. Prime contact / girlfriend / partner ke liye name='prime' ya user dwara bola gaya rishta/naam pass karo — device local storage se number nikal kar khud dial karega (phone number kabhi server par mat bhejo).
+- Apps: Koi bhi app kholne ke liye open_app(app_name) chalao — Android system locally app match karke launch karega.
+- Privacy: OTP, PIN, passwords aur bank account numbers hamesha protected rehte hain.
 ${if (custom.isNotEmpty()) "\n=== CUSTOM BEHAVIOR ===\n$custom\n" else ""}
 
 === VOICE AND CONVERSATION STYLE (highest priority) ===
@@ -461,22 +489,18 @@ Tumhare paas tools hain: app kholna, call, WhatsApp, SMS, YouTube/Spotify, scree
 - Tool error de to sach batao aur agla rasta suggest karo (jaise Accessibility ON karna).
 - Naam galat sunayi de sakte hain: "winod"=Vinod, "sportify"=Spotify, "watsp"=WhatsApp, "ytube"=YouTube.
 - Chat apps (ChatGPT, WhatsApp...) mein sawal / message bhejna ho to: app kholo, phir type_and_send(text). Jawab aane par read_screen se padho aur user ko batao.
-- Camera / saamne kya hai poochhe to look_camera, screen ki tasveer ke liye look_screen. Saved logon ko naam se pehchano.
+- Camera / saamne kya hai poochhe to look_camera, screen ki tasveer ke liye look_screen.
 - File kaam (agar tools mile): list_files / find_files / read_file / write_file / move_file / delete_file / share_file. delete se pehle user se pooch lo. Share ke baad contact chuno aur Send dabao.
 - Browser (agar tools mile): browser_search / browser_open / browser_click / browser_read. Gaana ya video ke liye YouTube search kholo aur pehle result par browser_click karo.
-- Location: get_location (abhi kahan), set_location(jagah) kahin jaane / kisi jagah ki location set karne ke liye, show_map(jagah, satellite) map popup dikhane ke liye (user usse khiska / chhota-bada kar sakta hai), close_map band karne ke liye. $location
+- Location: get_location (abhi kahan), set_location(jagah) kahin jaane / kisi jagah ki location set karne ke liye, show_map(jagah, satellite) map popup dikhane ke liye (user usse khiska / chhota-bada kar sakta hai), close_map band karne ke liye.
 - Browser window: browser_window(small / big / full / popup / top / bottom / left / right) se window chhoti-badi karo ya hatao; browser_menu(action) se history, bookmarks, downloads, dark_mode, desktop_site, find, zoom, share, clear_data sab chalao. Browser piche background mein bhi chalta rehta hai.
 - Gaana / video: "ye kaun sa gaana hai" ya "ye kya chal raha hai" poochhe to pehle now_playing, aur agar naam na mile to listen_around(8) se awaaz suno aur pehchano. Gaana khojna ho to YouTube / Spotify mein search karke chalao. Play / pause / next ke liye media_control.
 - Number ke aakhri 2-3 ank bole to find_number_by_last_digits chalao, popup mein list dikhegi, user se zor se pucho kaun sa call karna hai. Naam save na ho to bhi call kar do.
 - Awaaz: sirf us insaan ko suno jo tumse seedha baat kar raha hai; peeche ki TV / bheed / dusre logon ki baat ko ignore karo.
-$people
-$habits
 $screening
-- Installed apps: $apps
 
 === YAADDAASHT ===
-Tumhe user ke saath ki poori purani baatcheet yaad rehti hai (neeche diya hai). Purani baat puchhe to pehle niche dekho, na mile to search_memory tool use karo. Koi zaroori baat (naam, pasand, birthday, plan) pata chale to remember_fact se save karo.
-$memory
+Tumhe user ke saath ki baatcheet yaad rakhne ke liye tools diye gaye hain. Purani baat puchhe to search_memory tool use karo. Koi zaroori baat (naam, pasand, birthday, plan) pata chale to remember_fact se save karo.
         """.trimIndent()
     }
 }

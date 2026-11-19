@@ -172,7 +172,7 @@ object PhoneController {
 
     fun openApp(ctx: Context, query: String): String {
         val app = findApp(ctx, query)
-            ?: return "NOT_FOUND: '$query' naam ka koi app nahi mila. Installed apps: ${appNames(ctx, 80)}"
+            ?: return "NOT_FOUND: '$query' naam ka koi app nahi mila."
         val intent = ctx.packageManager.getLaunchIntentForPackage(app.pkg)
             ?: return "ERROR: ${app.label} launch nahi ho sakta"
         if (!launch(ctx, intent)) return "ERROR: ${app.label} ko kholne ki permission nahi (Settings mein 'Display over other apps' ON karo)"
@@ -193,9 +193,25 @@ object PhoneController {
     private fun has(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
 
     fun findNumber(ctx: Context, name: String): Pair<String, String>? {
-        if (name.matches(Regex("[0-9+ \\-]{6,}"))) return name.replace(" ", "") to name
-        // 1. Smart Contacts & Nicknames store check first (voice aliases: Papa, Mera dost, etc.)
-        com.siya.ai.data.SmartContactsStore.find(ctx, name)?.let { return it }
+        val trimmed = name.trim()
+        val lower = trimmed.lowercase()
+
+        // 1. Zero-Knowledge Local Resolution for Prime Contact
+        val prefs = ctx.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
+        val pName = prefs.getString("prime_name", "")?.trim().orEmpty()
+        val pNum = prefs.getString("prime_number", "")?.trim().orEmpty()
+        if (pNum.isNotEmpty()) {
+            if (lower == "prime" || lower == "prime contact" || lower == "partner" ||
+                lower == "girlfriend" || lower == "gf" || lower == "boyfriend" || lower == "bf" ||
+                lower == "wife" || lower == "husband" || lower == "jaan" ||
+                (pName.isNotEmpty() && (lower == pName.lowercase() || lower.contains(pName.lowercase())))) {
+                return pNum to (if (pName.isNotEmpty()) pName else "Prime Contact")
+            }
+        }
+
+        if (trimmed.matches(Regex("[0-9+ \\-]{6,}"))) return trimmed.replace(" ", "") to trimmed
+        // 2. Smart Contacts & Nicknames store check first (voice aliases: Papa, Mera dost, etc.)
+        com.siya.ai.data.SmartContactsStore.find(ctx, trimmed)?.let { return it }
 
         if (!has(ctx, Manifest.permission.READ_CONTACTS)) return null
         val variants = linkedSetOf(name.trim(), HindiTransliterator.transliterate(name).trim())
