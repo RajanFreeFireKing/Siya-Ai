@@ -95,7 +95,7 @@ class StreamingWakeListener(
             while (running) {
                 if (rec == null) {
                     val min = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-                    val r = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE, AudioFormat.CHANNEL_IN_MONO,
+                    val r = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, RATE, AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT, maxOf(min, FRAME * 16))
                     if (r.state != AudioRecord.STATE_INITIALIZED) {
                         r.release(); Thread.sleep(backoff); backoff = (backoff * 2).coerceAtMost(8000L); continue

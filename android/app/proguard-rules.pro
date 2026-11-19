@@ -14,8 +14,7 @@
 -keep class com.siya.ai.audio.** { *; }
 -keep class com.siya.ai.core.** { *; }
 -keep class com.siya.ai.browser.** { *; }
--keep class com.siya.ai.ui.main.OrbAnimationView { *; }
--keep class com.siya.ai.ui.main.WaveformView { *; }
+-keep class com.siya.ai.ui.main.** { *; }
 -keep class com.siya.ai.security.PatternLockView { *; }
 
 # ONNX Runtime (Mobile ML Inference)

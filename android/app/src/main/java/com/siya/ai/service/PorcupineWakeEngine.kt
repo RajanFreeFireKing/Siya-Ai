@@ -71,7 +71,7 @@ class PorcupineWakeEngine(private val ctx: Context, private val onWake: () -> Un
             while (running) {
                 if (rec == null) {
                     val min = AudioRecord.getMinBufferSize(porcupine.sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-                    val r = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, porcupine.sampleRate,
+                    val r = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, porcupine.sampleRate,
                         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, frame * 2 * 4))
                     if (r.state != AudioRecord.STATE_INITIALIZED) {
                         r.release()

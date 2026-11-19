@@ -182,6 +182,38 @@ class MainActivity : FlutterFragmentActivity() {
                     com.siya.ai.browser.ObscuraMobileEngine.cleanup()
                     result.success(null)
                 }
+                "getBossProfileStatus" -> {
+                    val engine = com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this)
+                    result.success(mapOf(
+                        "enrolled" to engine.isBossEnrolled(),
+                        "sampleCount" to engine.getEnrolledSampleCount(),
+                        "threshold" to com.siya.ai.audio.SpeakerRecognitionEngine.BOSS_MATCH_THRESHOLD
+                    ))
+                }
+                "enrollBossVoiceSample" -> {
+                    Thread {
+                        val count = recordAndEnrollBossSample()
+                        ui.post { result.success(count) }
+                    }.start()
+                }
+                "finalizeBossEnrollment" -> {
+                    val ok = com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).finalizeEnrollment()
+                    result.success(ok)
+                }
+                "clearBossVoiceProfile" -> {
+                    com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).clearBossProfile()
+                    result.success(null)
+                }
+                "launchAppFreeform" -> {
+                    val pkg = call.argument<String>("package") ?: ""
+                    val success = launchFreeformApp(pkg)
+                    result.success(success)
+                }
+                "shareImage" -> {
+                    val path = call.argument<String>("path") ?: ""
+                    shareImagePath(path)
+                    result.success(null)
+                }
                 "getSettings" -> result.success(readSettings())
                 "saveSettings" -> {
                     @Suppress("UNCHECKED_CAST")
@@ -697,6 +729,94 @@ class MainActivity : FlutterFragmentActivity() {
             Toast.makeText(this, "Siya ko Default Assistant chuno", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Settings > Apps > Default Apps > Assistant > Siya", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun recordAndEnrollBossSample(): Int {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            return -1
+        }
+        val rate = 16000
+        val durationMs = 2200L // 2.2 seconds voice sample
+        val totalSamples = (rate * durationMs / 1000).toInt()
+        val minBuf = android.media.AudioRecord.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT)
+        val record = try {
+            android.media.AudioRecord(
+                android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                rate,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT,
+                maxOf(minBuf, totalSamples * 2)
+            )
+        } catch (_: Exception) { return -1 }
+
+        if (record.state != android.media.AudioRecord.STATE_INITIALIZED) {
+            record.release()
+            return -1
+        }
+
+        val floatSamples = FloatArray(totalSamples)
+        val byteBuf = ByteArray(1024)
+        var samplesRead = 0
+
+        try {
+            record.startRecording()
+            while (samplesRead < totalSamples) {
+                val toRead = minOf(byteBuf.size, (totalSamples - samplesRead) * 2)
+                val n = record.read(byteBuf, 0, toRead)
+                if (n <= 0) break
+                var i = 0
+                while (i + 1 < n && samplesRead < totalSamples) {
+                    val pcm = ((byteBuf[i + 1].toInt() shl 8) or (byteBuf[i].toInt() and 0xFF)).toShort()
+                    floatSamples[samplesRead++] = pcm / 32768.0f
+                    i += 2
+                }
+            }
+        } catch (_: Exception) {
+            return -1
+        } finally {
+            try { record.stop() } catch (_: Exception) {}
+            try { record.release() } catch (_: Exception) {}
+        }
+
+        return com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this).addEnrollmentSample(floatSamples)
+    }
+
+    private fun launchFreeformApp(pkg: String): Boolean {
+        return try {
+            val intent = packageManager.getLaunchIntentForPackage(pkg) ?: return false
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val options = android.app.ActivityOptions.makeBasic()
+                try {
+                    val dm = resources.displayMetrics
+                    val bounds = android.graphics.Rect(dm.widthPixels / 10, dm.heightPixels / 5, dm.widthPixels * 9 / 10, dm.heightPixels * 4 / 5)
+                    val m = android.app.ActivityOptions::class.java.getMethod("setLaunchBounds", android.graphics.Rect::class.java)
+                    m.invoke(options, bounds)
+                } catch (_: Exception) {}
+                startActivity(intent, options.toBundle())
+            } else {
+                startActivity(intent)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun shareImagePath(path: String) {
+        try {
+            val file = java.io.File(path)
+            if (!file.exists()) return
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(Intent.createChooser(intent, "Share Image via").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error sharing image: ${e.message}")
         }
     }
 }

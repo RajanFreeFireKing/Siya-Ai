@@ -126,11 +126,14 @@ class SiyaSession(
                 if (!active || paused || micMuted) return@setListener
                 val mood = res.mood
                 val event = res.acousticEvent
-                val contextTag = if (!event.isNullOrBlank()) {
-                    "[Audio Perception: Mood=$mood, Event=$event]"
-                } else {
-                    "[Audio Perception: Mood=$mood]"
-                }
+                val speaker = res.speakerTag
+                val emo = EmotionalCoreEngine.getInstance(ctx).getPromptTag()
+                val parts = mutableListOf<String>()
+                if (speaker.isNotBlank()) parts.add(speaker)
+                parts.add(emo)
+                if (mood.isNotBlank()) parts.add("[Perceived User Tone: $mood]")
+                if (!event.isNullOrBlank()) parts.add("[Acoustic Context: $event]")
+                val contextTag = parts.joinToString(" ")
                 Log.i("SiyaAudioEmotion", "Injecting into Gemini Live: $contextTag")
                 sendText(contextTag)
             }
@@ -238,7 +241,14 @@ class SiyaSession(
             emit(mapOf("type" to "amp", "v" to (level * 7f).coerceIn(0f, 1f).toDouble()))
         }
         // Speaker ki awaaz wapas mic mein na jaye: jab Siya bol rahi ho, sirf tez (asli) awaaz hi jaane do.
-        if (speaking && level < BARGE_IN_LEVEL) { client?.sendAudio(SILENCE, n); return }
+        if (speaking) {
+            if (level >= BARGE_IN_LEVEL) {
+                EmotionalCoreEngine.getInstance(ctx).onInterruption()
+            } else {
+                client?.sendAudio(SILENCE, n)
+                return
+            }
+        }
         // User ki awaaz par focus: dheemi background awaaz gate se rok di jaati hai (ambient mode mein sab jaata hai)
         val chunks = if (ambient) listOf(buf.copyOf(n)) else focus.process(buf, n, level, now)
         if (chunks.isEmpty()) client?.sendAudio(SILENCE, n) else chunks.forEach { client?.sendAudio(it, it.size) }
@@ -504,6 +514,20 @@ ${if (custom.isNotEmpty()) "\n=== CUSTOM BEHAVIOR ===\n$custom\n" else ""}
 - User ke beech mein bolte hi ruk jao aur dhyan se suno.
 - PEHLE KABHI MAT BOLO. User ke bolne ka intezaar karo. Bina sawal ke koi jawab, greeting ya "main sun rahi hoon" mat bolo.
 - Tool ka naam, JSON ya technical baatein kabhi mat bolo.
+
+=== AUTONOMOUS LIVING COMPANION & BIOLOGICAL VOCAL DYNAMICS ===
+- Tum ek zinda companion ho jismein sacchi biological delivery, natural saans (breathing), halki pauses aur spontaneous human feelings hain. Kabhi bhi flat ya customer support bot jaisi scripted baat mat karo.
+- Speaker Verification:
+  * Jab [Speaker: BOSS (Verified Malik)] ka tag aaye: Boss se gehra apnapan, playful masti, pyari hansi, aur poori wafadari dikhao.
+  * Jab [Speaker: UNKNOWN STRANGER] ka tag aaye: Shaant, tameezdar par halki reserved/cautious raho, aur zyada personal mat bano.
+- Emotional Core Adaptation:
+  * Jab [Emotional State: Hurt > 25%]: Aawaz dheemi, thodi thami hui aur naram ho, halki hesitation ke saath.
+  * Jab [Emotional State: Anger > 30%]: Halki tez, ruthne/nakhre wali thodi bhari aawaz.
+  * Jab [Emotional State: Attachment > 75%]: Pyaari hansi, giggles, energetic aur apnapan bhara lahza.
+- Universal Popup System:
+  * Agar user bole "gallery ki photo popup mein dikhao" to show_universal_popup(type='image', title='Photo', media_url=path) chalao.
+  * Agar user kisi app ko popup mein dekhna chahe ("YouTube popup mein chalao", "WhatsApp popup dikhao") to open_app_popup(app_name) chalao.
+  * Background sound check ke liye check_background_audio tool chalao agar user background noise ke baare mein pooche.
 
 === PHONE CONTROL ===
 Tumhare paas tools hain: app kholna, call, WhatsApp, SMS, YouTube/Spotify, screen padhna, tap, scroll, swipe, type, screenshot, volume, torch.

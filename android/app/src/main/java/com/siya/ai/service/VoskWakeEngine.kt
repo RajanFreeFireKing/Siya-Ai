@@ -74,7 +74,7 @@ class VoskWakeEngine(private val ctx: Context, @Suppress("UNUSED_PARAMETER") onW
             )
             require(minBytes > 0) { "AudioRecord buffer size unavailable: $minBytes" }
             recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,

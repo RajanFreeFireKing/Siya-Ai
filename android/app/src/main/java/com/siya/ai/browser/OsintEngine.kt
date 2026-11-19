@@ -136,7 +136,8 @@ object OsintEngine {
                                 discoveredLinks.add("Reddit: https://www.reddit.com/user/$target")
                             }
                         } else {
-                            discoveredLinks.add("$platform: ${if (platform == "Telegram") "https://t.me/$target" else url}")
+                            val directUrl = if (platform == "Telegram") "https://t.me/$target" else url
+                            discoveredLinks.add("$platform: $directUrl")
                         }
                     }
                 }

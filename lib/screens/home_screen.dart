@@ -10,6 +10,7 @@ import '../widgets/wallpaper_layer.dart';
 import '../widgets/wave_painter.dart';
 import '../widgets/siya_bottom_navigation.dart';
 import '../widgets/osint_result_popup.dart';
+import '../widgets/universal_popup.dart';
 import '../widgets/permission_explanation_sheet.dart';
 import 'power_screen.dart';
 import 'settings_screen.dart';
@@ -247,16 +248,18 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
 
-                      // Dark Glassmorphic Neon OSINT Result Popup
+                      // Universal Smart Floating & Full-Screen Popup System
                       ValueListenableBuilder<Map<String, dynamic>?>(
-                        valueListenable: widget.bridge.osintResult,
-                        builder: (context, osintData, _) {
-                          if (osintData == null) return const SizedBox.shrink();
-                          return OsintResultPopup(
-                            data: osintData,
+                        valueListenable: widget.bridge.universalPopupData,
+                        builder: (context, popupData, _) {
+                          if (popupData == null) return const SizedBox.shrink();
+                          return UniversalPopup(
+                            data: popupData,
                             accent: accent,
-                            onClose: () => widget.bridge.osintResult.value = null,
+                            onClose: () => widget.bridge.closeUniversalPopup(),
                             onClearData: () => widget.bridge.obscuraCleanup(),
+                            onShareImage: (path) => widget.bridge.shareImage(path),
+                            onLaunchFullApp: (pkg) => widget.bridge.launchAppFreeform(pkg),
                           );
                         },
                       ),
@@ -324,6 +327,7 @@ class _HomeScreenState extends State<HomeScreen>
                         level: _level,
                         active: widget.bridge.isActive,
                         accent: accent,
+                        emotionalState: widget.bridge.emotionalState,
                       ),
                     ),
                   ),
@@ -1257,6 +1261,7 @@ class _CoreLogo extends StatelessWidget {
     required this.level,
     required this.active,
     required this.accent,
+    this.emotionalState,
   });
 
   final double size;
@@ -1264,59 +1269,72 @@ class _CoreLogo extends StatelessWidget {
   final ValueListenable<double> level;
   final bool active;
   final Color accent;
+  final ValueListenable<Map<String, dynamic>>? emotionalState;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
       valueListenable: level,
       builder: (context, lvl, _) {
-        return AnimatedBuilder(
-          animation: time,
-          builder: (context, child) {
-            final pulse = (active ? 0.040 : 0.015) * math.sin(time.value * math.pi * 2) + lvl * 0.05;
-            return Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                // Radiating colorful side sound wave arcs (from image 2)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _OrbSideWavesPainter(
-                      time: time,
-                      active: active,
-                      accent: accent,
-                    ),
-                  ),
-                ),
+        return ValueListenableBuilder<Map<String, dynamic>>(
+          valueListenable: emotionalState ?? ValueNotifier<Map<String, dynamic>>({}),
+          builder: (context, emo, _) {
+            final bpm = ((emo['bpm'] as num?) ?? 72).toDouble();
+            final heartRate = (bpm / 60.0).clamp(0.85, 2.2);
+            final glowHex = (emo['glow'] as String?) ?? '#FF4D91';
+            final emoColor = Color(int.parse(glowHex.replaceFirst('#', '0xFF')));
+            final liveAccent = Color.lerp(accent, emoColor, 0.65)!;
 
-                // Outer Frosted Glass Aura & Elevated 3D Rim (from image 3)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _OrbGlassHaloPainter(
-                      time: time,
-                      level: level,
-                      active: active,
-                      accent: accent,
+            return AnimatedBuilder(
+              animation: time,
+              builder: (context, child) {
+                final heartPulse = math.sin(time.value * math.pi * 2 * heartRate);
+                final pulse = (active ? 0.045 : 0.020) * heartPulse + lvl * 0.06;
+                return Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Radiating colorful side sound wave arcs (from image 2)
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _OrbSideWavesPainter(
+                          time: time,
+                          active: active,
+                          accent: liveAccent,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-                // Center Hologram Orb Core with Dynamic Theme Color & True 3D Aesthetics
-                Transform.scale(
-                  scale: 1.0 + pulse,
-                  child: SizedBox(
-                    width: size,
-                    height: size,
-                    child: _HologramOrbCore(
-                      size: size,
-                      time: time,
-                      level: level,
-                      active: active,
-                      accent: accent,
+                    // Outer Frosted Glass Aura & Elevated 3D Rim (from image 3)
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _OrbGlassHaloPainter(
+                          time: time,
+                          level: level,
+                          active: active,
+                          accent: liveAccent,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+
+                    // Center Hologram Orb Core with Dynamic Theme Color & True 3D Aesthetics
+                    Transform.scale(
+                      scale: 1.0 + pulse,
+                      child: SizedBox(
+                        width: size,
+                        height: size,
+                        child: _HologramOrbCore(
+                          size: size,
+                          time: time,
+                          level: level,
+                          active: active,
+                          accent: liveAccent,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );

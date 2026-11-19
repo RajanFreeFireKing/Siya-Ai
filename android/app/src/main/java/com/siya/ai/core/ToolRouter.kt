@@ -75,6 +75,10 @@ object ToolRouter {
         // 100% Free OSINT Photo & Name Lookup
         f.put(fn("osint_image_lookup", "Kisi image/photo ka free reverse image search karo (Catbox + Yandex) aur matching public links/titles dhoondo.", p("image_path", "Local phone storage mein image ka absolute path")))
         f.put(fn("osint_name_lookup", "Kisi insaan ya username ke public social profiles aur footprints (Instagram, GitHub, Reddit, YouTube) search karo.", p("name_or_username", "Insaan ka naam ya social handle/username")))
+        // Universal Smart Floating & Full-Screen Popup System
+        f.put(fn("show_universal_popup", "Screen par Universal Smart Popup mein photo, web result, ya app information dikhao.", p("type", "image, osint, app, ya web"), p("title", "Popup ka title"), p("content", "Text description ya summary", false), p("media_url", "Image ka path ya URL (agar photo dikhani hai)", false), p("action_data", "Package name ya extra data", false)))
+        f.put(fn("open_app_popup", "Kisi app (YouTube, WhatsApp, etc) ko screen par ek chhoti floating popup window mein kholo.", p("app_name", "App ka naam")))
+        f.put(fn("check_background_audio", "Peeche chal rahi background aawaz (gaana, saans, hansi, shor) ko check karke batao."))
         if (FileTools.hasAccess()) {
             f.put(fn("list_files", "Phone ke kisi folder ki files dikhao. Khaali path = main storage.", p("path", "Folder, jaise Download, DCIM/Camera, Documents", false)))
             f.put(fn("find_files", "Naam se file / folder dhundo.", p("query", "Naam ka hissa"), p("path", "Kahan dhundna hai (khaali = poora storage)", false)))
@@ -185,6 +189,65 @@ object ToolRouter {
             "obscura_cleanup" -> ObscuraMobileEngine.cleanup()
             "osint_image_lookup" -> com.siya.ai.browser.OsintEngine.imageLookup(ctx, a.optString("image_path"))
             "osint_name_lookup" -> com.siya.ai.browser.OsintEngine.nameLookup(ctx, a.optString("name_or_username"))
+            "show_universal_popup" -> {
+                val map = mapOf(
+                    "type" to "universal_popup",
+                    "popup_type" to a.optString("type", "web"),
+                    "title" to a.optString("title", "Siya Smart Popup"),
+                    "summary" to a.optString("content"),
+                    "media_url" to a.optString("media_url"),
+                    "action_data" to a.optString("action_data")
+                )
+                com.siya.ai.service.SiyaService.eventSink?.invoke(map)
+                "OK: popup screen par dikha diya"
+            }
+            "open_app_popup" -> {
+                val app = a.optString("app_name")
+                val pm = ctx.packageManager
+                val installed = pm.getInstalledApplications(0)
+                val target = installed.firstOrNull { pm.getApplicationLabel(it).toString().contains(app, ignoreCase = true) }
+                if (target != null) {
+                    val pkg = target.packageName
+                    val appName = pm.getApplicationLabel(target).toString()
+                    val intent = pm.getLaunchIntentForPackage(pkg)
+                    if (intent != null) {
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                            val options = android.app.ActivityOptions.makeBasic()
+                            try {
+                                val dm = ctx.resources.displayMetrics
+                                val bounds = android.graphics.Rect(dm.widthPixels / 10, dm.heightPixels / 5, dm.widthPixels * 9 / 10, dm.heightPixels * 4 / 5)
+                                val m = android.app.ActivityOptions::class.java.getMethod("setLaunchBounds", android.graphics.Rect::class.java)
+                                m.invoke(options, bounds)
+                            } catch (_: Exception) {}
+                            ctx.startActivity(intent, options.toBundle())
+                        } else {
+                            ctx.startActivity(intent)
+                        }
+                    }
+                    val map = mapOf(
+                        "type" to "universal_popup",
+                        "popup_type" to "app",
+                        "title" to "$appName (Floating Window)",
+                        "summary" to "$appName popup window mein open ho chuka hai.",
+                        "package" to pkg
+                    )
+                    com.siya.ai.service.SiyaService.eventSink?.invoke(map)
+                    "OK: $appName popup window mein khol diya"
+                } else {
+                    "ERROR: $app app phone mein nahi mila"
+                }
+            }
+            "check_background_audio" -> {
+                var res = "Aas-paas shaant hai."
+                val latch = java.util.concurrent.CountDownLatch(1)
+                com.siya.ai.audio.AudioEmotionPipeline.getInstance(ctx).checkAcousticEnvironment { acoustic ->
+                    res = acoustic
+                    latch.countDown()
+                }
+                try { latch.await(2, java.util.concurrent.TimeUnit.SECONDS) } catch (_: Exception) {}
+                res
+            }
             "set_location" -> if (a.optString("place").trim().equals("phone", true)) LocationHelper.useDevice(ctx) else LocationHelper.setCustom(ctx, a.optString("place"))
             "show_map" -> showMap(ctx, a.optString("place").trim(), !a.optString("satellite").equals("false", true))
             "close_map" -> { MapWindow.close(); "OK: map band" }

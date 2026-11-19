@@ -124,6 +124,19 @@ class SiyaService : Service() {
             addAction(ACTION_WAKE_DETECTED)
         }
         ContextCompat.registerReceiver(this, callReceiver, f, ContextCompat.RECEIVER_NOT_EXPORTED)
+        try {
+            com.siya.ai.core.EmotionalCoreEngine.getInstance(this).setListener { snap ->
+                emit(mapOf(
+                    "type" to "emotional_state",
+                    "attachment" to snap.attachment,
+                    "hurt" to snap.hurt,
+                    "anger" to snap.anger,
+                    "energy" to snap.energy,
+                    "bpm" to snap.heartbeatBpm,
+                    "glow" to snap.primaryGlowHex
+                ))
+            }
+        } catch (_: Exception) {}
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

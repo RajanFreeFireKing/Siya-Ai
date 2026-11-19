@@ -6,7 +6,7 @@ import kotlin.math.max
 class VoiceFocus(private val mode: String) {
     private val margin = when (mode) { "strict" -> 2.5f; "normal" -> 1.75f; else -> 0f }
     private val minLevel = when (mode) { "strict" -> 0.010f; "normal" -> 0.0045f; else -> 0f }
-    private val hangoverMs = if (mode == "strict") 520L else 700L
+    private val hangoverMs = 300L // Fast turnaround (300ms) once user stops speaking
     private var floor = 0.004f
     private var openUntil = 0L
     private val pre = ArrayDeque<ByteArray>()

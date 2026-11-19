@@ -22,6 +22,19 @@ class SiyaBridge extends ChangeNotifier {
   /// OSINT Search Results (image lookup, name lookup)
   final ValueNotifier<Map<String, dynamic>?> osintResult = ValueNotifier<Map<String, dynamic>?>(null);
 
+  /// Universal Popup Data (OSINT, gallery image viewer, app in popup, web research)
+  final ValueNotifier<Map<String, dynamic>?> universalPopupData = ValueNotifier<Map<String, dynamic>?>(null);
+
+  /// Autonomous Living Companion Emotional Core State
+  final ValueNotifier<Map<String, dynamic>> emotionalState = ValueNotifier<Map<String, dynamic>>({
+    'attachment': 70,
+    'hurt': 5,
+    'anger': 0,
+    'energy': 80,
+    'bpm': 72,
+    'glow': '#FF4D91',
+  });
+
   /// Native se aayi error ka code (no_key, no_mic, connection...). UI dikhane ke baad null kar deta hai.
   final ValueNotifier<String?> error = ValueNotifier<String?>(null);
 
@@ -77,10 +90,81 @@ class SiyaBridge extends ChangeNotifier {
         break;
       case 'osint_result':
         try {
-          osintResult.value = Map<String, dynamic>.from(e);
+          final m = Map<String, dynamic>.from(e);
+          osintResult.value = m;
+          universalPopupData.value = m;
           notifyListeners();
         } catch (_) {}
         break;
+      case 'universal_popup':
+        try {
+          final m = Map<String, dynamic>.from(e);
+          universalPopupData.value = m;
+          notifyListeners();
+        } catch (_) {}
+        break;
+      case 'emotional_state':
+        try {
+          emotionalState.value = Map<String, dynamic>.from(e);
+          notifyListeners();
+        } catch (_) {}
+        break;
+    }
+  }
+
+  void closeUniversalPopup() {
+    universalPopupData.value = null;
+    osintResult.value = null;
+    notifyListeners();
+  }
+
+  Future<void> shareImage(String path) async {
+    try {
+      await _method.invokeMethod<void>('shareImage', {'path': path});
+    } on PlatformException {
+      // ignore
+    }
+  }
+
+  Future<bool> launchAppFreeform(String pkg) async {
+    try {
+      return (await _method.invokeMethod<bool>('launchAppFreeform', {'package': pkg})) ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  // ── AI Boss (Biometric Voiceprint Lock) ───────────────────
+  Future<Map<String, dynamic>> getBossProfileStatus() async {
+    try {
+      return (await _method.invokeMapMethod<String, dynamic>('getBossProfileStatus')) ?? {};
+    } on PlatformException {
+      return {};
+    }
+  }
+
+  Future<int> enrollBossVoiceSample() async {
+    try {
+      return (await _method.invokeMethod<int>('enrollBossVoiceSample')) ?? -1;
+    } on PlatformException {
+      return -1;
+    }
+  }
+
+  Future<bool> finalizeBossEnrollment() async {
+    try {
+      return (await _method.invokeMethod<bool>('finalizeBossEnrollment')) ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> clearBossVoiceProfile() async {
+    try {
+      await _method.invokeMethod<void>('clearBossVoiceProfile');
+      notifyListeners();
+    } on PlatformException {
+      // ignore
     }
   }
 
@@ -88,6 +172,7 @@ class SiyaBridge extends ChangeNotifier {
     try {
       await _method.invokeMethod<void>('obscuraCleanup');
       osintResult.value = null;
+      universalPopupData.value = null;
       notifyListeners();
     } on PlatformException {
       // ignore
