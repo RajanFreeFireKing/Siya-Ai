@@ -355,10 +355,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             _section('Feature Controls'),
                             _card([
                               _switchRow(
-                                'AI Browser Access',
+                                'Obscura Web Agent',
                                 _aiBrowser
-                                    ? 'Chalu - in-app automated browser active'
-                                    : 'Band - automated web browsing access',
+                                    ? 'Chalu - headless background research active'
+                                    : 'Band - background web research access',
                                 _aiBrowser,
                                 (v) {
                                   setState(() => _aiBrowser = v);

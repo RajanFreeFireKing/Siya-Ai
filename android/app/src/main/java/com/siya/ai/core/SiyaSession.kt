@@ -138,6 +138,7 @@ class SiyaSession(
         try { client?.close() } catch (_: Exception) {}; client = null
         try { audioOut?.release() } catch (_: Exception) {}; audioOut = null
         try { AudioRouter.exit(ctx) } catch (_: Exception) {}
+        try { com.siya.ai.browser.ObscuraMobileEngine.cleanup() } catch (_: Exception) {}
         ambient = false
         setState(State.IDLE)
         emit(mapOf("type" to "amp", "v" to 0.0))
@@ -491,9 +492,12 @@ Tumhare paas tools hain: app kholna, call, WhatsApp, SMS, YouTube/Spotify, scree
 - Chat apps (ChatGPT, WhatsApp...) mein sawal / message bhejna ho to: app kholo, phir type_and_send(text). Jawab aane par read_screen se padho aur user ko batao.
 - Camera / saamne kya hai poochhe to look_camera, screen ki tasveer ke liye look_screen.
 - File kaam (agar tools mile): list_files / find_files / read_file / write_file / move_file / delete_file / share_file. delete se pehle user se pooch lo. Share ke baad contact chuno aur Send dabao.
-- Browser (agar tools mile): browser_search / browser_open / browser_click / browser_read. Gaana ya video ke liye YouTube search kholo aur pehle result par browser_click karo.
+- Web Research (Obscura Headless Engine - Screen par koi browser nahi khulta; 100% off-screen background research):
+  * obscura_search(query): Internet par taaza jaankari, news ya kisi sawal ke liye background search karo; top results aur clean content milega.
+  * obscura_open(url): Kisi link ya website ko background mein open karke uska clean text aur numbered interactive elements [1], [2]... extract karo.
+  * obscura_interact(action='click'/'type'/'scroll', target='1', text=''): Page ke kisi button/link par click karne, search box mein likhne ya scroll karne ke liye use karo.
+  * obscura_cleanup(): Research poori hone par background browser memory release karo.
 - Location: get_location (abhi kahan), set_location(jagah) kahin jaane / kisi jagah ki location set karne ke liye, show_map(jagah, satellite) map popup dikhane ke liye (user usse khiska / chhota-bada kar sakta hai), close_map band karne ke liye.
-- Browser window: browser_window(small / big / full / popup / top / bottom / left / right) se window chhoti-badi karo ya hatao; browser_menu(action) se history, bookmarks, downloads, dark_mode, desktop_site, find, zoom, share, clear_data sab chalao. Browser piche background mein bhi chalta rehta hai.
 - Gaana / video: "ye kaun sa gaana hai" ya "ye kya chal raha hai" poochhe to pehle now_playing, aur agar naam na mile to listen_around(8) se awaaz suno aur pehchano. Gaana khojna ho to YouTube / Spotify mein search karke chalao. Play / pause / next ke liye media_control.
 - Number ke aakhri 2-3 ank bole to find_number_by_last_digits chalao, popup mein list dikhegi, user se zor se pucho kaun sa call karna hai. Naam save na ho to bhi call kar do.
 - Awaaz: sirf us insaan ko suno jo tumse seedha baat kar raha hai; peeche ki TV / bheed / dusre logon ki baat ko ignore karo.

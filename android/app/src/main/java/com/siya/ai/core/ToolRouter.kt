@@ -1,7 +1,7 @@
 package com.siya.ai.core
 
 import android.content.Context
-import com.siya.ai.browser.AiBrowser
+import com.siya.ai.browser.ObscuraMobileEngine
 import com.siya.ai.data.LocationHelper
 import com.siya.ai.data.MapWindow
 import com.siya.ai.memory.MemoryStore
@@ -67,20 +67,11 @@ object ToolRouter {
         f.put(fn("listen_around", "Aas-paas ya phone par chal rahe gaane / video ki awaaz kuch second bina filter ke suno taaki pehchan sako ya samajh sako.", p("seconds", "Kitne second (3-15, default 8)", false)))
         f.put(fn("get_location", "User ki abhi ki location (ya jo location user ne map par set ki hai) batao."))
         f.put(fn("show_on_map", "Maps app mein koi jagah dikhao / raasta kholo.", p("query", "Jagah ka naam ya address")))
-        if (com.siya.ai.browser.AiBrowser.isEnabled(ctx)) {
-            f.put(fn("browser_search", "Siya ke apne browser mein Google par search karo (popup ya poori screen).", p("query", "Kya search karna hai"), p("mode", "popup (default) ya full", false)))
-            f.put(fn("browser_open", "Siya ke browser mein koi bhi website / link kholo.", p("url", "Website ya link"), p("mode", "popup (default) ya full", false)))
-            f.put(fn("browser_read", "Browser ke abhi ke page ka text padho."))
-            f.put(fn("browser_links", "Browser ke page ke links (text -> url) dekho."))
-            f.put(fn("browser_click", "Browser ke page par kisi link / button / video ke text par click karo (gaana ya video chalane ke liye bhi).", p("text", "Click karne wale item ka text")))
-            f.put(fn("browser_type", "Browser ke page ke input box mein likho (aur chaho to Enter).", p("text", "Likhne wala text"), p("submit", "true agar Enter karna hai", false)))
-            f.put(fn("browser_scroll", "Browser ka page scroll karo.", p("direction", "down, up, top, bottom")))
-            f.put(fn("browser_back", "Browser mein peeche jao."))
-            f.put(fn("browser_download", "Koi file / link browser se download karo (Downloads mein).", p("url", "Download ka link")))
-            f.put(fn("browser_menu", "Browser ke 3-dot menu ka koi bhi option chalao: reload, forward, add_bookmark, bookmarks, history, clear_history, downloads, dark_mode, desktop_site, find, zoom_in, zoom_out, share, open_external, clear_data.", p("action", "Option ka naam"), p("arg", "Zaroorat ho to: dark_mode/desktop_site ke liye on/off, find ke liye text", false)))
-            f.put(fn("browser_window", "Browser window ko chhota / bada / poori screen / popup karo ya screen par idhar-udhar le jao.", p("action", "small, big, full, popup, min, restore, top, bottom, left, right, center")))
-            f.put(fn("browser_close", "Browser band karo (chalta hua gaana / video bhi ruk jaata hai)."))
-        }
+        // Obscura-style Headless Agent Browser (Zero UI, 100% off-screen)
+        f.put(fn("obscura_search", "Background headless browser mein search karke top links aur summary text extract karo (screen par koi browser nahi khulta).", p("query", "Kya search karna hai")))
+        f.put(fn("obscura_open", "Background headless browser mein kisi website/URL ko load karke uska clean text aur numbered clickable items [1], [2]... extract karo.", p("url", "Website ka URL ya link")))
+        f.put(fn("obscura_interact", "Background page par kisi button/link par click karo, input box mein type karo, ya scroll karo.", p("action", "click, type, scroll, ya submit"), p("target", "Element number jaise '1', '2' ya text/direction"), p("text", "Type karne wala text (agar action type hai)", false)))
+        f.put(fn("obscura_cleanup", "Background headless browser ko reset karke RAM aur memory release karo jab research poori ho jaye."))
         if (FileTools.hasAccess()) {
             f.put(fn("list_files", "Phone ke kisi folder ki files dikhao. Khaali path = main storage.", p("path", "Folder, jaise Download, DCIM/Camera, Documents", false)))
             f.put(fn("find_files", "Naam se file / folder dhundo.", p("query", "Naam ka hissa"), p("path", "Kahan dhundna hai (khaali = poora storage)", false)))
@@ -163,7 +154,7 @@ object ToolRouter {
             "youtube_play" -> PhoneController.youtubePlay(ctx, a.optString("query"))
             "spotify_play" -> PhoneController.spotifyPlay(ctx, a.optString("query"))
             "media_control" -> PhoneController.mediaKey(ctx, a.optString("action"))
-            "open_url" -> PhoneController.openUrl(ctx, a.optString("url"))
+            "open_url" -> ObscuraMobileEngine.open(ctx, a.optString("url"))
             "generate_image_web" -> com.siya.ai.automation.BrowserAutomationEngine.start(ctx, a.optString("provider", "chatgpt"), a.optString("prompt"), a.optString("edit_image").equals("true", true))
             "post_story_status" -> SmartAccessibilityEngine.startStoryStatus(ctx, a.optString("platform", "whatsapp"), a.optString("music_query", "Diwali festive instrumental"), a.optString("caption"))
             "flashlight" -> PhoneController.flashlight(ctx, a.optString("state").equals("on", true))
@@ -185,18 +176,10 @@ object ToolRouter {
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
                 "OK: maps mein khol diya"
             }
-            "browser_search" -> AiBrowser.search(ctx, a.optString("query"), a.optString("mode", "popup"))
-            "browser_open" -> AiBrowser.open(ctx, a.optString("url"), a.optString("mode", "popup"))
-            "browser_read" -> AiBrowser.read(ctx)
-            "browser_links" -> AiBrowser.links(ctx)
-            "browser_click" -> AiBrowser.click(ctx, a.optString("text"))
-            "browser_type" -> AiBrowser.type(ctx, a.optString("text"), a.optString("submit").equals("true", true))
-            "browser_scroll" -> AiBrowser.scroll(ctx, a.optString("direction", "down"))
-            "browser_back" -> AiBrowser.back(ctx)
-            "browser_download" -> AiBrowser.download(ctx, a.optString("url"))
-            "browser_close" -> AiBrowser.close(ctx)
-            "browser_menu" -> AiBrowser.menuAction(ctx, a.optString("action"), a.optString("arg"))
-            "browser_window" -> AiBrowser.windowControl(ctx, a.optString("action"))
+            "obscura_search" -> ObscuraMobileEngine.search(ctx, a.optString("query"))
+            "obscura_open" -> ObscuraMobileEngine.open(ctx, a.optString("url"))
+            "obscura_interact" -> ObscuraMobileEngine.interact(ctx, a.optString("action"), a.optString("target"), a.optString("text"))
+            "obscura_cleanup" -> ObscuraMobileEngine.cleanup()
             "set_location" -> if (a.optString("place").trim().equals("phone", true)) LocationHelper.useDevice(ctx) else LocationHelper.setCustom(ctx, a.optString("place"))
             "show_map" -> showMap(ctx, a.optString("place").trim(), !a.optString("satellite").equals("false", true))
             "close_map" -> { MapWindow.close(); "OK: map band" }

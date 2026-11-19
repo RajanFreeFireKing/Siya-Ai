@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../bridge/siya_bridge.dart';
 import '../theme.dart';
-import 'ai_browser_screen.dart';
 import 'call_logs_screen.dart';
 import 'kharcha_screen.dart';
 import 'location_screen.dart';
@@ -177,14 +176,21 @@ class _PowerScreenState extends State<PowerScreen> {
                       _buildDashboardHeroBanner(),
                       const SizedBox(height: 16),
 
-                      // Card 1: AI Browser
+                      // Card 1: Obscura Headless Engine
                       _dashboardToolCard(
                         icon: Icons.travel_explore_rounded,
-                        badge: 'Web Automation',
-                        title: 'AI Browser',
-                        subtitle: 'In-app automated web viewer aur live web search',
+                        badge: 'Headless Agent Engine',
+                        title: 'Obscura Browser',
+                        subtitle: 'Background AI web research engine (100% off-screen, zero UI)',
                         onTap: () {
-                          widget.bridge.openBrowser('https://www.google.com');
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              const SnackBar(
+                                content: Text('Obscura Headless Browser background mein active hai. Gemini screen kholiye bina autonomous research karta hai.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                         },
                       ),
                       const SizedBox(height: 14),

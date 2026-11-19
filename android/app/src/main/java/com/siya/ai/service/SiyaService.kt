@@ -376,6 +376,7 @@ class SiyaService : Service() {
         holdAwake(false)
         holdWakeCpuLock(false)
         hideOverlay()
+        try { com.siya.ai.browser.ObscuraMobileEngine.cleanup() } catch (_: Exception) {}
         if (foregroundOn) { stopForeground(STOP_FOREGROUND_REMOVE); foregroundOn = false }
         stopSelf()
     }
@@ -387,6 +388,7 @@ class SiyaService : Service() {
         holdAwake(false)
         holdWakeCpuLock(false)
         hideOverlay()
+        try { com.siya.ai.browser.ObscuraMobileEngine.cleanup() } catch (_: Exception) {}
         lastState = "idle"
         instance = null
         super.onDestroy()

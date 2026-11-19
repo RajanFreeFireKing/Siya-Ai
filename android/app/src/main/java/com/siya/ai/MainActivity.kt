@@ -268,8 +268,7 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "openBrowser" -> {
                     val url = call.argument<String>("url") ?: "https://www.google.com"
-                    prefs.edit().putBoolean("ai_browser_enabled", true).apply()
-                    Thread { AiBrowser.open(this, url, "full"); ui.post { result.success(true) } }.start()
+                    Thread { com.siya.ai.browser.ObscuraMobileEngine.open(this, url); ui.post { result.success(true) } }.start()
                 }
                 "getSmsLedger" -> Thread {
                     val entries = com.siya.ai.data.SmsLedger.getEntries(this)

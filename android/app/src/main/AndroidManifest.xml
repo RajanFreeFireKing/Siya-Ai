@@ -138,15 +138,6 @@
             </intent-filter>
         </activity>
 
-        <!-- AI Browser (poori screen) -->
-        <activity
-            android:name=".browser.AiBrowserActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Siya"
-            android:launchMode="singleTask"
-            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|density|uiMode"
-            android:windowSoftInputMode="adjustResize" />
-
         <!-- Camera se ek photo lene ke liye (transparent, turant band) -->
         <activity
             android:name=".ui.main.CameraCaptureActivity"

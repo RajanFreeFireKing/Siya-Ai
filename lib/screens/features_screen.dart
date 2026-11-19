@@ -125,7 +125,7 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                         setState(() => _wake = v);
                         _put({'wake_word_enabled': v});
                       }),
-                      _switchRow('AI Browser', _aiBrowser ? 'Siya ko browser chalane do' : 'Band', _aiBrowser, (v) {
+                      _switchRow('Obscura Web Agent', _aiBrowser ? 'Background headless web research chalu' : 'Band', _aiBrowser, (v) {
                         setState(() => _aiBrowser = v);
                         _put({'ai_browser_enabled': v});
                       }),

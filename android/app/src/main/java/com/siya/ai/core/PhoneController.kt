@@ -342,8 +342,7 @@ object PhoneController {
     }
 
     fun openUrl(ctx: Context, url: String): String {
-        val u = if (url.startsWith("http")) url else "https://$url"
-        return if (launch(ctx, Intent(Intent.ACTION_VIEW, Uri.parse(u)))) "OK: $u khul gaya" else "ERROR: link nahi khula"
+        return com.siya.ai.browser.ObscuraMobileEngine.open(ctx, url)
     }
 
     // ── System ────────────────────────────────────────────────
