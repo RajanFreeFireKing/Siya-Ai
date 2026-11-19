@@ -210,9 +210,9 @@ object ToolRouter {
                     // If user wants to see an image popup but didn't provide path, find the latest gallery photo
                     if ((type == "image" || type == "gallery") && mediaUrl.isBlank()) {
                         try {
-                            val images = com.siya.ai.data.MediaHelper.list(ctx, "image")
+                            val images = com.siya.ai.data.MediaHelper.list(ctx, "image", 1)
                             if (images.isNotEmpty()) {
-                                mediaUrl = images[0].uri
+                                mediaUrl = (images[0]["uri"] as? String) ?: ""
                             }
                         } catch (_: Exception) {}
                     }
