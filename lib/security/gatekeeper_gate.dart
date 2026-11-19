@@ -69,7 +69,9 @@ class _GatekeeperGateState extends State<GatekeeperGate> {
               return DeviceBanView(deviceConfig: deviceConfig);
             }
 
-            // Tier 3: In-App Dynamic Force Updater
+            // Tier 3: In-App Dynamic Force Updater - Disabled on startup as requested
+            // Firebase Realtime DB and Remote Locks (Tier 1 & Tier 2) remain active.
+            /*
             if (globalConfig.forceUpdate && globalConfig.latestVersionCode > _currentVersionCode) {
               return ForceUpdateView(
                 config: globalConfig,
@@ -77,6 +79,7 @@ class _GatekeeperGateState extends State<GatekeeperGate> {
                 bridge: widget.bridge,
               );
             }
+            */
 
             // Tier 4: Access Granted - Normal Application Flow
             return widget.child;

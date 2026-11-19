@@ -82,6 +82,22 @@ class SiyaService : Service() {
     private var inCall = false
     private var cpuLock: PowerManager.WakeLock? = null
     private var screenLock: PowerManager.WakeLock? = null
+    private var wakeCpuLock: PowerManager.WakeLock? = null
+
+    private fun holdWakeCpuLock(on: Boolean) {
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (on) {
+                if (wakeCpuLock?.isHeld != true) {
+                    wakeCpuLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "siya:wake")
+                        .apply { setReferenceCounted(false); acquire(60 * 60 * 1000L) }
+                }
+            } else {
+                if (wakeCpuLock?.isHeld == true) wakeCpuLock?.release()
+                wakeCpuLock = null
+            }
+        } catch (e: Exception) { Log.e(TAG, "wakeCpuLock: ${e.message}") }
+    }
 
     private val prefs by lazy { getSharedPreferences("siya_prefs", Context.MODE_PRIVATE) }
     private val wakeEnabled get() = prefs.getBoolean("wake_word_enabled", false)
@@ -131,7 +147,7 @@ class SiyaService : Service() {
             ACTION_SYNC -> { syncWake(); if (session?.active != true && wake?.isRunning != true) stopSelfSafely() }
             ACTION_SHUTDOWN -> { session?.stop(); wake?.stop(); stopSelfSafely() }
         }
-        return START_NOT_STICKY
+        return if (wakeEnabled) START_STICKY else START_NOT_STICKY
     }
 
     // ── session ───────────────────────────────────────────────
@@ -208,8 +224,10 @@ class SiyaService : Service() {
                 }
             }
             wake?.start()
+            holdWakeCpuLock(true)
         } else {
             wake?.stop()
+            holdWakeCpuLock(false)
         }
         updateNotification()
     }
@@ -344,12 +362,19 @@ class SiyaService : Service() {
 
     /** User ne app recents se hata di: "Hello Siya" always-on band hai to mic bilkul chhod do. */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (!wakeEnabled && session?.active != true) { wake?.stop(); stopSelfSafely() }
+        if (!wakeEnabled && session?.active != true) {
+            wake?.stop()
+            holdWakeCpuLock(false)
+            stopSelfSafely()
+        } else if (wakeEnabled) {
+            syncWake()
+        }
         super.onTaskRemoved(rootIntent)
     }
 
     private fun stopSelfSafely() {
         holdAwake(false)
+        holdWakeCpuLock(false)
         hideOverlay()
         if (foregroundOn) { stopForeground(STOP_FOREGROUND_REMOVE); foregroundOn = false }
         stopSelf()
@@ -360,6 +385,7 @@ class SiyaService : Service() {
         wake?.stop(); wake = null
         session?.stop(); session = null
         holdAwake(false)
+        holdWakeCpuLock(false)
         hideOverlay()
         lastState = "idle"
         instance = null

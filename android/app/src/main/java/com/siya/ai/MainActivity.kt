@@ -577,7 +577,8 @@ class MainActivity : FlutterFragmentActivity() {
         // naye features
         "wa_autoreply" to false, "wa_reply_names" to "", "call_screener" to false, "ledger_enabled" to true,
         "sos_volume_enabled" to false, "sos_contacts" to "", "ghost_mode" to false, "ghost_code" to "2580",
-        "game_hud" to false, "spam_numbers" to ""
+        "game_hud" to false, "spam_numbers" to "",
+        "app_accent_color" to 0xFFFF2A6DL
     )
 
     /** In keys ke badalne par live session dobara connect hota hai. */
@@ -586,7 +587,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun readSettings(): Map<String, Any?> {
         val out = HashMap<String, Any?>(defaults)
-        prefs.all.forEach { (k, v) -> if (k in defaults) out[k] = if (v is Float) v.toDouble() else v }
+        prefs.all.forEach { (k, v) -> out[k] = if (v is Float) v.toDouble() else v }
         return out
     }
 
@@ -595,10 +596,22 @@ class MainActivity : FlutterFragmentActivity() {
         prefs.edit().apply {
             for ((k, v) in m) {
                 when (val d = defaults[k]) {
-                    null -> {}
                     is Boolean -> putBoolean(k, v as? Boolean ?: d)
                     is String -> putString(k, (v?.toString() ?: d).trim())
                     is Double -> putFloat(k, (v as? Number)?.toFloat() ?: d.toFloat())
+                    is Long -> putLong(k, (v as? Number)?.toLong() ?: d)
+                    is Int -> putInt(k, (v as? Number)?.toInt() ?: d)
+                    null -> {
+                        when (v) {
+                            is Boolean -> putBoolean(k, v)
+                            is String -> putString(k, v.trim())
+                            is Int -> putInt(k, v)
+                            is Long -> putLong(k, v)
+                            is Float -> putFloat(k, v)
+                            is Double -> putFloat(k, v.toFloat())
+                            is Number -> putLong(k, v.toLong())
+                        }
+                    }
                 }
             }
         }.apply()

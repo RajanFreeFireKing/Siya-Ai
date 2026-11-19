@@ -39,6 +39,7 @@ class SiyaTheme {
   static final ValueNotifier<Color> accent = ValueNotifier<Color>(defaultAccent);
   static Color parseAccent(Object? value) {
     if (value is int) return Color(value);
+    if (value is num) return Color(value.toInt());
     if (value is! String) return defaultAccent;
     final raw = value.trim().replaceFirst('#', '').replaceFirst('0x', '');
     final parsed = int.tryParse(raw, radix: 16);
