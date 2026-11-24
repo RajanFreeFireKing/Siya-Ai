@@ -296,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _BrandTitle(width: w, accent: accent),
+                    _BrandTitle(width: w, accent: accent, bridge: widget.bridge),
                     _NotificationButton(
                       accent: accent,
                       onTap: () {
@@ -432,7 +432,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _BrandTitle(width: w, accent: accent),
+                    _BrandTitle(width: w, accent: accent, bridge: widget.bridge),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -975,26 +975,36 @@ class _OrbSideWavesPainter extends CustomPainter {
 }
 
 class _BrandTitle extends StatelessWidget {
-  const _BrandTitle({required this.width, required this.accent});
+  const _BrandTitle({required this.width, required this.accent, required this.bridge});
   final double width;
   final Color accent;
+  final SiyaBridge bridge;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/siya_ai_logo.png',
-      height: 32,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) =>
-          _VectorBrandTitle(width: width, accent: accent),
+    return ValueListenableBuilder<String>(
+      valueListenable: bridge.assistantName,
+      builder: (context, name, _) {
+        if (name.toUpperCase() == 'KIYON') {
+          return _VectorBrandTitle(width: width, accent: accent, name: 'KIYON');
+        }
+        return Image.asset(
+          'assets/images/siya_ai_logo.png',
+          height: 32,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              _VectorBrandTitle(width: width, accent: accent, name: 'SIYA'),
+        );
+      },
     );
   }
 }
 
 class _VectorBrandTitle extends StatelessWidget {
-  const _VectorBrandTitle({required this.width, required this.accent});
+  const _VectorBrandTitle({required this.width, required this.accent, this.name = 'SIYA'});
   final double width;
   final Color accent;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -1008,9 +1018,9 @@ class _VectorBrandTitle extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // "SIYA" with modern geometric aesthetic & soft ambient glow
+            // Active Assistant Name ("SIYA" or "KIYON")
             Text(
-              'SIYA',
+              name.toUpperCase(),
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w900,

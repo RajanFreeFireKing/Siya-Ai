@@ -20,6 +20,9 @@ class SiyaBridge extends ChangeNotifier {
   final ValueNotifier<double> enrollmentAmp = ValueNotifier<double>(0);
   final ValueNotifier<String> transcript = ValueNotifier<String>('');
 
+  /// Active assistant name: 'SIYA' or 'KIYON'
+  final ValueNotifier<String> assistantName = ValueNotifier<String>('SIYA');
+
   /// OSINT Search Results (image lookup, name lookup)
   final ValueNotifier<Map<String, dynamic>?> osintResult = ValueNotifier<Map<String, dynamic>?>(null);
 
@@ -55,6 +58,10 @@ class SiyaBridge extends ChangeNotifier {
     listen();
     try {
       await _method.invokeMethod<bool>('init');
+      final s = await getSettings();
+      final name = (s['assistant_name'] as String?) ?? 'Siya';
+      assistantName.value = name.trim().toUpperCase();
+      notifyListeners();
     } on PlatformException {
       // ignore
     }
@@ -240,8 +247,18 @@ class SiyaBridge extends ChangeNotifier {
   Future<Map<String, dynamic>> getSettings() async =>
       (await _method.invokeMapMethod<String, dynamic>('getSettings')) ?? {};
 
-  Future<void> saveSettings(Map<String, dynamic> s) =>
-      _method.invokeMethod<void>('saveSettings', s);
+  Future<void> saveSettings(Map<String, dynamic> s) async {
+    if (s.containsKey('assistant_name')) {
+      final name = (s['assistant_name'] as String?) ?? 'Siya';
+      assistantName.value = name.trim().toUpperCase();
+      notifyListeners();
+    }
+    await _method.invokeMethod<void>('saveSettings', s);
+  }
+
+  /// Launch Visible In-App Browser
+  Future<bool> openBrowser([String query = '']) async =>
+      (await _method.invokeMethod<bool>('openBrowser', {'query': query})) ?? false;
 
   Future<Map<String, dynamic>> getStatus() async =>
       (await _method.invokeMapMethod<String, dynamic>('getStatus')) ?? {};

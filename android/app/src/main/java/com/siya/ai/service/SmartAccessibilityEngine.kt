@@ -69,10 +69,16 @@ object SmartAccessibilityEngine {
         return searchAndLongClick(rootNode, text, contentDesc)
     }
 
-    // ── Scroll ─────────────────────────────────────────────────
+    // ── Scroll & Reels ─────────────────────────────────────────
     fun scrollDown(id: String? = null): Boolean {
         val service = AccessibilityHelperService.instance ?: return false
         val rootNode = service.rootInActiveWindow ?: return false
+
+        // Check if short video app (Instagram Reels, YouTube Shorts, etc.)
+        val pkg = rootNode.packageName?.toString()?.lowercase().orEmpty()
+        if (pkg.contains("instagram") || pkg.contains("tiktok") || pkg.contains("short")) {
+            if (reelNext()) return true
+        }
 
         // Try by ID first
         if (id != null) {
@@ -83,13 +89,19 @@ object SmartAccessibilityEngine {
                 }
             }
         }
-        // Find any scrollable
-        return findScrollableAndScroll(rootNode, forward = true)
+        // Find any scrollable, fallback to gesture swipe up
+        return findScrollableAndScroll(rootNode, forward = true) || swipe("up")
     }
 
     fun scrollUp(id: String? = null): Boolean {
         val service = AccessibilityHelperService.instance ?: return false
         val rootNode = service.rootInActiveWindow ?: return false
+
+        val pkg = rootNode.packageName?.toString()?.lowercase().orEmpty()
+        if (pkg.contains("instagram") || pkg.contains("tiktok") || pkg.contains("short")) {
+            if (reelPrev()) return true
+        }
+
         if (id != null) {
             rootNode.findAccessibilityNodeInfosByViewId(id).forEach { node ->
                 if (node.isScrollable) {
@@ -98,7 +110,61 @@ object SmartAccessibilityEngine {
                 }
             }
         }
-        return findScrollableAndScroll(rootNode, forward = false)
+        return findScrollableAndScroll(rootNode, forward = false) || swipe("down")
+    }
+
+    fun scrollLeft(): Boolean {
+        return swipe("left")
+    }
+
+    fun scrollRight(): Boolean {
+        return swipe("right")
+    }
+
+    /**
+     * Precision gesture for Instagram Reels / YouTube Shorts / TikTok next video.
+     * Fast upward flick gesture from 78% height to 22% height in ~220ms.
+     */
+    fun reelNext(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+        val service = AccessibilityHelperService.instance ?: return false
+        val display = service.resources.displayMetrics
+        val w = display.widthPixels.toFloat()
+        val h = display.heightPixels.toFloat()
+
+        val path = Path().apply {
+            moveTo(w * 0.5f, h * 0.78f)
+            lineTo(w * 0.5f, h * 0.22f)
+        }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 220))
+            .build()
+        val ok = service.dispatchGesture(gesture, null, null)
+        Log.d(TAG, "Reel Next gesture dispatched: $ok")
+        return ok
+    }
+
+    /**
+     * Precision gesture for Instagram Reels / YouTube Shorts / TikTok previous video.
+     * Fast downward flick gesture from 22% height to 78% height in ~220ms.
+     */
+    fun reelPrev(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+        val service = AccessibilityHelperService.instance ?: return false
+        val display = service.resources.displayMetrics
+        val w = display.widthPixels.toFloat()
+        val h = display.heightPixels.toFloat()
+
+        val path = Path().apply {
+            moveTo(w * 0.5f, h * 0.22f)
+            lineTo(w * 0.5f, h * 0.78f)
+        }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 220))
+            .build()
+        val ok = service.dispatchGesture(gesture, null, null)
+        Log.d(TAG, "Reel Prev gesture dispatched: $ok")
+        return ok
     }
 
     private fun findScrollableAndScroll(node: AccessibilityNodeInfo?, forward: Boolean): Boolean {
@@ -171,7 +237,7 @@ object SmartAccessibilityEngine {
     }
 
     // ── Swipe Gesture ──────────────────────────────────────────
-    fun swipe(direction: String): Boolean {
+    fun swipe(direction: String, durationMs: Long = 240): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
         val service = AccessibilityHelperService.instance ?: return false
         val display = service.resources.displayMetrics
@@ -179,19 +245,25 @@ object SmartAccessibilityEngine {
         val h = display.heightPixels.toFloat()
 
         val path = Path()
-        when (direction.lowercase()) {
-            "up"    -> { path.moveTo(w/2, h*0.7f); path.lineTo(w/2, h*0.3f) }
-            "down"  -> { path.moveTo(w/2, h*0.3f); path.lineTo(w/2, h*0.7f) }
-            "left"  -> { path.moveTo(w*0.8f, h/2); path.lineTo(w*0.2f, h/2) }
-            "right" -> { path.moveTo(w*0.2f, h/2); path.lineTo(w*0.8f, h/2) }
+        when (direction.lowercase().trim()) {
+            "up", "next_reel", "reel_next", "next" -> {
+                path.moveTo(w * 0.5f, h * 0.78f)
+                path.lineTo(w * 0.5f, h * 0.22f)
+            }
+            "down", "prev_reel", "reel_prev", "prev" -> {
+                path.moveTo(w * 0.5f, h * 0.22f)
+                path.lineTo(w * 0.5f, h * 0.78f)
+            }
+            "left"  -> { path.moveTo(w * 0.85f, h * 0.5f); path.lineTo(w * 0.15f, h * 0.5f) }
+            "right" -> { path.moveTo(w * 0.15f, h * 0.5f); path.lineTo(w * 0.85f, h * 0.5f) }
             else -> return false
         }
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 300))
+            .addStroke(GestureDescription.StrokeDescription(path, 0, durationMs.coerceIn(100L, 800L)))
             .build()
-        service.dispatchGesture(gesture, null, null)
-        Log.d(TAG, "Swipe: $direction")
-        return true
+        val ok = service.dispatchGesture(gesture, null, null)
+        Log.d(TAG, "Swipe: $direction ($ok)")
+        return ok
     }
 
     // ── Get Screen Text ────────────────────────────────────────

@@ -129,6 +129,14 @@ class _FeaturesScreenState extends State<FeaturesScreen> with WidgetsBindingObse
                         setState(() => _aiBrowser = v);
                         _put({'ai_browser_enabled': v});
                       }),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.language_rounded, color: Color(0xFF00E5FF)),
+                        title: const Text('In-App Visible Browser', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        subtitle: const Text('Dikhai dene wala browser kholo aur search karo', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                        trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 16),
+                        onTap: () => widget.bridge.openBrowser(),
+                      ),
                       _switchRow('Screen on rakho', _keepAwake ? 'AI chalne tak screen band nahi hogi' : 'Screen normal timeout par band hogi',
                           _keepAwake, (v) {
                         setState(() => _keepAwake = v);

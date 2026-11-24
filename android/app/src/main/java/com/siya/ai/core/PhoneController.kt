@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.net.Uri
@@ -376,22 +377,99 @@ object PhoneController {
 
     fun readScreen(): String {
         needA11y()?.let { return it }
-        val root = AccessibilityHelperService.instance?.rootInActiveWindow ?: return "ERROR: screen read nahi hui"
-        val sb = StringBuilder("App: ${root.packageName}\n")
+        val service = AccessibilityHelperService.instance ?: return "ERROR: Accessibility service band hai"
+        val root = service.rootInActiveWindow ?: return "ERROR: screen read nahi hui (screen blank ya protected hai)"
+
+        val displayMetrics = service.resources.displayMetrics
+        val screenW = displayMetrics.widthPixels
+        val screenH = displayMetrics.heightPixels
+
+        val topElements = mutableListOf<String>()
+        val bottomElements = mutableListOf<String>()
+        val leftElements = mutableListOf<String>()
+        val rightElements = mutableListOf<String>()
+        val centerElements = mutableListOf<String>()
+        val allNodesFormatted = StringBuilder()
+
+        val tempRect = Rect()
+
         fun walk(n: AccessibilityNodeInfo?, depth: Int) {
-            if (n == null || sb.length > 6500 || depth > 28) return
+            if (n == null || allNodesFormatted.length > 7500 || depth > 32) return
+
             val label = (n.text ?: n.contentDescription)?.toString()?.trim().orEmpty()
-            val tags = buildString {
-                if (n.isClickable) append("[tap]")
-                if (n.isEditable) append("[input]")
-                if (n.isScrollable) append("[scroll]")
+            val isActionable = n.isClickable || n.isEditable || n.isScrollable
+
+            if (label.isNotEmpty() || isActionable) {
+                n.getBoundsInScreen(tempRect)
+                val cx = tempRect.centerX()
+                val cy = tempRect.centerY()
+
+                // Spatial zone determination
+                val vertZone = when {
+                    cy < screenH * 0.22 -> "TOP"
+                    cy > screenH * 0.78 -> "BOTTOM"
+                    else -> "CENTER"
+                }
+                val horizZone = when {
+                    cx < screenW * 0.33 -> "LEFT"
+                    cx > screenW * 0.67 -> "RIGHT"
+                    else -> "CENTER"
+                }
+
+                val spatialTag = when {
+                    vertZone == "TOP" && horizZone == "LEFT" -> "[TOP-LEFT]"
+                    vertZone == "TOP" && horizZone == "RIGHT" -> "[TOP-RIGHT]"
+                    vertZone == "TOP" -> "[TOP]"
+                    vertZone == "BOTTOM" && horizZone == "LEFT" -> "[BOTTOM-LEFT]"
+                    vertZone == "BOTTOM" && horizZone == "RIGHT" -> "[BOTTOM-RIGHT]"
+                    vertZone == "BOTTOM" -> "[BOTTOM]"
+                    horizZone == "LEFT" -> "[LEFT]"
+                    horizZone == "RIGHT" -> "[RIGHT]"
+                    else -> "[CENTER]"
+                }
+
+                val actionTag = buildString {
+                    if (n.isClickable) append("[tap]")
+                    if (n.isEditable) append("[input]")
+                    if (n.isScrollable) append("[scroll]")
+                }
+
+                val shortText = label.take(120)
+                val formattedItem = if (actionTag.isNotEmpty()) "$spatialTag \"$shortText\" $actionTag" else "$spatialTag \"$shortText\""
+
+                when {
+                    vertZone == "TOP" && topElements.size < 6 -> if (shortText.isNotEmpty()) topElements.add(formattedItem)
+                    vertZone == "BOTTOM" && bottomElements.size < 6 -> if (shortText.isNotEmpty()) bottomElements.add(formattedItem)
+                    horizZone == "RIGHT" && rightElements.size < 6 -> if (shortText.isNotEmpty()) rightElements.add(formattedItem)
+                    horizZone == "LEFT" && leftElements.size < 6 -> if (shortText.isNotEmpty()) leftElements.add(formattedItem)
+                    centerElements.size < 8 -> if (shortText.isNotEmpty()) centerElements.add(formattedItem)
+                }
+
+                if (label.isNotEmpty() || actionTag.isNotEmpty()) {
+                    allNodesFormatted.append(formattedItem)
+                    if (tempRect.width() > 0 && tempRect.height() > 0) {
+                        allNodesFormatted.append(" (pos: x=$cx, y=$cy)")
+                    }
+                    allNodesFormatted.append("\n")
+                }
             }
-            if (label.isNotEmpty() || tags.isNotEmpty()) {
-                if (label.isNotEmpty()) sb.append(label.take(90)).append(' ').append(tags).append('\n')
-            }
+
             for (i in 0 until n.childCount) walk(n.getChild(i), depth + 1)
         }
+
         walk(root, 0)
+
+        val sb = StringBuilder()
+        sb.append("App: ${root.packageName} (Screen: ${screenW}x${screenH})\n")
+        sb.append("=== SCREEN SPATIAL LAYOUT (Upar/Neeche/Baayein/Daayein) ===\n")
+        if (topElements.isNotEmpty()) sb.append("• UPAR (Top Header): ").append(topElements.joinToString(" | ")).append("\n")
+        if (bottomElements.isNotEmpty()) sb.append("• NEECHE (Bottom Nav/Actions): ").append(bottomElements.joinToString(" | ")).append("\n")
+        if (leftElements.isNotEmpty()) sb.append("• BAAYEIN (Left Side): ").append(leftElements.joinToString(" | ")).append("\n")
+        if (rightElements.isNotEmpty()) sb.append("• DAAYEIN (Right Controls): ").append(rightElements.joinToString(" | ")).append("\n")
+        if (centerElements.isNotEmpty()) sb.append("• BEECH MEIN (Main View): ").append(centerElements.joinToString(" | ")).append("\n")
+
+        sb.append("\n=== DETAILED SCREEN NODES ===\n")
+        sb.append(allNodesFormatted)
         return sb.toString()
     }
 
@@ -407,13 +485,41 @@ object PhoneController {
 
     fun scroll(direction: String): String {
         needA11y()?.let { return it }
-        val d = direction.lowercase()
+        val d = direction.lowercase().trim()
         val ok = when (d) {
-            "down", "next" -> SmartAccessibilityEngine.scrollDown() || SmartAccessibilityEngine.swipe("up")
-            "up", "previous", "prev" -> SmartAccessibilityEngine.scrollUp() || SmartAccessibilityEngine.swipe("down")
-            else -> false
+            "next_reel", "reel_next", "reel_up", "next" -> SmartAccessibilityEngine.reelNext() || SmartAccessibilityEngine.scrollDown()
+            "prev_reel", "reel_prev", "reel_down", "previous", "prev" -> SmartAccessibilityEngine.reelPrev() || SmartAccessibilityEngine.scrollUp()
+            "down" -> SmartAccessibilityEngine.scrollDown() || SmartAccessibilityEngine.reelNext()
+            "up" -> SmartAccessibilityEngine.scrollUp() || SmartAccessibilityEngine.reelPrev()
+            "left" -> SmartAccessibilityEngine.scrollLeft()
+            "right" -> SmartAccessibilityEngine.scrollRight()
+            else -> SmartAccessibilityEngine.scrollDown() || SmartAccessibilityEngine.reelNext()
         }
         return if (ok) "OK: scroll $d" else "ERROR: scroll nahi hua"
+    }
+
+    fun reelNext(): String {
+        needA11y()?.let { return it }
+        return if (SmartAccessibilityEngine.reelNext()) "OK: agla reel chalaya" else "ERROR: reel scroll nahi hua"
+    }
+
+    fun reelPrev(): String {
+        needA11y()?.let { return it }
+        return if (SmartAccessibilityEngine.reelPrev()) "OK: pichhla reel chalaya" else "ERROR: reel scroll nahi hua"
+    }
+
+    /** In-App Visible Browser UI launch */
+    fun openInAppBrowser(ctx: Context, queryOrUrl: String): String {
+        return try {
+            val intent = Intent(ctx, com.siya.ai.browser.BrowserActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("query_or_url", queryOrUrl.trim())
+            }
+            ctx.startActivity(intent)
+            "OK: In-App Browser khol diya hai aur '$queryOrUrl' load ho raha hai"
+        } catch (e: Exception) {
+            "ERROR: Browser kholne mein error: ${e.message}"
+        }
     }
 
     /** Seedha ungli ka swipe (reels/shorts/next video ke liye). direction = ungli ki disha. */

@@ -34,6 +34,15 @@ class SileroVadDetector(private val context: Context) {
     private fun initSession() {
         if (initialized) return
         try {
+            val hasAsset = try {
+                context.assets.open(MODEL_NAME).use { true }
+            } catch (_: Exception) { false }
+
+            if (!hasAsset) {
+                Log.d(TAG, "Silero VAD model ($MODEL_NAME) not present; using fast algorithmic RMS VAD gatekeeper.")
+                return
+            }
+
             ortEnv = OrtEnvironment.getEnvironment()
             val modelBytes = context.assets.open(MODEL_NAME).use { it.readBytes() }
             val options = OrtSession.SessionOptions().apply {
@@ -44,7 +53,7 @@ class SileroVadDetector(private val context: Context) {
             initialized = true
             Log.d(TAG, "Silero VAD v5 initialized successfully from assets ($MODEL_NAME)")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load Silero VAD model: ${e.message}", e)
+            Log.d(TAG, "Using fallback algorithmic VAD: ${e.message}")
         }
     }
 
@@ -53,7 +62,13 @@ class SileroVadDetector(private val context: Context) {
      */
     @Synchronized
     fun process(samples: FloatArray): Float {
-        if (!initialized || session == null || ortEnv == null) return 0f
+        if (!initialized || session == null || ortEnv == null) {
+            // Algorithmic energy VAD fallback: computes RMS speech energy
+            var sum = 0.0
+            for (s in samples) sum += (s * s)
+            val rms = kotlin.math.sqrt(sum / samples.size.coerceAtLeast(1)).toFloat()
+            return ((rms - 0.012f) / 0.030f).coerceIn(0f, 1f)
+        }
         val env = ortEnv ?: return 0f
         val sess = session ?: return 0f
 

@@ -70,15 +70,18 @@ class AstAudioClassifier(private val context: Context) {
                 labelMap[id] = obj.getString(key)
             }
             Log.d(TAG, "Loaded ${labelMap.size} AST labels.")
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not load AST labels: ${e.message}")
-        }
+        } catch (_: Exception) {}
     }
 
     @Synchronized
     private fun initSession() {
         if (initialized) return
         try {
+            val hasAsset = try {
+                context.assets.open(MODEL_NAME).use { true }
+            } catch (_: Exception) { false }
+            if (!hasAsset) return
+
             ortEnv = OrtEnvironment.getEnvironment()
             val modelBytes = context.assets.open(MODEL_NAME).use { it.readBytes() }
             val options = OrtSession.SessionOptions().apply {
@@ -89,7 +92,7 @@ class AstAudioClassifier(private val context: Context) {
             initialized = true
             Log.d(TAG, "AST Audio Classifier initialized successfully from assets ($MODEL_NAME)")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load AST model: ${e.message}", e)
+            Log.d(TAG, "AST model skipped: ${e.message}")
         }
     }
 

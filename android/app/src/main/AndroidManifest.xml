@@ -184,6 +184,14 @@
             android:exported="false"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
 
+        <!-- Dikhai dene wala in-app browser UI -->
+        <activity
+            android:name=".browser.BrowserActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Siya"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize" />
+
         <activity
             android:name=".security.AppSelectionActivity"
             android:exported="false"

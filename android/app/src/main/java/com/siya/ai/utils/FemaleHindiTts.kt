@@ -25,18 +25,31 @@ class FemaleHindiTts(
             return
         }
         try {
+            val prefs = context.getSharedPreferences("siya_prefs", Context.MODE_PRIVATE)
+            val assistantName = prefs.getString("assistant_name", "Siya").orEmpty()
+            val isMale = assistantName.equals("Kiyon", ignoreCase = true) || prefs.getString("assistant_gender", "").equals("male", true)
+
             val languageStatus = tts.setLanguage(Locale("hi", "IN"))
             val candidates = tts.voices.orEmpty().filter {
                 it.locale.language == "hi" && (it.locale.country.isBlank() || it.locale.country.equals("IN", true))
             }
-            val femaleVoice = candidates.firstOrNull {
-                it.name.contains("female", true) || it.name.contains("hi-in-x-hie-local", true)
+
+            if (isMale) {
+                val maleVoice = candidates.firstOrNull { it.name.contains("male", true) }
+                if (maleVoice != null) tts.voice = maleVoice
+                tts.setSpeechRate(0.95f)
+                tts.setPitch(0.75f) // Deep, heavy khatarnak male pitch
+                Log.d("SIYA_TTS", "Configured Kiyon Khatarnak Male Voice (Pitch 0.75)")
+            } else {
+                val femaleVoice = candidates.firstOrNull {
+                    it.name.contains("female", true) || it.name.contains("hi-in-x-hie-local", true)
+                }
+                if (femaleVoice != null) tts.voice = femaleVoice
+                tts.setSpeechRate(0.92f)
+                tts.setPitch(1.08f)
+                Log.d("SIYA_TTS", "Configured Siya Sweet Female Voice (Pitch 1.08)")
             }
-            if (femaleVoice != null) tts.voice = femaleVoice
-            tts.setSpeechRate(0.92f)
-            tts.setPitch(1.08f)
             ready = languageStatus >= TextToSpeech.LANG_AVAILABLE
-            if (femaleVoice == null) Log.w("SIYA_TTS", "No labelled Hindi female voice installed; using available Hindi voice")
             onReady(ready)
         } catch (e: Exception) {
             Log.e("SIYA_TTS", "Could not configure Hindi TTS: ${e.message}", e)

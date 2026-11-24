@@ -183,6 +183,15 @@ class MainActivity : FlutterFragmentActivity() {
                     com.siya.ai.browser.ObscuraMobileEngine.cleanup()
                     result.success(null)
                 }
+                "openBrowser" -> {
+                    val query = call.argument<String>("query") ?: ""
+                    val intent = Intent(this, com.siya.ai.browser.BrowserActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("query_or_url", query)
+                    }
+                    startActivity(intent)
+                    result.success(true)
+                }
                 "getBossProfileStatus" -> {
                     val engine = com.siya.ai.audio.SpeakerRecognitionEngine.getInstance(this)
                     result.success(mapOf(
@@ -635,6 +644,7 @@ class MainActivity : FlutterFragmentActivity() {
     // ── Settings ────────────────────────────────────────────────────────
     private val defaults: Map<String, Any> = mapOf(
         "api_key" to "", "user_name" to "Sir", "prime_name" to "", "prime_number" to "",
+        "assistant_name" to "Siya", "assistant_gender" to "female",
         "personality_mode" to "love", "selected_personality" to "love", "live_voice" to "Aoede",
         "memory_enabled" to true, "wake_word_enabled" to false,
         "call_detect_enabled" to false,          // call detect default BAND (privacy)
@@ -651,7 +661,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     /** In keys ke badalne par live session dobara connect hota hai. */
     private val reloadKeys = setOf("api_key", "user_name", "prime_name", "prime_number", "personality_mode",
-        "selected_personality", "live_voice", "memory_enabled", "ai_browser_enabled", "loc_mode", "loc_name", "voice_focus")
+        "selected_personality", "live_voice", "assistant_name", "assistant_gender", "memory_enabled", "ai_browser_enabled", "loc_mode", "loc_name", "voice_focus")
 
     private fun readSettings(): Map<String, Any?> {
         val out = HashMap<String, Any?>(defaults)

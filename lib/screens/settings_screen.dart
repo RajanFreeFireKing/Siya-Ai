@@ -198,6 +198,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   final _apiKey = TextEditingController();
 
+  String _assistantName = 'Siya';
+  String _assistantGender = 'female';
   String _personality = 'love';
   String _voice = 'Aoede';
   bool _memory = true;
@@ -254,7 +256,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       SiyaTheme.accent.value = _primaryThemeColor;
       final rawMode = (s['selected_personality'] ?? s['personality_mode'] as String?) ?? 'love';
       _personality = (rawMode == 'gf') ? 'love' : rawMode;
-      _voice = (s['live_voice'] as String?) ?? 'Aoede';
+      _assistantName = (s['assistant_name'] as String?) ?? 'Siya';
+      _assistantGender = (s['assistant_gender'] as String?) ?? 'female';
+      _voice = (s['live_voice'] as String?) ?? (_assistantName.toLowerCase() == 'kiyon' ? 'Fenrir' : 'Aoede');
       _memory = (s['memory_enabled'] as bool?) ?? true;
       _wake = (s['wake_word_enabled'] as bool?) ?? false;
       _callDetect = (s['call_detect_enabled'] as bool?) ?? false;
@@ -448,7 +452,19 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   await _refreshStatus();
                                 },
                               ),
+                              _action(
+                                Icons.language_rounded,
+                                'In-App Visible Browser',
+                                'Screen par app ka apna dikhai dene wala browser kholo',
+                                null,
+                                () => widget.bridge.openBrowser(),
+                              ),
                             ]),
+                            const SizedBox(height: 10),
+
+                            // Voice & Assistant Persona (Siya vs Kiyon)
+                            _section('Voice & Assistant Persona'),
+                            _voicePersonaSelector(),
                             const SizedBox(height: 10),
 
                             // 3. Personality
@@ -853,6 +869,120 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
+  Widget _voicePersonaSelector() {
+    final isKiyon = _assistantName.toLowerCase() == 'kiyon';
+    return _card([
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _VoicePersonaChip(
+                    name: 'Siya',
+                    title: 'Female Voice 🌸',
+                    subtitle: 'Sweet, emotional & caring companion (Aoede)',
+                    selected: !isKiyon,
+                    color: const Color(0xFFFF2A6D),
+                    icon: Icons.female_rounded,
+                    onTap: () async {
+                      setState(() {
+                        _assistantName = 'Siya';
+                        _assistantGender = 'female';
+                        _voice = 'Aoede';
+                      });
+                      await widget.bridge.saveSettings({
+                        'assistant_name': 'Siya',
+                        'assistant_gender': 'female',
+                        'live_voice': 'Aoede',
+                      });
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(
+                            content: Text('🌸 Siya (Female Voice) active! Home page name updated.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _VoicePersonaChip(
+                    name: 'Kiyon',
+                    title: 'Male Voice ⚡',
+                    subtitle: 'Khatarnak, bhaari male voice • Sir & Boss mode (Fenrir)',
+                    selected: isKiyon,
+                    color: const Color(0xFF02A3FC),
+                    icon: Icons.male_rounded,
+                    onTap: () async {
+                      setState(() {
+                        _assistantName = 'Kiyon';
+                        _assistantGender = 'male';
+                        _voice = 'Fenrir';
+                      });
+                      await widget.bridge.saveSettings({
+                        'assistant_name': 'Kiyon',
+                        'assistant_gender': 'male',
+                        'live_voice': 'Fenrir',
+                      });
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(
+                            content: Text('⚡ Kiyon (Khatarnak Male Voice - Sir/Boss Mode) active! Home page name updated.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: (isKiyon ? const Color(0xFF02A3FC) : const Color(0xFFFF2A6D)).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: (isKiyon ? const Color(0xFF02A3FC) : const Color(0xFFFF2A6D)).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isKiyon ? Icons.shield_rounded : Icons.favorite_rounded,
+                    color: isKiyon ? const Color(0xFF02A3FC) : const Color(0xFFFF2A6D),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isKiyon
+                          ? 'Kiyon Active: Deep khatarnak voice se aapko "Sir" aur "Boss" bulayega. Home screen par KIYON AI dikhega.'
+                          : 'Siya Active: Sweet female voice se baat karegi. Home screen par SIYA AI dikhega.',
+                      style: TextStyle(
+                        color: isKiyon ? const Color(0xFF0284C7) : const Color(0xFFD6004C),
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
   Widget _personalityGrid() {
     const choices = <(String, String, IconData)>[
       ('friendly', 'Friendly 😊', Icons.sentiment_very_satisfied_rounded),
@@ -1239,4 +1369,119 @@ class _PersonalityChipState extends State<_PersonalityChip> {
           ),
         ),
       );
+}
+
+class _VoicePersonaChip extends StatefulWidget {
+  const _VoicePersonaChip({
+    required this.name,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String name;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  State<_VoicePersonaChip> createState() => _VoicePersonaChipState();
+}
+
+class _VoicePersonaChipState extends State<_VoicePersonaChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 240),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: widget.selected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.color,
+                      Color.lerp(widget.color, Colors.black, 0.28)!,
+                    ],
+                  )
+                : null,
+            color: widget.selected ? null : Colors.white.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.selected ? Colors.white : widget.color.withOpacity(0.3),
+              width: widget.selected ? 2.0 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withOpacity(widget.selected ? 0.35 : 0.08),
+                blurRadius: widget.selected ? 14 : 6,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.selected ? Colors.white.withOpacity(0.25) : widget.color.withOpacity(0.12),
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      size: 20,
+                      color: widget.selected ? Colors.white : widget.color,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: TextStyle(
+                        color: widget.selected ? Colors.white : const Color(0xFF1E293B),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.subtitle,
+                style: TextStyle(
+                  color: widget.selected ? Colors.white.withOpacity(0.9) : const Color(0xFF64748B),
+                  fontSize: 11.0,
+                  height: 1.25,
+                  fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
