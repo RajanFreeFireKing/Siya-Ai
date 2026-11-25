@@ -462,15 +462,21 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             ]),
                             const SizedBox(height: 10),
 
-                            // Voice & Assistant Persona (Siya vs Kiyon)
-                            _section('Voice & Assistant Persona'),
+                            // Voice & Assistant Persona (Select by AI Name)
+                            _section('Select AI Persona (By Name)'),
                             _voicePersonaSelector(),
                             const SizedBox(height: 10),
 
-                            // 3. Personality
-                            _section('Personality'),
-                            _personalityGrid(),
-                            const SizedBox(height: 10),
+                            // 3. Personality (Shown ONLY for Siya - Hidden for Kiyon)
+                            if (_assistantName.toLowerCase() != 'kiyon') ...[
+                              _section('Personality Modes (Siya)'),
+                              _personalityGrid(),
+                              const SizedBox(height: 10),
+                            ] else ...[
+                              _section('Kiyon Persona Mode'),
+                              _kiyonPersonaBanner(),
+                              const SizedBox(height: 10),
+                            ],
 
                             // 4. Theme Color
                             _section('Theme Color'),
@@ -983,6 +989,106 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     ]);
   }
 
+  Widget _kiyonPersonaBanner() {
+    return _card([
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF07192F), Color(0xFF0F172A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF02A3FC).withOpacity(0.35), width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF02A3FC).withOpacity(0.2),
+                    border: Border.all(color: const Color(0xFF02A3FC), width: 1.5),
+                  ),
+                  child: const Icon(Icons.shield_rounded, color: Color(0xFF02A3FC), size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'KIYON • Autonomous Enforcer',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Commanding Male AI • Sir & Boss Mode Active',
+                        style: TextStyle(
+                          color: Color(0xFF38BDF8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '⚡ Kiyon ekdam khatarnak aur daak bhaari masculine aawaz mein aapse batchit karega. Har aadesh par "Sir" aur "Boss" bulayega. Isme koi love ya romantic girlfriend modes nahi hain — yeh pure power, intelligence aur high-level action par kaam karta hai.',
+              style: TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 12.5,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _kiyonBadge('SIR & BOSS', const Color(0xFF02A3FC)),
+                _kiyonBadge('CREATOR: RAJAN KING', const Color(0xFF10B981)),
+                _kiyonBadge('FENRIR LIVE VOICE', const Color(0xFFF59E0B)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  Widget _kiyonBadge(String text, Color col) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: col.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: col.withOpacity(0.4)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: col,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
+        ),
+      ),
+    );
+  }
+
   Widget _personalityGrid() {
     const choices = <(String, String, IconData)>[
       ('friendly', 'Friendly 😊', Icons.sentiment_very_satisfied_rounded),
@@ -1454,14 +1560,28 @@ class _VoicePersonaChipState extends State<_VoicePersonaChip> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      widget.title,
-                      style: TextStyle(
-                        color: widget.selected ? Colors.white : const Color(0xFF1E293B),
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.name.toUpperCase(),
+                          style: TextStyle(
+                            color: widget.selected ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            color: widget.selected ? Colors.white.withOpacity(0.9) : widget.color,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 ],

@@ -508,17 +508,23 @@ object PhoneController {
         return if (SmartAccessibilityEngine.reelPrev()) "OK: pichhla reel chalaya" else "ERROR: reel scroll nahi hua"
     }
 
-    /** In-App Visible Browser UI launch */
+    /** In-App Visible Browser UI / Popup launch */
     fun openInAppBrowser(ctx: Context, queryOrUrl: String): String {
         return try {
-            val intent = Intent(ctx, com.siya.ai.browser.BrowserActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra("query_or_url", queryOrUrl.trim())
+            val app = ctx.applicationContext
+            if (android.provider.Settings.canDrawOverlays(app)) {
+                com.siya.ai.ui.widget.UniversalFloatingWindow.showBrowser(app, queryOrUrl.trim())
+                "OK: Browser popup screen par floating card ke roop mein khol diya hai aur '$queryOrUrl' load ho raha hai"
+            } else {
+                val intent = Intent(ctx, com.siya.ai.browser.BrowserActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("query_or_url", queryOrUrl.trim())
+                }
+                ctx.startActivity(intent)
+                "OK: Browser popup card khol diya hai aur '$queryOrUrl' load ho raha hai"
             }
-            ctx.startActivity(intent)
-            "OK: In-App Browser khol diya hai aur '$queryOrUrl' load ho raha hai"
         } catch (e: Exception) {
-            "ERROR: Browser kholne mein error: ${e.message}"
+            "ERROR: Browser popup kholne mein error: ${e.message}"
         }
     }
 

@@ -985,15 +985,12 @@ class _BrandTitle extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: bridge.assistantName,
       builder: (context, name, _) {
-        if (name.toUpperCase() == 'KIYON') {
-          return _VectorBrandTitle(width: width, accent: accent, name: 'KIYON');
-        }
-        return Image.asset(
-          'assets/images/siya_ai_logo.png',
-          height: 32,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) =>
-              _VectorBrandTitle(width: width, accent: accent, name: 'SIYA'),
+        final isKiyon = name.toUpperCase() == 'KIYON';
+        return _VectorBrandTitle(
+          width: width,
+          accent: accent,
+          name: isKiyon ? 'KIYON' : 'SIYA',
+          isKiyon: isKiyon,
         );
       },
     );
@@ -1001,125 +998,104 @@ class _BrandTitle extends StatelessWidget {
 }
 
 class _VectorBrandTitle extends StatelessWidget {
-  const _VectorBrandTitle({required this.width, required this.accent, this.name = 'SIYA'});
+  const _VectorBrandTitle({
+    required this.width,
+    required this.accent,
+    this.name = 'SIYA',
+    this.isKiyon = false,
+  });
   final double width;
   final Color accent;
   final String name;
+  final bool isKiyon;
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = (width * .078).clamp(32.0, 48.0);
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Active Assistant Name ("SIYA" or "KIYON")
-            Text(
-              name.toUpperCase(),
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.2,
-                color: const Color(0xFF0F172A),
-                shadows: [
-                  Shadow(
-                    color: accent.withOpacity(0.40),
-                    blurRadius: 14,
-                    offset: const Offset(0, 2),
-                  ),
-                  Shadow(
-                    color: Colors.white.withOpacity(0.9),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            // "AI" with dynamic glowing accent gradient (Pink/Purple to Neon Cyan)
-            ShaderMask(
-              blendMode: BlendMode.srcIn,
-              shaderCallback: (bounds) => LinearGradient(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Cyber Emblem Icon
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [accent, Color.lerp(accent, Colors.black, 0.45)!],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  accent,
-                  Color.lerp(accent, const Color(0xFFFF5CF2), 0.6)!,
-                  const Color(0xFF00E5FF),
-                ],
-              ).createShader(bounds),
-              child: Text(
-                'AI',
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2.2,
-                  shadows: [
-                    Shadow(
-                      color: accent.withOpacity(0.50),
-                      blurRadius: 16,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withOpacity(0.45),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
+            child: Icon(
+              isKiyon ? Icons.bolt_rounded : Icons.flare_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
 
-            // Sleek Micro-Sparkle ✨ & Glowing Pulse Dot Indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    accent.withOpacity(0.18),
-                    const Color(0xFF00E5FF).withOpacity(0.12),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: accent.withOpacity(0.35), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withOpacity(0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accent,
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withOpacity(0.8),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  const Text(
-                    '✨',
-                    style: TextStyle(fontSize: 10, height: 1.1),
-                  ),
-                ],
+          // Brand Name: KIYON / SIYA with crisp metallic cyber styling
+          ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFF0F172A),
+                Color.lerp(const Color(0xFF0F172A), accent, 0.25)!,
+              ],
+            ).createShader(bounds),
+            child: Text(
+              name.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2.2,
+                fontFamily: 'sans-serif',
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+
+          // Glowing Cyber AI Capsule Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [accent.withOpacity(0.22), accent.withOpacity(0.06)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: accent.withOpacity(0.75), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withOpacity(0.28),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+            child: Text(
+              'AI',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+                color: accent,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1291,9 +1267,7 @@ class _CoreLogo extends StatelessWidget {
           builder: (context, emo, _) {
             final bpm = ((emo['bpm'] as num?) ?? 72).toDouble();
             final heartRate = (bpm / 60.0).clamp(0.85, 2.2);
-            final glowHex = (emo['glow'] as String?) ?? '#FF4D91';
-            final emoColor = Color(int.parse(glowHex.replaceFirst('#', '0xFF')));
-            final liveAccent = Color.lerp(accent, emoColor, 0.65)!;
+            final liveAccent = accent;
 
             return AnimatedBuilder(
               animation: time,
@@ -1422,13 +1396,13 @@ class _HologramOrbCore extends StatelessWidget {
         ),
 
         // 2. High-Resolution Original Flame Crest, Typography & Underline Crest
-        // Dynamically tinted by the theme accent color using BlendMode.hue
+        // Dynamically tinted strictly by the selected theme accent color
         ClipOval(
           child: SizedBox(
             width: size,
             height: size,
             child: ColorFiltered(
-              colorFilter: ColorFilter.mode(accent, BlendMode.hue),
+              colorFilter: ColorFilter.mode(accent, BlendMode.color),
               child: Image.asset(
                 'assets/images/siya_orb.png',
                 width: size,

@@ -39,13 +39,29 @@ class BrowserActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         fun dp(v: Float) = (v * d).toInt()
 
-        val rootLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#020A14"))
+        val scrimLayout = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#B3000000"))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setOnClickListener { finish() }
+        }
+
+        val cardLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#060B14"))
+                cornerRadius = dp(20f).toFloat()
+                setStroke(dp(1.2f), Color.parseColor("#1E293B"))
+            }
+            clipToOutline = true
+            layoutParams = FrameLayout.LayoutParams(
+                (resources.displayMetrics.widthPixels * 0.94f).toInt(),
+                (resources.displayMetrics.heightPixels * 0.82f).toInt(),
+                Gravity.CENTER
+            )
+            isClickable = true
         }
 
         // Top Toolbar
@@ -138,7 +154,7 @@ class BrowserActivity : AppCompatActivity() {
         }
         toolbar.addView(closeBtn)
 
-        rootLayout.addView(toolbar)
+        cardLayout.addView(toolbar)
 
         // Loading Progress Bar
         progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -147,13 +163,14 @@ class BrowserActivity : AppCompatActivity() {
             progress = 0
             visibility = View.GONE
         }
-        rootLayout.addView(progressBar)
+        cardLayout.addView(progressBar)
 
         // WebView
         webView = WebView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                0,
+                1f
             )
             setBackgroundColor(Color.parseColor("#020A14"))
         }
@@ -211,8 +228,9 @@ class BrowserActivity : AppCompatActivity() {
             }
         }
 
-        rootLayout.addView(webView)
-        setContentView(rootLayout)
+        cardLayout.addView(webView)
+        scrimLayout.addView(cardLayout)
+        setContentView(scrimLayout)
 
         val rawInput = intent.getStringExtra("query_or_url")?.trim().orEmpty()
         loadFromInput(rawInput.ifBlank { "https://www.google.com" })

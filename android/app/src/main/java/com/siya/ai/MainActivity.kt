@@ -185,11 +185,15 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "openBrowser" -> {
                     val query = call.argument<String>("query") ?: call.argument<String>("url") ?: ""
-                    val intent = Intent(this, com.siya.ai.browser.BrowserActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        putExtra("query_or_url", query)
+                    if (Settings.canDrawOverlays(this)) {
+                        com.siya.ai.ui.widget.UniversalFloatingWindow.showBrowser(this, query)
+                    } else {
+                        val intent = Intent(this, com.siya.ai.browser.BrowserActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra("query_or_url", query)
+                        }
+                        startActivity(intent)
                     }
-                    startActivity(intent)
                     result.success(true)
                 }
                 "getBossProfileStatus" -> {
