@@ -176,7 +176,7 @@ object UniversalFloatingWindow {
             setBackgroundColor(Color.parseColor("#0C1524"))
         }
 
-        lateinit var webView: WebView
+        var webView: WebView? = null
         lateinit var urlEdit: EditText
         lateinit var progress: ProgressBar
         lateinit var backBtn: TextView
@@ -198,7 +198,7 @@ object UniversalFloatingWindow {
             textSize = 15f
             setTextColor(Color.parseColor("#64748B"))
             setPadding(dp(8f), dp(4f), dp(8f), dp(4f))
-            setOnClickListener { if (::webView.isInitialized && webView.canGoBack()) webView.goBack() }
+            setOnClickListener { if (webView?.canGoBack() == true) webView?.goBack() }
         }
         toolbar.addView(backBtn)
 
@@ -208,7 +208,7 @@ object UniversalFloatingWindow {
             textSize = 15f
             setTextColor(Color.parseColor("#64748B"))
             setPadding(dp(8f), dp(4f), dp(8f), dp(4f))
-            setOnClickListener { if (::webView.isInitialized && webView.canGoForward()) webView.goForward() }
+            setOnClickListener { if (webView?.canGoForward() == true) webView?.goForward() }
         }
         toolbar.addView(forwardBtn)
 
@@ -235,7 +235,7 @@ object UniversalFloatingWindow {
                     (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
                     val u = resolveUrl(text.toString())
                     setText(u)
-                    if (::webView.isInitialized) webView.loadUrl(u)
+                    webView?.loadUrl(u)
                     val imm = app.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                     imm?.hideSoftInputFromWindow(windowToken, 0)
                     true
@@ -250,7 +250,7 @@ object UniversalFloatingWindow {
             textSize = 18f
             setTextColor(Color.parseColor("#00E5FF"))
             setPadding(dp(6f), dp(2f), dp(6f), dp(2f))
-            setOnClickListener { if (::webView.isInitialized) webView.reload() }
+            setOnClickListener { webView?.reload() }
         }
         toolbar.addView(reloadBtn)
 
@@ -265,7 +265,7 @@ object UniversalFloatingWindow {
         root.addView(progress)
 
         // WebView
-        webView = WebView(app).apply {
+        val wv = WebView(app).apply {
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
             setBackgroundColor(Color.parseColor("#060B14"))
             settings.apply {
@@ -300,11 +300,12 @@ object UniversalFloatingWindow {
                 }
             }
         }
-        root.addView(webView)
+        webView = wv
+        root.addView(wv)
 
         val targetUrl = resolveUrl(initialInput)
         urlEdit.setText(targetUrl)
-        webView.loadUrl(targetUrl)
+        wv.loadUrl(targetUrl)
 
         return root
     }
