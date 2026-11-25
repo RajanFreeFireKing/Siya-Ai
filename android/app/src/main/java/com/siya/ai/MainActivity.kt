@@ -184,7 +184,7 @@ class MainActivity : FlutterFragmentActivity() {
                     result.success(null)
                 }
                 "openBrowser" -> {
-                    val query = call.argument<String>("query") ?: ""
+                    val query = call.argument<String>("query") ?: call.argument<String>("url") ?: ""
                     val intent = Intent(this, com.siya.ai.browser.BrowserActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         putExtra("query_or_url", query)

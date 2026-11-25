@@ -256,10 +256,6 @@ class SiyaBridge extends ChangeNotifier {
     await _method.invokeMethod<void>('saveSettings', s);
   }
 
-  /// Launch Visible In-App Browser
-  Future<bool> openBrowser([String query = '']) async =>
-      (await _method.invokeMethod<bool>('openBrowser', {'query': query})) ?? false;
-
   Future<Map<String, dynamic>> getStatus() async =>
       (await _method.invokeMapMethod<String, dynamic>('getStatus')) ?? {};
 
@@ -359,8 +355,12 @@ class SiyaBridge extends ChangeNotifier {
 
   Future<void> openNotificationAccess() => _method.invokeMethod<void>('openNotificationAccess');
 
-  Future<bool> openBrowser([String? url]) async =>
-      (await _method.invokeMethod<bool>('openBrowser', url != null ? {'url': url} : null)) ?? false;
+  /// Launch Visible In-App Browser
+  Future<bool> openBrowser([String? queryOrUrl]) async =>
+      (await _method.invokeMethod<bool>(
+        'openBrowser',
+        queryOrUrl != null ? {'query': queryOrUrl, 'url': queryOrUrl} : null,
+      )) ?? false;
 
   Future<Map<String, dynamic>> getSmsLedger() async =>
       (await _method.invokeMapMethod<String, dynamic>('getSmsLedger')) ?? {};
