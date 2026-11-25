@@ -7,7 +7,7 @@ import java.util.Locale
 
 /** Stable Android TTS fallback. Prefer a Hindi-India voice labelled female when installed. */
 class FemaleHindiTts(
-    context: Context,
+    private val context: Context,
     private val onReady: (Boolean) -> Unit = {}
 ) : TextToSpeech.OnInitListener {
     @Volatile private var ready = false
